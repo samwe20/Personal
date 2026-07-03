@@ -434,7 +434,9 @@ class Game {
 // Initialize game when page loads
 let game;
 window.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing game...');
     game = new Game();
     game.initialize();
-    console.log('Galactic Empire initialized');
+    console.log('Game initialized with', game.galaxy.systems.length, 'systems');
+    console.log('Home system:', game.galaxy.systems[0]);
 });

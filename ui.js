@@ -6,6 +6,18 @@ class UI {
         this.ctx = this.canvas.getContext('2d');
         this.tooltip = document.getElementById('system-tooltip');
         
+        if (!this.canvas) {
+            console.error('Canvas element not found!');
+            return;
+        }
+        
+        if (!this.ctx) {
+            console.error('Could not get 2D context!');
+            return;
+        }
+        
+        console.log('UI constructor: canvas and context OK');
+        
         this.camera = {
             x: 0,
             y: 0,
@@ -19,22 +31,41 @@ class UI {
         this.setupEventListeners();
         this.startRenderLoop();
         this.startUIUpdateLoop();
+        
+        console.log('UI constructor complete');
     }
 
     setupCanvas() {
-        this.resizeCanvas();
+        console.log('Setting up canvas...');
+        
+        // Force initial size
+        setTimeout(() => {
+            this.resizeCanvas();
+        }, 0);
+        
         window.addEventListener('resize', () => this.resizeCanvas());
         
         // Center camera on home system
         const homeSystem = this.game.galaxy.systems[0];
-        this.camera.x = homeSystem.x;
-        this.camera.y = homeSystem.y;
+        if (homeSystem) {
+            this.camera.x = homeSystem.x;
+            this.camera.y = homeSystem.y;
+            console.log('Camera centered on home system:', homeSystem.name);
+        } else {
+            console.error('No home system found!');
+        }
     }
 
     resizeCanvas() {
         const container = this.canvas.parentElement;
-        this.canvas.width = container.clientWidth;
-        this.canvas.height = container.clientHeight;
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        
+        // Fallback if container has no size
+        this.canvas.width = width > 0 ? width : 800;
+        this.canvas.height = height > 0 ? height : 600;
+        
+        console.log('Canvas resized to:', this.canvas.width, 'x', this.canvas.height);
     }
 
     setupEventListeners() {
@@ -287,6 +318,12 @@ class UI {
     }
 
     render() {
+        // Check if canvas has valid size
+        if (!this.canvas.width || !this.canvas.height) {
+            console.warn('Canvas has no size, skipping render');
+            return;
+        }
+
         // Clear canvas
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -518,8 +555,14 @@ class UI {
     }
 
     startRenderLoop() {
+        console.log('Starting render loop...');
+        let frameCount = 0;
         const render = () => {
             this.render();
+            if (frameCount === 0) {
+                console.log('First frame rendered');
+            }
+            frameCount++;
             requestAnimationFrame(render);
         };
         render();
@@ -533,11 +576,19 @@ class UI {
 }
 
 // Initialize UI when game is ready
+let ui;
 window.addEventListener('DOMContentLoaded', () => {
+    console.log('Waiting for game initialization...');
     setTimeout(() => {
         if (window.game) {
-            new UI(window.game);
-            console.log('UI initialized');
+            console.log('Initializing UI...');
+            ui = new UI(window.game);
+            console.log('UI initialized successfully');
+            console.log('Canvas element:', ui.canvas);
+            console.log('Canvas size:', ui.canvas.width, 'x', ui.canvas.height);
+            console.log('Context:', ui.ctx ? 'OK' : 'FAILED');
+        } else {
+            console.error('Game not initialized!');
         }
-    }, 100);
+    }, 200);
 });
