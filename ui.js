@@ -37,10 +37,19 @@ class UI {
 
     setupCanvas() {
         console.log('Setting up canvas...');
+        console.log('Canvas parent:', this.canvas.parentElement);
+        console.log('Parent dimensions:', 
+            this.canvas.parentElement.clientWidth, 
+            'x', 
+            this.canvas.parentElement.clientHeight);
         
         // Force initial size
         setTimeout(() => {
             this.resizeCanvas();
+            // Test render
+            this.ctx.fillStyle = '#ff0000';
+            this.ctx.fillRect(50, 50, 100, 100);
+            console.log('Test rect drawn');
         }, 0);
         
         window.addEventListener('resize', () => this.resizeCanvas());
