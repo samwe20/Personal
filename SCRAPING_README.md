@@ -1,6 +1,6 @@
-# Web Scraping - Prázdné domy Kalendárium
+# Web Scraping - Prázdnédomy.cz
 
-Tento projekt obsahuje skript pro vytěžení kalendáře událostí z webu [databaze.prazdnedomy.cz](https://databaze.prazdnedomy.cz/kalendarium/).
+Tento projekt obsahuje komplexní nástroje pro vytěžení dat z webu [databaze.prazdnedomy.cz](https://databaze.prazdnedomy.cz/), včetně kalendáře událostí a celé databáze historických objektů.
 
 ## Popis
 
@@ -66,9 +66,43 @@ datum,datum_iso,popis
 31.12.2022,2022-12-31,3700 fanoušků na našem instagramovém účtu
 ```
 
-## Statistiky
+## Dva scrapery v jednom projektu
 
-Aktuálně skript vytěží **133 událostí** z období 2014-2023.
+### 1. Kalendář událostí (`scrape_prazdnedomy.py`)
+
+Vytěžuje **kalendář událostí** projektu Prázdné domy.
+
+**Výsledky:**
+- **133 událostí** z období 2014-2023
+- Export do `prazdnedomy_kalendarium.json` a `.csv`
+
+### 2. Kompletní databáze (`scrape_prazdnedomy_full.py`)
+
+Vytěžuje **celou databázi historických objektů** včetně detailů.
+
+**Co vytěžuje:**
+- ~**7855 objektů** celkem
+- GPS souřadnice každého objektu
+- **Časové osy** - kompletní historie objektů
+- Popisy, architekti, majitelé
+- Odkazy na články a fotografie
+
+**Výsledky:**
+- `prazdnedomy_full.json` - kompletní data (50+ MB)
+- `prazdnedomy_summary.csv` - přehledné CSV
+- Checkpoint soubory každých 100 objektů
+
+## Statistiky databáze
+
+### Růst počtu objektů (z kalendáře)
+- **2015**: 268 objektů (start projektu)
+- **2016**: 1 000 domů
+- **2017**: 2 000 domů
+- **2018**: 3 000 domů  
+- **2019**: 4 000 objektů
+- **2020**: 6 000 objektů
+- **2021**: 7 000 objektů
+- **2026**: ~7 855 objektů (aktuálně)
 
 ## O projektu Prázdné domy
 
