@@ -113,32 +113,50 @@ def split_sentences(text: str) -> list[str]:
     return [part.strip() for part in parts if part.strip()]
 
 
-def translate_sentence(sentence: str, translator: GoogleTranslator, retries: int = 4) -> str:
+def translate_sentence(sentence: str, translator: GoogleTranslator, retries: int = 3) -> str:
+    if len(sentence) > 4500:
+        sentence = sentence[:4500]
+
     for attempt in range(retries):
         try:
             result = translator.translate(sentence)
             if result:
                 return result
-        except Exception:
-            pass
-        time.sleep(1.5 * (attempt + 1))
+        except Exception as exc:
+            print(f"      [warn] překlad věty selhal (pokus {attempt + 1}/{retries}): {exc}", flush=True)
+        time.sleep(min(8.0, 1.0 * (attempt + 1)))
     return sentence
 
 
 def translate_text(text: str, translator: GoogleTranslator) -> str:
-    sentences = split_sentences(text)
-    if not sentences:
+    text = text.strip()
+    if not text:
         return ""
 
+    # Kratší odstavce přeložit najednou — rychlejší a spolehlivější.
+    if len(text) <= 3500:
+        return translate_sentence(text, translator)
+
+    sentences = split_sentences(text)
+    if not sentences:
+        return translate_sentence(text, translator)
+
     translated_sentences: list[str] = []
-    for sentence in sentences:
+    for index, sentence in enumerate(sentences, start=1):
         translated_sentences.append(translate_sentence(sentence, translator))
-        time.sleep(0.05)
+        if index % 5 == 0:
+            print(f"      ... {index}/{len(sentences)} vět", flush=True)
+        time.sleep(0.1)
     return " ".join(translated_sentences)
 
 
 def translate_paragraphs(paragraphs: list[str], translator: GoogleTranslator) -> list[str]:
-    return [translate_text(paragraph, translator) for paragraph in paragraphs]
+    translated: list[str] = []
+    total = len(paragraphs)
+    for index, paragraph in enumerate(paragraphs, start=1):
+        print(f"    odstavec {index}/{total}", flush=True)
+        translated.append(translate_text(paragraph, translator))
+    return translated
 
 
 def render_markdown(day: DiaryDay, czech_paragraphs: list[str]) -> str:
