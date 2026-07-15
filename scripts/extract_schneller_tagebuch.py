@@ -113,6 +113,18 @@ def split_sentences(text: str) -> list[str]:
     return [part.strip() for part in parts if part.strip()]
 
 
+def translate_sentence(sentence: str, translator: GoogleTranslator, retries: int = 4) -> str:
+    for attempt in range(retries):
+        try:
+            result = translator.translate(sentence)
+            if result:
+                return result
+        except Exception:
+            pass
+        time.sleep(1.5 * (attempt + 1))
+    return sentence
+
+
 def translate_text(text: str, translator: GoogleTranslator) -> str:
     sentences = split_sentences(text)
     if not sentences:
@@ -120,7 +132,7 @@ def translate_text(text: str, translator: GoogleTranslator) -> str:
 
     translated_sentences: list[str] = []
     for sentence in sentences:
-        translated_sentences.append(translator.translate(sentence))
+        translated_sentences.append(translate_sentence(sentence, translator))
         time.sleep(0.05)
     return " ".join(translated_sentences)
 
@@ -201,7 +213,7 @@ def main() -> None:
     skipped_empty = 0
     skipped_existing = 0
 
-    print(f"Calendar days to check: {len(days)}")
+    print(f"Calendar days to check: {len(days)}", flush=True)
 
     for date_label, url in days:
         iso = to_iso_date(date_label)
@@ -216,16 +228,22 @@ def main() -> None:
 
         if day is None:
             skipped_empty += 1
-            print(f"[skip] {date_label} — bez záznamu v deníku Schnellera")
+            print(f"[skip] {date_label} — bez záznamu v deníku Schnellera", flush=True)
             continue
 
-        czech = translate_paragraphs(day.german_paragraphs, translator)
+        try:
+            czech = translate_paragraphs(day.german_paragraphs, translator)
+        except Exception as exc:
+            print(f"[error] {date_label} — překlad selhal: {exc}")
+            continue
+
         save_day(day, czech, output_dir)
         processed += 1
-        print(f"[ok] {date_label} -> {target}")
+        print(f"[ok] {date_label} -> {target}", flush=True)
 
     print(
-        f"Done. Saved: {processed}, empty days: {skipped_empty}, skipped existing: {skipped_existing}"
+        f"Done. Saved: {processed}, empty days: {skipped_empty}, skipped existing: {skipped_existing}",
+        flush=True,
     )
 
 
