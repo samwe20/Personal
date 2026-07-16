@@ -21,10 +21,6 @@ file_count() {
   ls "$OUT"/*.md 2>/dev/null | wc -l | tr -d ' '
 }
 
-latest_md_mtime() {
-  find "$OUT" -maxdepth 1 -name '*.md' -printf '%T@\n' 2>/dev/null | sort -n | tail -1 | cut -d. -f1
-}
-
 last_ok_line() {
   rg '^\[ok\]' "$EXPORT_LOG" 2>/dev/null | tail -1 || true
 }
@@ -61,10 +57,12 @@ hourly_report() {
   log "hourly: files=$count status=$status"
 }
 
-last_progress_epoch="$(latest_md_mtime)"
+last_file_count="$(file_count)"
+last_ok="$(last_ok_line)"
+last_progress_epoch="$(date +%s)"
 last_hourly_epoch="$(date +%s)"
 
-log "watchdog started (check=${CHECK_INTERVAL_SEC}s stall=${STALL_THRESHOLD_SEC}s)"
+log "watchdog started (check=${CHECK_INTERVAL_SEC}s stall=${STALL_THRESHOLD_SEC}s files=${last_file_count})"
 
 while true; do
   now="$(date +%s)"
@@ -72,17 +70,20 @@ while true; do
   if ! export_running; then
     log "export not running — starting"
     start_export
-    last_progress_epoch="$(latest_md_mtime)"
+    last_progress_epoch="$now"
   else
-    current_mtime="$(latest_md_mtime)"
-    if [[ "$current_mtime" -gt "$last_progress_epoch" ]]; then
-      last_progress_epoch="$current_mtime"
+    current_count="$(file_count)"
+    current_ok="$(last_ok_line)"
+    if [[ "$current_count" -gt "$last_file_count" ]] || [[ "$current_ok" != "$last_ok" && -n "$current_ok" ]]; then
+      last_file_count="$current_count"
+      last_ok="$current_ok"
+      last_progress_epoch="$now"
     elif (( now - last_progress_epoch > STALL_THRESHOLD_SEC )); then
-      log "stall detected (${STALL_THRESHOLD_SEC}s without new file) — restarting export"
+      log "stall detected (${STALL_THRESHOLD_SEC}s without progress, files=${current_count}) — restarting export"
       stop_export
       sleep 2
       start_export
-      last_progress_epoch="$(latest_md_mtime)"
+      last_progress_epoch="$now"
     fi
   fi
 
