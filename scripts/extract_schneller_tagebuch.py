@@ -8,6 +8,7 @@ import re
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass
 from datetime import datetime
 from html import unescape
@@ -19,6 +20,7 @@ from deep_translator import GoogleTranslator
 BASE_URL = "https://wk1.staatsarchiv.at/tagebuch/karl-schneller/"
 USER_AGENT = "Mozilla/5.0 (compatible; SchnellerTagebuchExtractor/1.0)"
 DATE_RE = re.compile(r"(\d{2})\.(\d{2})\.(\d{4})")
+TRANSLATE_TIMEOUT_SEC = 90
 
 
 @dataclass
@@ -119,9 +121,16 @@ def translate_sentence(sentence: str, translator: GoogleTranslator, retries: int
 
     for attempt in range(retries):
         try:
-            result = translator.translate(sentence)
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(translator.translate, sentence)
+                result = future.result(timeout=TRANSLATE_TIMEOUT_SEC)
             if result:
                 return result
+        except FuturesTimeoutError:
+            print(
+                f"      [warn] překlad vypršel ({TRANSLATE_TIMEOUT_SEC}s), pokus {attempt + 1}/{retries}",
+                flush=True,
+            )
         except Exception as exc:
             print(f"      [warn] překlad věty selhal (pokus {attempt + 1}/{retries}): {exc}", flush=True)
         time.sleep(min(8.0, 1.0 * (attempt + 1)))
