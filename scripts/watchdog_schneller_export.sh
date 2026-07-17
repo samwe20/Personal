@@ -7,6 +7,7 @@ OUT="$WORKDIR/schneller-tagebuch-cs"
 EXPORT_LOG="$WORKDIR/schneller-export.log"
 HOURLY_LOG="$WORKDIR/schneller-hourly.log"
 WATCHDOG_LOG="$WORKDIR/schneller-watchdog.log"
+COMPLETE_FILE="$WORKDIR/schneller-export-complete.txt"
 PID_FILE="$WORKDIR/schneller-export.pid"
 
 CHECK_INTERVAL_SEC=300      # kontrola každých 5 minut
@@ -27,6 +28,27 @@ last_ok_line() {
 
 export_running() {
   pgrep -f 'python3 scripts/extract_schneller_tagebuch.py' >/dev/null 2>&1
+}
+
+export_complete() {
+  [[ -f "$COMPLETE_FILE" ]] && return 0
+  rg -q '^Done\.' "$EXPORT_LOG" 2>/dev/null
+}
+
+mark_complete() {
+  local summary count
+  summary="$(rg '^Done\.' "$EXPORT_LOG" 2>/dev/null | tail -1 || true)"
+  count="$(file_count)"
+  {
+    echo "completed_at=$(date -u '+%Y-%m-%d %H:%M UTC')"
+    echo "files=$count"
+    echo "summary=$summary"
+    echo "last_ok=$(last_ok_line)"
+  } > "$COMPLETE_FILE"
+  log "EXPORT COMPLETE — $summary (files=$count)"
+  if [[ -x "$WORKDIR/scripts/on_export_complete.sh" ]]; then
+    "$WORKDIR/scripts/on_export_complete.sh" >> "$WATCHDOG_LOG" 2>&1 || true
+  fi
 }
 
 start_export() {
@@ -66,6 +88,18 @@ log "watchdog started (check=${CHECK_INTERVAL_SEC}s stall=${STALL_THRESHOLD_SEC}
 
 while true; do
   now="$(date +%s)"
+
+  if export_complete; then
+    if export_running; then
+      stop_export
+    fi
+    if [[ ! -f "$COMPLETE_FILE" ]]; then
+      mark_complete
+    fi
+    hourly_report
+    sleep "$HOURLY_INTERVAL_SEC"
+    continue
+  fi
 
   if ! export_running; then
     log "export not running — starting"
