@@ -1,0 +1,24 @@
+Pokračuj v odborné revizi českých překladů deníku Karla Schnellera.
+
+## Instrukce
+
+1. Přečti `.cursor/agents/schneller-prekladatel.md` a `scripts/glossary-de-cs.md`.
+2. Spusť `python3 scripts/revise_schneller_translation.py status`.
+3. Reviduj **dalších 20–30 dnů** chronologicky od prvního nerevidovaného data.
+4. U každého souboru v `schneller-tagebuch-cs/`:
+   - přelož z německé sekce „Originál (německy)“
+   - nahraď sekci „Český překlad“
+   - přidej `- **Překlad:** odborně revidováno (datum)`
+5. Po dávce: `git add`, `commit`, `push`.
+
+## Pokud je k dispozici OPENAI_API_KEY
+
+Místo ruční revize spusť:
+```bash
+pip install -r scripts/requirements-revision.txt
+python3 scripts/batch_revise_translation.py --limit 30 --delay 1.5
+```
+
+## Cíl
+
+Revidovat všech ~1155 souborů. Nezastavuj se, dokud status neukáže 0 zbývajících (kromě již hotových).
