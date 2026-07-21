@@ -62,6 +62,43 @@ Cíl: text by měl snést **tisk nebo publikaci** po lehké redakci — gramatik
 | Dlouhé záznamy | 1 den / relace |
 | Commit | po měsíci nebo ~50 souborech |
 
+## Automatizace (plný běh)
+
+### 1. Nastav API klíč (doporučeno)
+
+V **Cursor → Environment secrets** přidej:
+```
+OPENAI_API_KEY=sk-...
+REVISION_MODEL=gpt-4o-mini   # volitelné
+```
+
+### 2. Spusť watchdog (běží na pozadí)
+
+```bash
+tmux new-session -d -s schneller-revision-watchdog -- scripts/watchdog_revision.sh
+```
+
+Watchdog:
+- volá `batch_revise_translation.py` (8 souborů / dávka)
+- commit + push každých ~25 souborů
+- hodinové logy: `schneller-hourly-revision.log`
+- po dokončení: `schneller-revision-complete.txt`
+
+### 3. Sledování
+
+```bash
+python3 scripts/revise_schneller_translation.py status
+tail -f schneller-revision.log
+tail -f schneller-revision-watchdog.log
+```
+
+### Ruční / agentní režim
+
+Bez API klíče použij agenta **schneller-prekladatel** v Cursoru nebo:
+```bash
+gh agent-task create --custom-agent schneller-prekladatel -F scripts/revision-agent-task.txt
+```
+
 ## Cursor agent
 
 V Cursoru vyber agenta **schneller-prekladatel** nebo invoke skill `/schneller-prekladatel`.
