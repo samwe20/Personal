@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+src-tauri/target
+src-tauri/gen/schemas
+*.exe
+*.msi
+*.nsis
 
 # Editor directories and files
 .vscode/*

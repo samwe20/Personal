@@ -2,9 +2,17 @@ import type { NoteMeta, WikiTarget } from "../types";
 
 const WIKI_RE = /\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]/g;
 
+/** Strip fenced/inline code so example [[links]] inside code are ignored. */
+export function stripCodeForLinks(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, (block) => " ".repeat(block.length))
+    .replace(/`[^`\n]+`/g, (inline) => " ".repeat(inline.length));
+}
+
 export function parseWikiTargets(text: string): WikiTarget[] {
   const out: WikiTarget[] = [];
-  for (const match of text.matchAll(WIKI_RE)) {
+  const scan = stripCodeForLinks(text);
+  for (const match of scan.matchAll(WIKI_RE)) {
     const title = match[1]?.trim();
     if (!title) continue;
     out.push({

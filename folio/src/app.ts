@@ -59,7 +59,6 @@ export class FolioApp {
   async init() {
     this.settings = await loadSettings();
     this.applyTheme(this.settings.theme);
-    this.applyChrome();
 
     this.editor = createEditor(
       this.els.editorRoot,
@@ -71,6 +70,7 @@ export class FolioApp {
       this.settings.theme,
     );
 
+    this.applyChrome();
     this.bindUi();
     this.bindShortcuts();
 

@@ -180,7 +180,7 @@ Další tipy najdete v [[Vítejte ve Folio]].
 
   const backlinks = `# Backlinky
 
-Backlink je zpětný odkaz: poznámka A odkazuje na B přes \`[[B]]\`, takže B „ví“, že na ni A ukazuje.
+Backlink je zpětný odkaz: když poznámka A obsahuje odkaz na tuto stránku, Folio ho sem vypíše automaticky.
 
 Folio indexuje celou knihovnu a panel vpravo živě aktualizuje:
 

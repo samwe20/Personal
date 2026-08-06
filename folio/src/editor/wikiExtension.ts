@@ -7,7 +7,7 @@ import {
   ViewPlugin,
   ViewUpdate,
 } from "@codemirror/view";
-import type { NoteIndex } from "../lib/noteIndex";
+import { NoteIndex, stripCodeForLinks } from "../lib/noteIndex";
 
 export type WikiOpenHandler = (title: string, createIfMissing: boolean) => void;
 
@@ -45,7 +45,8 @@ function wikiCompletions(index: NoteIndex) {
 function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   for (const { from, to } of view.visibleRanges) {
-    const text = view.state.doc.sliceString(from, to);
+    const raw = view.state.doc.sliceString(from, to);
+    const text = stripCodeForLinks(raw);
     WIKI_RE.lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = WIKI_RE.exec(text))) {
@@ -71,9 +72,10 @@ function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet
 
 function linkAt(view: EditorView, pos: number): { title: string; from: number; to: number } | null {
   const line = view.state.doc.lineAt(pos);
+  const text = stripCodeForLinks(line.text);
   WIKI_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
-  while ((match = WIKI_RE.exec(line.text))) {
+  while ((match = WIKI_RE.exec(text))) {
     const from = line.from + match.index;
     const to = from + match[0].length;
     if (pos >= from && pos <= to) {
