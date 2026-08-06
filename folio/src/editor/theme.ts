@@ -25,6 +25,7 @@ export function createEditorTheme(theme: "light" | "dark") {
         fontWeight: "400",
         letterSpacing: "0.005em",
         padding: "2.5rem 0 8rem",
+        transition: "padding 180ms ease",
       },
       ".cm-content": {
         maxWidth: "42rem",

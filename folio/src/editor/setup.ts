@@ -30,6 +30,22 @@ export interface FolioEditor {
   destroy: () => void;
 }
 
+function centerCursor(view: EditorView) {
+  const head = view.state.selection.main.head;
+  const coords = view.coordsAtPos(head);
+  if (!coords) return;
+
+  const scroller = view.scrollDOM;
+  const scrollerRect = scroller.getBoundingClientRect();
+  if (scrollerRect.height <= 0) return;
+
+  const lineMid = (coords.top + coords.bottom) / 2;
+  const viewMid = scrollerRect.top + scrollerRect.height / 2;
+  const delta = lineMid - viewMid;
+  if (Math.abs(delta) < 1) return;
+  scroller.scrollTop += delta;
+}
+
 export function createEditor(
   parent: HTMLElement,
   index: NoteIndex,
@@ -39,6 +55,7 @@ export function createEditor(
   let currentTheme = theme;
   let typewriterOn = false;
   let focusOn = false;
+  let centering = false;
 
   const buildExtensions = () => [
     history(),
@@ -52,13 +69,13 @@ export function createEditor(
     wikiExtension(index, hooks.onOpenWiki),
     EditorView.updateListener.of((update) => {
       if (update.docChanged) hooks.onChange(update.state.doc.toString());
-      if (!typewriterOn || !update.selectionSet) return;
-      const head = update.state.selection.main.head;
-      // Defer so we don't re-enter the current update cycle.
+      if (!typewriterOn || centering) return;
+      if (!update.selectionSet && !update.docChanged) return;
+
+      centering = true;
       requestAnimationFrame(() => {
-        update.view.dispatch({
-          effects: EditorView.scrollIntoView(head, { y: "center" }),
-        });
+        centerCursor(update.view);
+        centering = false;
       });
     }),
     EditorView.lineWrapping,
@@ -83,6 +100,9 @@ export function createEditor(
       }),
     );
     setFocusMode(view, focusOn);
+    if (typewriterOn) {
+      requestAnimationFrame(() => centerCursor(view));
+    }
   };
 
   return {
@@ -108,6 +128,10 @@ export function createEditor(
     },
     setTypewriter(enabled) {
       typewriterOn = enabled;
+      document.getElementById("app")?.classList.toggle("typewriter-on", enabled);
+      if (enabled) {
+        requestAnimationFrame(() => centerCursor(view));
+      }
     },
     reconfigureWiki() {
       reconfigure();

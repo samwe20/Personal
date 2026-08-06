@@ -26,6 +26,7 @@ export class FolioApp {
   private saveTimer: number | null = null;
   private dirty = false;
   private suppressChange = false;
+  private renaming = false;
   private previewOn = false;
   private commandIndex = 0;
   private commandItems: NoteMeta[] = [];
@@ -121,7 +122,8 @@ export class FolioApp {
       void saveSettings(this.settings);
     });
 
-    this.els.titleInput.addEventListener("change", () => void this.renameCurrent());
+    this.els.titleInput.addEventListener("input", () => this.previewSidebarTitle());
+    this.els.titleInput.addEventListener("blur", () => void this.renameCurrent());
     this.els.titleInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -340,17 +342,57 @@ export class FolioApp {
     await this.refreshLibrary();
   }
 
-  private async renameCurrent() {
+  private previewSidebarTitle() {
     if (!this.current) return;
+    const draft = this.els.titleInput.value.trim() || "Bez názvu";
+    const active = this.els.noteList.querySelector(".note-item.active .note-item-title");
+    if (active) active.textContent = draft;
+  }
+
+  private async renameCurrent() {
+    if (!this.current || this.renaming) return;
     const nextTitle = this.els.titleInput.value.trim();
-    if (!nextTitle || nextTitle === this.current.title) {
+    if (!nextTitle) {
       this.els.titleInput.value = this.current.title;
+      this.previewSidebarTitle();
       return;
     }
-    if (this.dirty) await this.saveCurrent(true);
-    const newPath = await renameNote(this.current.path, nextTitle);
-    this.settings.lastOpenPath = newPath;
-    await this.refreshLibrary(newPath);
+    if (nextTitle === this.current.title) return;
+
+    const previous = this.current;
+    this.renaming = true;
+    try {
+      if (this.dirty) await this.saveCurrent(true);
+      const newPath = await renameNote(previous.path, nextTitle);
+      const renamedTitle = newPath.split(/[/\\]/).pop()?.replace(/\.md$/i, "") || nextTitle;
+
+      // Update in-memory list immediately so the sidebar never lags.
+      const note = this.notes.find((n) => n.path === previous.path);
+      if (note) {
+        note.path = newPath;
+        note.title = renamedTitle;
+        note.relativePath = note.relativePath.includes("/")
+          ? `${note.relativePath.slice(0, note.relativePath.lastIndexOf("/") + 1)}${renamedTitle}.md`
+          : `${renamedTitle}.md`;
+        note.id = note.relativePath.replace(/\.md$/i, "").toLowerCase();
+      }
+      this.current = note ?? { ...previous, path: newPath, title: renamedTitle };
+      this.settings.lastOpenPath = newPath;
+      this.els.titleInput.value = this.current.title;
+      this.notes.sort((a, b) => a.title.localeCompare(b.title, "cs", { sensitivity: "base" }));
+      this.index.setNotes(this.notes);
+      this.renderNoteList();
+      this.editor.reconfigureWiki();
+      void saveSettings(this.settings);
+      await this.refreshLibrary(newPath);
+    } catch (error) {
+      console.error("Rename failed", error);
+      this.els.titleInput.value = previous.title;
+      this.renderNoteList();
+      this.els.statusSave.textContent = "Přejmenování selhalo";
+    } finally {
+      this.renaming = false;
+    }
   }
 
   private handleEditorChange(text: string) {

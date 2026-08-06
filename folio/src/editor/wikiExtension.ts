@@ -61,7 +61,9 @@ function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet
           class: `cm-wiki-link${missing ? " missing" : ""}`,
           attributes: {
             "data-wiki-title": title,
-            title: missing ? `Vytvořit „${title}“` : `Otevřít „${title}“`,
+            title: missing
+              ? `Dvojklik: vytvořit „${title}“`
+              : `Dvojklik: otevřít „${title}“`,
           },
         }),
       );
@@ -104,12 +106,12 @@ export function wikiExtension(index: NoteIndex, onOpen: WikiOpenHandler): Extens
     {
       decorations: (v) => v.decorations,
       eventHandlers: {
-        click(event, view) {
+        // Single click keeps the caret in place so [[links]] stay editable.
+        dblclick(event, view) {
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
           if (pos == null) return false;
           const link = linkAt(view, pos);
           if (!link) return false;
-          // Click on wiki link opens; Alt+click forces create prompt path
           event.preventDefault();
           onOpen(link.title, true);
           return true;

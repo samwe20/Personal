@@ -392,6 +392,12 @@ input {
   height: 100%;
 }
 
+/* Extra vertical room so the caret can sit in the vertical center. */
+.app.typewriter-on .cm-scroller {
+  padding-top: 42vh !important;
+  padding-bottom: 42vh !important;
+}
+
 .preview-root {
   max-width: 42rem;
   margin: 0 auto;
