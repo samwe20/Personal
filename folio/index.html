@@ -46,6 +46,14 @@
           </button>
         </div>
 
+        <div class="disk-actions web-only hidden" id="disk-actions">
+          <button class="disk-btn" id="btn-export-library" type="button">Export ZIP</button>
+          <button class="disk-btn" id="btn-export-note" type="button">Export .md</button>
+          <button class="disk-btn" id="btn-import-files" type="button">Import .md</button>
+          <button class="disk-btn desktop-chromium" id="btn-save-folder" type="button">Uložit do složky</button>
+          <input id="import-files" class="hidden" type="file" accept=".md,text/markdown,text/plain" multiple />
+        </div>
+
         <div class="library-path" id="library-path" title="">Žádná knihovna</div>
         <div class="note-list" id="note-list" role="list"></div>
       </aside>
@@ -96,7 +104,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span id="status-chars">0 znaků</span>
           <span class="dot desktop-only" aria-hidden="true"></span>
-          <span id="status-save" class="desktop-only">Připraveno</span>
+          <span id="status-save">Připraveno</span>
           <span class="spacer"></span>
           <span id="status-hint" class="desktop-only">[[odkaz]] dvojklik · Ctrl+N nová · Ctrl+D focus · Ctrl+P rychlé otevření</span>
         </footer>

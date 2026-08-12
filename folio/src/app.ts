@@ -10,6 +10,13 @@ import {
   renameNote,
   writeNote,
 } from "./lib/fs";
+import {
+  canUseDirectoryPicker,
+  exportLibraryToDisk,
+  exportNoteToDisk,
+  importMarkdownFiles,
+  saveLibraryToDirectory,
+} from "./lib/disk";
 import { NoteIndex } from "./lib/noteIndex";
 import { isAppleMobile, isMobileUi } from "./lib/platform";
 import { isTauri } from "./lib/runtime";
@@ -104,6 +111,11 @@ export class FolioApp {
       document.getElementById("welcome-open")?.classList.add("mobile-hide");
       const demoBtn = document.getElementById("welcome-demo");
       if (demoBtn) demoBtn.textContent = "Otevřít knihovnu";
+      document.getElementById("disk-actions")?.classList.remove("hidden");
+      const folderBtn = document.getElementById("btn-save-folder");
+      if (folderBtn && !canUseDirectoryPicker()) {
+        folderBtn.classList.add("is-unsupported");
+      }
     }
 
     if (!this.mobile) return;
@@ -164,6 +176,18 @@ export class FolioApp {
     this.els.scrim.addEventListener("click", () => this.closeMobileOverlays());
     document.getElementById("welcome-open")!.addEventListener("click", () => void this.pickLibrary());
     document.getElementById("welcome-demo")!.addEventListener("click", () => void this.createDemo());
+
+    document.getElementById("btn-export-library")?.addEventListener("click", () => void this.exportLibrary());
+    document.getElementById("btn-export-note")?.addEventListener("click", () => void this.exportCurrentNote());
+    document.getElementById("btn-import-files")?.addEventListener("click", () => {
+      document.getElementById("import-files")?.dispatchEvent(new MouseEvent("click"));
+    });
+    document.getElementById("import-files")?.addEventListener("change", (e) => {
+      const input = e.target as HTMLInputElement;
+      if (input.files?.length) void this.importFiles(input.files);
+      input.value = "";
+    });
+    document.getElementById("btn-save-folder")?.addEventListener("click", () => void this.saveToFolder());
 
     this.els.btnFocus.addEventListener("click", () => {
       this.settings.focusMode = !this.settings.focusMode;
@@ -298,6 +322,68 @@ export class FolioApp {
     const path = await getDefaultLibraryPath();
     const first = await createDemoLibrary(path);
     await this.openLibrary(path, first);
+  }
+
+  private async exportLibrary() {
+    if (!this.settings.libraryPath) return;
+    if (this.dirty) await this.saveCurrent(true);
+    try {
+      this.els.statusSave.textContent = "Exportuji…";
+      const mode = await exportLibraryToDisk(this.settings.libraryPath);
+      this.els.statusSave.textContent =
+        mode === "shared" ? "Export připraven (Sdílet → Uložit do Souborů)" : "ZIP stažen na disk";
+    } catch (error) {
+      if ((error as DOMException)?.name === "AbortError") {
+        this.els.statusSave.textContent = "Export zrušen";
+        return;
+      }
+      console.error(error);
+      this.els.statusSave.textContent = "Export selhal";
+    }
+  }
+
+  private async importFiles(files: FileList) {
+    if (!this.settings.libraryPath) {
+      await this.createDemo();
+    }
+    try {
+      const imported = await importMarkdownFiles(files, this.settings.libraryPath!);
+      await this.refreshLibrary(imported[0] ?? this.settings.lastOpenPath);
+      this.els.statusSave.textContent =
+        imported.length === 1 ? "Importován 1 soubor" : `Importováno ${imported.length} souborů`;
+    } catch (error) {
+      console.error(error);
+      this.els.statusSave.textContent = "Import selhal";
+    }
+  }
+
+  private async saveToFolder() {
+    if (!this.settings.libraryPath) return;
+    if (this.dirty) await this.saveCurrent(true);
+    try {
+      const count = await saveLibraryToDirectory(this.settings.libraryPath);
+      this.els.statusSave.textContent = `Uloženo ${count} souborů do složky`;
+    } catch (error) {
+      if ((error as DOMException)?.name === "AbortError") {
+        this.els.statusSave.textContent = "Ukládání zrušeno";
+        return;
+      }
+      console.error(error);
+      this.els.statusSave.textContent = "Uložení do složky selhalo";
+    }
+  }
+
+  async exportCurrentNote() {
+    if (!this.current) return;
+    if (this.dirty) await this.saveCurrent(true);
+    try {
+      const mode = await exportNoteToDisk(this.current.path, this.current.title);
+      this.els.statusSave.textContent =
+        mode === "shared" ? "Poznámka připravena ke sdílení" : "Poznámka stažena";
+    } catch (error) {
+      if ((error as DOMException)?.name === "AbortError") return;
+      console.error(error);
+    }
   }
 
   private async openLibrary(path: string, openPath?: string | null) {

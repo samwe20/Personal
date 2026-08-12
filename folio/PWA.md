@@ -30,9 +30,23 @@ npm run web:preview
 - `[[wikilinky]]` + backlinky
 - mobilní drawer / Links sheet
 - offline shell přes service worker
+- **Export na disk** / **Import .md** (v levém panelu)
+
+## Jak dostat poznámky na disk (iPhone)
+
+Safari neumí webovce tiše zapisovat do složky Soubory. Funguje to takto:
+
+1. Otevři knihovnu (☰)
+2. Klepni **Export na disk**
+3. V share sheetu zvol **Uložit do Souborů**
+4. Vyber složku (iCloud Drive, Na mém iPhonu, …)
+
+Obráceně: **Import .md** načte soubory ze Souborů zpět do Folia.
+
+Na desktop Chrome/Edge je navíc **Uložit do složky** (File System Access API).
 
 ## Poznámky
 
 - Není to nativní iOS appka ze App Store
-- Složku z disku nevybíráš — knihovna je uvnitř prohlížeče
+- Primární úložiště zůstává IndexedDB; disk je přes export/import
 - Na telefonu otevřeš `[[odkaz]]` **dlouhým stiskem**

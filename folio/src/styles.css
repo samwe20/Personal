@@ -220,6 +220,46 @@ input {
   transform: translateY(-1px);
 }
 
+.disk-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  padding: 0 0.35rem;
+}
+
+.disk-actions #btn-import-files {
+  grid-column: 1 / -1;
+}
+
+.disk-actions.hidden {
+  display: none !important;
+}
+
+.disk-btn {
+  border: 1px solid var(--border);
+  background: rgba(28, 28, 26, 0.03);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 0.55rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.disk-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.disk-btn.desktop-chromium {
+  grid-column: 1 / -1;
+}
+
+.app:not(.is-web) .web-only,
+.app.is-web .disk-btn.desktop-chromium.is-unsupported {
+  display: none !important;
+}
+
 .library-path {
   margin: 0 0.35rem;
   padding: 0.55rem 0.65rem;
