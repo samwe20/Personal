@@ -2,7 +2,10 @@
 
 Distraction-free markdown writing app inspired by **iA Writer**, with Obsidian-style `[[wiki links]]` and live **backlinks**.
 
-Built with [Tauri 2](https://tauri.app/) as a **native Windows** app, with an **iOS** target (Mac + Xcode required to build).
+Built with [Tauri 2](https://tauri.app/) as a **native Windows** app, plus:
+
+- **PWA / web** version for iPhone Safari (no Mac needed) — see [`PWA.md`](./PWA.md)
+- **iOS native** target (Mac + Xcode) — see [`IOS.md`](./IOS.md)
 
 ## Features
 
@@ -47,9 +50,22 @@ Artifacts:
 - `src-tauri/target/release/bundle/nsis/`
 - `src-tauri/target/release/bundle/msi/`
 
-## iOS
+## PWA (iPhone bez Macu)
 
-> Apple allows iOS builds only on **macOS + Xcode**.  
+```bash
+cd folio
+npm install
+npm run web:dev        # vývoj
+# nebo
+npm run web:build && npm run web:preview
+```
+
+Na iPhonu: Safari → **Sdílet → Přidat na plochu**.  
+Details: [`PWA.md`](./PWA.md)
+
+## iOS native
+
+> Apple allows native iOS builds only on **macOS + Xcode**.  
 > Full step-by-step guide: [`IOS.md`](./IOS.md)
 
 ```bash

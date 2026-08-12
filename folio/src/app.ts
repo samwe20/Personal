@@ -1,4 +1,3 @@
-import { open } from "@tauri-apps/plugin-dialog";
 import { marked } from "marked";
 import { createEditor, FolioEditor } from "./editor/setup";
 import {
@@ -13,6 +12,7 @@ import {
 } from "./lib/fs";
 import { NoteIndex } from "./lib/noteIndex";
 import { isAppleMobile, isMobileUi } from "./lib/platform";
+import { isTauri } from "./lib/runtime";
 import { loadSettings, saveSettings } from "./lib/settings";
 import type { AppSettings, NoteMeta } from "./types";
 
@@ -33,6 +33,8 @@ export class FolioApp {
   private commandItems: NoteMeta[] = [];
   private mobile = isMobileUi();
   private appleMobile = isAppleMobile();
+  private native = isTauri();
+  private webOnly = !isTauri();
 
   private els = {
     app: document.getElementById("app")!,
@@ -83,8 +85,8 @@ export class FolioApp {
 
     if (this.settings.libraryPath) {
       await this.openLibrary(this.settings.libraryPath, this.settings.lastOpenPath);
-    } else if (this.appleMobile) {
-      // On iPhone, skip folder picking and go straight to the sandbox library.
+    } else if (this.webOnly || this.appleMobile) {
+      // Browser / iPhone: use the built-in library immediately.
       await this.createDemo();
     } else {
       this.showWelcome(true);
@@ -93,14 +95,27 @@ export class FolioApp {
 
   private setupMobileShell() {
     this.els.app.classList.toggle("is-mobile", this.mobile);
+    this.els.app.classList.toggle("is-web", this.webOnly);
+
+    if (this.webOnly) {
+      this.els.welcomeCopy.textContent =
+        "Folio v prohlížeči — soustředěné psaní s [[wikilinky]]. Na iPhonu: Sdílet → Přidat na plochu.";
+      document.getElementById("btn-open-library")?.classList.add("mobile-hide");
+      document.getElementById("welcome-open")?.classList.add("mobile-hide");
+      const demoBtn = document.getElementById("welcome-demo");
+      if (demoBtn) demoBtn.textContent = "Otevřít knihovnu";
+    }
+
     if (!this.mobile) return;
 
     this.els.app.classList.add("sidebar-collapsed");
     this.settings.showBacklinks = false;
-    this.els.welcomeCopy.textContent =
-      "Soustředěné psaní na iPhonu — s [[propojenými]] poznámkami. Knihovna žije přímo v aplikaci.";
-    document.getElementById("btn-open-library")?.classList.add("mobile-hide");
-    document.getElementById("welcome-open")?.classList.add("mobile-hide");
+    if (!this.webOnly) {
+      this.els.welcomeCopy.textContent =
+        "Soustředěné psaní na iPhonu — s [[propojenými]] poznámkami. Knihovna žije přímo v aplikaci.";
+      document.getElementById("btn-open-library")?.classList.add("mobile-hide");
+      document.getElementById("welcome-open")?.classList.add("mobile-hide");
+    }
   }
 
   private setLibraryOpen(open: boolean) {
@@ -265,6 +280,11 @@ export class FolioApp {
   }
 
   private async pickLibrary() {
+    if (!this.native) {
+      await this.createDemo();
+      return;
+    }
+    const { open } = await import("@tauri-apps/plugin-dialog");
     const selected = await open({
       directory: true,
       multiple: false,
@@ -282,7 +302,8 @@ export class FolioApp {
 
   private async openLibrary(path: string, openPath?: string | null) {
     this.settings.libraryPath = path;
-    this.els.libraryPath.textContent = path;
+    const label = this.webOnly ? "Prohlížeč · Folio Library" : path;
+    this.els.libraryPath.textContent = label;
     this.els.libraryPath.title = path;
     this.showWelcome(false);
     await this.refreshLibrary(openPath ?? this.settings.lastOpenPath);
