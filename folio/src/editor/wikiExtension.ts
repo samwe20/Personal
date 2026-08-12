@@ -8,10 +8,12 @@ import {
   ViewUpdate,
 } from "@codemirror/view";
 import { NoteIndex, stripCodeForLinks } from "../lib/noteIndex";
+import { isTouchPrimary } from "../lib/platform";
 
 export type WikiOpenHandler = (title: string, createIfMissing: boolean) => void;
 
 const WIKI_RE = /\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]/g;
+const LONG_PRESS_MS = 420;
 
 function wikiCompletions(index: NoteIndex) {
   return (context: CompletionContext): CompletionResult | null => {
@@ -43,6 +45,7 @@ function wikiCompletions(index: NoteIndex) {
 }
 
 function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet {
+  const touch = isTouchPrimary();
   const builder = new RangeSetBuilder<Decoration>();
   for (const { from, to } of view.visibleRanges) {
     const raw = view.state.doc.sliceString(from, to);
@@ -54,6 +57,7 @@ function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet
       const start = from + match.index;
       const end = start + match[0].length;
       const missing = !index.resolve(title);
+      const action = touch ? "Dlouhý stisk" : "Dvojklik";
       builder.add(
         start,
         end,
@@ -62,8 +66,8 @@ function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet
           attributes: {
             "data-wiki-title": title,
             title: missing
-              ? `Dvojklik: vytvořit „${title}“`
-              : `Dvojklik: otevřít „${title}“`,
+              ? `${action}: vytvořit „${title}“`
+              : `${action}: otevřít „${title}“`,
           },
         }),
       );
@@ -88,6 +92,17 @@ function linkAt(view: EditorView, pos: number): { title: string; from: number; t
 }
 
 export function wikiExtension(index: NoteIndex, onOpen: WikiOpenHandler): Extension {
+  let pressTimer: number | null = null;
+  let pressTitle: string | null = null;
+
+  const clearPress = () => {
+    if (pressTimer != null) {
+      window.clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+    pressTitle = null;
+  };
+
   const plugin = ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
@@ -98,7 +113,6 @@ export function wikiExtension(index: NoteIndex, onOpen: WikiOpenHandler): Extens
         if (update.docChanged || update.viewportChanged) {
           this.decorations = buildWikiDecorations(update.view, index);
         } else {
-          // Refresh when index may have changed via external reconfigure
           this.decorations = buildWikiDecorations(update.view, index);
         }
       }
@@ -106,8 +120,9 @@ export function wikiExtension(index: NoteIndex, onOpen: WikiOpenHandler): Extens
     {
       decorations: (v) => v.decorations,
       eventHandlers: {
-        // Single click keeps the caret in place so [[links]] stay editable.
+        // Desktop: double-click opens; single click stays editable.
         dblclick(event, view) {
+          if (isTouchPrimary()) return false;
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
           if (pos == null) return false;
           const link = linkAt(view, pos);
@@ -115,6 +130,37 @@ export function wikiExtension(index: NoteIndex, onOpen: WikiOpenHandler): Extens
           event.preventDefault();
           onOpen(link.title, true);
           return true;
+        },
+        // iPhone / touch: long-press opens; short tap edits.
+        touchstart(event, view) {
+          if (!isTouchPrimary()) return false;
+          const touch = event.changedTouches[0];
+          if (!touch) return false;
+          const pos = view.posAtCoords({ x: touch.clientX, y: touch.clientY });
+          if (pos == null) return false;
+          const link = linkAt(view, pos);
+          if (!link) return false;
+          pressTitle = link.title;
+          pressTimer = window.setTimeout(() => {
+            if (pressTitle) {
+              onOpen(pressTitle, true);
+              pressTitle = null;
+            }
+            pressTimer = null;
+          }, LONG_PRESS_MS);
+          return false;
+        },
+        touchmove() {
+          clearPress();
+          return false;
+        },
+        touchend() {
+          clearPress();
+          return false;
+        },
+        touchcancel() {
+          clearPress();
+          return false;
         },
       },
     },

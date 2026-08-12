@@ -12,6 +12,7 @@ import {
   writeNote,
 } from "./lib/fs";
 import { NoteIndex } from "./lib/noteIndex";
+import { isAppleMobile, isMobileUi } from "./lib/platform";
 import { loadSettings, saveSettings } from "./lib/settings";
 import type { AppSettings, NoteMeta } from "./types";
 
@@ -30,10 +31,13 @@ export class FolioApp {
   private previewOn = false;
   private commandIndex = 0;
   private commandItems: NoteMeta[] = [];
+  private mobile = isMobileUi();
+  private appleMobile = isAppleMobile();
 
   private els = {
     app: document.getElementById("app")!,
     sidebar: document.getElementById("sidebar")!,
+    scrim: document.getElementById("scrim")!,
     noteList: document.getElementById("note-list")!,
     libraryPath: document.getElementById("library-path")!,
     titleInput: document.getElementById("note-title") as HTMLInputElement,
@@ -47,6 +51,7 @@ export class FolioApp {
     statusChars: document.getElementById("status-chars")!,
     statusSave: document.getElementById("status-save")!,
     welcome: document.getElementById("welcome")!,
+    welcomeCopy: document.getElementById("welcome-copy")!,
     commandPalette: document.getElementById("command-palette")!,
     commandInput: document.getElementById("command-input") as HTMLInputElement,
     commandResults: document.getElementById("command-results")!,
@@ -71,15 +76,59 @@ export class FolioApp {
       this.settings.theme,
     );
 
+    this.setupMobileShell();
     this.applyChrome();
     this.bindUi();
     this.bindShortcuts();
 
     if (this.settings.libraryPath) {
       await this.openLibrary(this.settings.libraryPath, this.settings.lastOpenPath);
+    } else if (this.appleMobile) {
+      // On iPhone, skip folder picking and go straight to the sandbox library.
+      await this.createDemo();
     } else {
       this.showWelcome(true);
     }
+  }
+
+  private setupMobileShell() {
+    this.els.app.classList.toggle("is-mobile", this.mobile);
+    if (!this.mobile) return;
+
+    this.els.app.classList.add("sidebar-collapsed");
+    this.settings.showBacklinks = false;
+    this.els.welcomeCopy.textContent =
+      "Soustředěné psaní na iPhonu — s [[propojenými]] poznámkami. Knihovna žije přímo v aplikaci.";
+    document.getElementById("btn-open-library")?.classList.add("mobile-hide");
+    document.getElementById("welcome-open")?.classList.add("mobile-hide");
+  }
+
+  private setLibraryOpen(open: boolean) {
+    this.els.app.classList.toggle("sidebar-collapsed", !open);
+    this.syncScrim();
+  }
+
+  private setLinksOpen(open: boolean) {
+    this.settings.showBacklinks = open;
+    this.syncChip(this.els.btnBacklinks, open);
+    this.els.app.classList.toggle("backlinks-hidden", !open);
+    this.syncScrim();
+  }
+
+  private syncScrim() {
+    if (!this.mobile) {
+      this.els.scrim.classList.add("hidden");
+      return;
+    }
+    const libraryOpen = !this.els.app.classList.contains("sidebar-collapsed");
+    const linksOpen = !this.els.app.classList.contains("backlinks-hidden");
+    this.els.scrim.classList.toggle("hidden", !(libraryOpen || linksOpen));
+  }
+
+  private closeMobileOverlays() {
+    if (!this.mobile) return;
+    this.setLibraryOpen(false);
+    this.setLinksOpen(false);
   }
 
   private bindUi() {
@@ -87,8 +136,17 @@ export class FolioApp {
     document.getElementById("btn-open-library")!.addEventListener("click", () => void this.pickLibrary());
     document.getElementById("btn-refresh")!.addEventListener("click", () => void this.refreshLibrary());
     document.getElementById("btn-toggle-sidebar")!.addEventListener("click", () => {
-      this.els.app.classList.toggle("sidebar-collapsed");
+      if (this.mobile) {
+        const open = this.els.app.classList.contains("sidebar-collapsed");
+        if (open) this.setLinksOpen(false);
+        this.setLibraryOpen(open);
+      } else {
+        this.els.app.classList.toggle("sidebar-collapsed");
+      }
     });
+    document.getElementById("btn-close-sidebar")?.addEventListener("click", () => this.setLibraryOpen(false));
+    document.getElementById("btn-close-backlinks")?.addEventListener("click", () => this.setLinksOpen(false));
+    this.els.scrim.addEventListener("click", () => this.closeMobileOverlays());
     document.getElementById("welcome-open")!.addEventListener("click", () => void this.pickLibrary());
     document.getElementById("welcome-demo")!.addEventListener("click", () => void this.createDemo());
 
@@ -113,10 +171,20 @@ export class FolioApp {
       this.applyTheme(next);
       this.editor.setTheme(next);
       this.els.btnTheme.textContent = next === "light" ? "Dark" : "Light";
+      document.querySelector('meta[name="theme-color"]')?.setAttribute(
+        "content",
+        next === "dark" ? "#121417" : "#f7f7f5",
+      );
       void saveSettings(this.settings);
     });
 
     this.els.btnBacklinks.addEventListener("click", () => {
+      if (this.mobile) {
+        const open = this.els.app.classList.contains("backlinks-hidden");
+        if (open) this.setLibraryOpen(false);
+        this.setLinksOpen(open);
+        return;
+      }
       this.settings.showBacklinks = !this.settings.showBacklinks;
       this.applyChrome();
       void saveSettings(this.settings);
@@ -159,9 +227,10 @@ export class FolioApp {
         this.openCommandPalette();
       } else if (mod && e.key.toLowerCase() === "b") {
         e.preventDefault();
-        this.els.app.classList.toggle("sidebar-collapsed");
+        document.getElementById("btn-toggle-sidebar")!.click();
       } else if (e.key === "Escape") {
         this.closeCommandPalette();
+        this.closeMobileOverlays();
       }
     });
   }
@@ -170,6 +239,10 @@ export class FolioApp {
     this.els.app.dataset.theme = theme;
     this.els.btnTheme.textContent = theme === "light" ? "Dark" : "Light";
     document.documentElement.style.colorScheme = theme;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute(
+      "content",
+      theme === "dark" ? "#121417" : "#f7f7f5",
+    );
   }
 
   private applyChrome() {
@@ -179,6 +252,7 @@ export class FolioApp {
     this.els.app.classList.toggle("backlinks-hidden", !this.settings.showBacklinks);
     this.editor?.setFocusMode(this.settings.focusMode);
     this.editor?.setTypewriter(this.settings.typewriter);
+    this.syncScrim();
   }
 
   private syncChip(el: HTMLElement, active: boolean) {
@@ -307,6 +381,7 @@ export class FolioApp {
     this.renderLinks();
     this.updateStats(text);
     if (this.previewOn) this.renderPreview(text);
+    this.closeMobileOverlays();
     this.editor.focus();
   }
 

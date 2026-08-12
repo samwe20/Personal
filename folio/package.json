@@ -10,7 +10,10 @@
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build",
-    "desktop:build:windows": "tauri build --target x86_64-pc-windows-msvc"
+    "desktop:build:windows": "tauri build --target x86_64-pc-windows-msvc",
+    "ios:init": "tauri ios init",
+    "ios:dev": "tauri ios dev",
+    "ios:build": "tauri ios build"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",

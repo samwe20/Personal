@@ -2,32 +2,33 @@
 
 Distraction-free markdown writing app inspired by **iA Writer**, with Obsidian-style `[[wiki links]]` and live **backlinks**.
 
-Built as a **native Windows desktop app** with [Tauri 2](https://tauri.app/) (Rust + WebView2).
+Built with [Tauri 2](https://tauri.app/) as a **native Windows** app, with an **iOS** target (Mac + Xcode required to build).
 
 ## Features
 
 - Clean, typography-first writing surface
-- Focus Mode (current sentence stays sharp)
-- Typewriter scrolling
+- Focus Mode + Typewriter scrolling
 - Markdown syntax highlighting + Preview
 - Local library of `.md` files
 - `[[Wiki links]]` with autocomplete
-- Click-to-open / create missing notes
-- Backlinks + outgoing links panel
-- Autosave, quick open (`Ctrl+P`), light/dark theme
-- Demo library for first launch
+  - Desktop: double-click to open
+  - iPhone: long-press to open
+- Backlinks + outgoing links
+- Autosave, quick open (`Ctrl+P` / `Cmd+P`), light/dark theme
+- Mobile UI: library drawer + links bottom sheet + safe areas
 
-## Windows build
+## Windows
 
 ### Requirements
 
 - Windows 10/11
-- [Node.js 20+](https://nodejs.org/)
-- [Rust](https://rustup.rs/)
-- WebView2 (preinstalled on modern Windows)
-- Visual Studio Build Tools with C++ workload (for Rust MSVC target)
+- Node.js 20+
+- Rust
+- WebView2
+- Visual Studio Build Tools with C++ (`link.exe`)
+  - Run from **Developer PowerShell for VS**
 
-### Install & run
+### Run
 
 ```bash
 cd folio
@@ -35,39 +36,51 @@ npm install
 npm run desktop:dev
 ```
 
-### Production installer
+### Installer
 
 ```bash
-cd folio
-npm install
 npm run desktop:build
 ```
 
 Artifacts:
 
-- `src-tauri/target/release/bundle/nsis/Folio_*_x64-setup.exe`
-- `src-tauri/target/release/bundle/msi/Folio_*_x64_en-US.msi`
+- `src-tauri/target/release/bundle/nsis/`
+- `src-tauri/target/release/bundle/msi/`
 
-## Shortcuts
+## iOS
+
+> Apple allows iOS builds only on **macOS + Xcode**.  
+> Full step-by-step guide: [`IOS.md`](./IOS.md)
+
+```bash
+cd folio
+npm install
+rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+brew install cocoapods
+
+npm run ios:init   # once — generates Xcode project
+npm run ios:dev    # simulator / device
+npm run ios:build  # release / IPA
+```
+
+On iPhone, Folio stores the library under the app Documents folder and opens with a mobile-first layout.
+
+## Shortcuts (desktop)
 
 | Shortcut | Action |
 |---|---|
-| `Ctrl+N` | New note |
-| `Ctrl+S` | Save |
-| `Ctrl+D` | Focus Mode |
-| `Ctrl+E` | Preview |
-| `Ctrl+P` | Quick open |
-| `Ctrl+B` | Toggle library |
-| `[[` | Wiki-link autocomplete |
-
-## Design notes
-
-Folio aims for iA Writer’s calm writing feel: centered measure, expressive serif body (`Literata`), quiet UI chrome, and no dashboard clutter. Linked notes are the one intentional “Obsidian” addition.
+| `Ctrl/Cmd+N` | New note |
+| `Ctrl/Cmd+S` | Save |
+| `Ctrl/Cmd+D` | Focus Mode |
+| `Ctrl/Cmd+E` | Preview |
+| `Ctrl/Cmd+P` | Quick open |
+| `Ctrl/Cmd+B` | Toggle library |
 
 ## Project layout
 
 ```
 folio/
-  src/                 # UI + editor (TypeScript)
-  src-tauri/           # Native Windows shell (Rust/Tauri)
+  src/                 # UI + editor
+  src-tauri/           # Native shell (Tauri / Rust)
+  IOS.md               # iOS build instructions
 ```

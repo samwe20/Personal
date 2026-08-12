@@ -8,7 +8,7 @@ import {
   stat,
   writeTextFile,
 } from "@tauri-apps/plugin-fs";
-import { appDataDir, dirname, join } from "@tauri-apps/api/path";
+import { appDataDir, dirname, documentDir, join } from "@tauri-apps/api/path";
 import type { NoteMeta } from "../types";
 
 const MD_EXT = /\.md$/i;
@@ -29,6 +29,13 @@ export async function ensureDir(path: string): Promise<void> {
 }
 
 export async function getDefaultLibraryPath(): Promise<string> {
+  // Prefer Documents so the library is visible in the iOS Files app / user folders.
+  try {
+    const docs = await documentDir();
+    if (docs) return await join(docs, "Folio", "Library");
+  } catch {
+    /* fall through */
+  }
   const root = await appDataDir();
   return await join(root, "Folio", "Library");
 }
