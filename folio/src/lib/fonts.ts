@@ -3,7 +3,8 @@ export type EditorFontId =
   | "jakarta"
   | "georgia"
   | "segoe"
-  | "mono";
+  | "mono"
+  | "courier";
 
 export interface EditorFontOption {
   id: EditorFontId;
@@ -36,6 +37,11 @@ export const EDITOR_FONTS: EditorFontOption[] = [
     id: "mono",
     label: "JetBrains Mono",
     css: '"JetBrains Mono", "Cascadia Mono", Consolas, monospace',
+  },
+  {
+    id: "courier",
+    label: "Courier",
+    css: '"Courier New", Courier, monospace',
   },
 ];
 

@@ -19,6 +19,9 @@
 .app[data-font="mono"] {
   --font-body: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
 }
+.app[data-font="courier"] {
+  --font-body: "Courier New", Courier, monospace;
+}
 
 * {
   box-sizing: border-box;
