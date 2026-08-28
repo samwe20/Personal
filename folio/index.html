@@ -67,6 +67,16 @@
             <input class="title-input" id="note-title" placeholder="Bez názvu" spellcheck="false" enterkeyhint="done" />
           </div>
           <div class="toolbar-right">
+            <label class="font-picker" title="Font editoru">
+              <span class="font-picker-label">Font</span>
+              <select id="font-select" class="font-select" aria-label="Font editoru">
+                <option value="literata">Literata</option>
+                <option value="jakarta">Plus Jakarta</option>
+                <option value="georgia">Georgia</option>
+                <option value="segoe">Segoe UI</option>
+                <option value="mono">JetBrains Mono</option>
+              </select>
+            </label>
             <button class="chip-btn desktop-only" id="btn-focus" data-active="false" title="Focus Mode">Focus</button>
             <button class="chip-btn desktop-only" id="btn-typewriter" data-active="false" title="Typewriter">Typewriter</button>
             <button class="chip-btn" id="btn-preview" data-active="false" title="Náhled">Preview</button>
@@ -106,7 +116,7 @@
           <span class="dot desktop-only" aria-hidden="true"></span>
           <span id="status-save">Připraveno</span>
           <span class="spacer"></span>
-          <span id="status-hint" class="desktop-only">[[odkaz]] dvojklik · Ctrl+N nová · Ctrl+D focus · Ctrl+P rychlé otevření</span>
+          <span id="status-hint" class="desktop-only">[[odkaz]] bez závorek · dvojklik otevře · Ctrl+N nová · Ctrl+P otevření</span>
         </footer>
       </div>
 

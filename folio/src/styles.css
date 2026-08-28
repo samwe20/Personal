@@ -4,6 +4,22 @@
   --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
 }
 
+.app[data-font="literata"] {
+  --font-body: "Literata Variable", Literata, "Iowan Old Style", Georgia, serif;
+}
+.app[data-font="jakarta"] {
+  --font-body: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", "Segoe UI", sans-serif;
+}
+.app[data-font="georgia"] {
+  --font-body: Georgia, "Times New Roman", Times, serif;
+}
+.app[data-font="segoe"] {
+  --font-body: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+.app[data-font="mono"] {
+  --font-body: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -421,6 +437,39 @@ input {
   transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
 }
 
+.font-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 32px;
+  padding: 0 0.55rem 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(28, 28, 26, 0.03);
+  color: var(--muted);
+}
+
+.app[data-theme="dark"] .font-picker {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.font-picker-label {
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.font-select {
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  max-width: 9.5rem;
+  cursor: pointer;
+}
+
 .chip-btn[data-active="true"] {
   color: var(--accent);
   background: var(--accent-soft);
@@ -478,8 +527,16 @@ input {
   line-height: 1.25;
 }
 
-.preview-root a {
+.preview-root a.wiki-link {
   color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+}
+
+.preview-root a.wiki-link.missing {
+  color: var(--warn);
+  text-decoration-style: dotted;
 }
 
 .preview-root code {

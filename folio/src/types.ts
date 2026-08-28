@@ -1,3 +1,5 @@
+import type { EditorFontId } from "./lib/fonts";
+
 export interface NoteMeta {
   id: string;
   title: string;
@@ -13,6 +15,7 @@ export interface AppSettings {
   typewriter: boolean;
   showBacklinks: boolean;
   lastOpenPath: string | null;
+  editorFont: EditorFontId;
 }
 
 export interface WikiTarget {
@@ -28,4 +31,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   typewriter: false,
   showBacklinks: true,
   lastOpenPath: null,
+  editorFont: "literata",
 };

@@ -83,6 +83,15 @@ export function createEditorTheme(theme: "light" | "dark") {
         color: isDark ? "#F0B27A" : "#B86B2B",
         textDecorationStyle: "dotted",
       },
+      ".cm-wiki-link.editing": {
+        textDecorationStyle: "solid",
+      },
+      ".cm-wiki-hidden": {
+        fontSize: "0",
+        opacity: "0",
+        letterSpacing: "-1em",
+        color: "transparent",
+      },
       ".cm-focus-dim": {
         color: faint,
         transition: "color 120ms ease",

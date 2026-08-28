@@ -44,9 +44,16 @@ function wikiCompletions(index: NoteIndex) {
   };
 }
 
+function selectionTouches(from: number, to: number, selFrom: number, selTo: number) {
+  return selFrom <= to && selTo >= from;
+}
+
 function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet {
   const touch = isTouchPrimary();
   const builder = new RangeSetBuilder<Decoration>();
+  const sel = view.state.selection.main;
+  const action = touch ? "Dlouhý stisk" : "Dvojklik";
+
   for (const { from, to } of view.visibleRanges) {
     const raw = view.state.doc.sliceString(from, to);
     const text = stripCodeForLinks(raw);
@@ -54,23 +61,56 @@ function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet
     let match: RegExpExecArray | null;
     while ((match = WIKI_RE.exec(text))) {
       const title = match[1].trim();
+      const alias = match[2]?.trim();
       const start = from + match.index;
       const end = start + match[0].length;
       const missing = !index.resolve(title);
-      const action = touch ? "Dlouhý stisk" : "Dvojklik";
-      builder.add(
-        start,
-        end,
-        Decoration.mark({
-          class: `cm-wiki-link${missing ? " missing" : ""}`,
-          attributes: {
-            "data-wiki-title": title,
-            title: missing
-              ? `${action}: vytvořit „${title}“`
-              : `${action}: otevřít „${title}“`,
-          },
-        }),
-      );
+      const editing = selectionTouches(start, end, sel.from, sel.to);
+      const tip = missing
+        ? `${action}: vytvořit „${title}“`
+        : `${action}: otevřít „${title}“`;
+
+      if (editing) {
+        // While editing, show raw [[...]] but keep link coloring.
+        builder.add(
+          start,
+          end,
+          Decoration.mark({
+            class: `cm-wiki-link editing${missing ? " missing" : ""}`,
+            attributes: { "data-wiki-title": title, title: tip },
+          }),
+        );
+        continue;
+      }
+
+      // Hide [[ brackets
+      builder.add(start, start + 2, Decoration.replace({}));
+
+      if (alias) {
+        // [[title|alias]] → hide title + pipe, show alias only
+        const pipeAt = match[0].indexOf("|");
+        builder.add(start + 2, start + pipeAt + 1, Decoration.replace({}));
+        builder.add(
+          start + pipeAt + 1,
+          end - 2,
+          Decoration.mark({
+            class: `cm-wiki-link${missing ? " missing" : ""}`,
+            attributes: { "data-wiki-title": title, title: tip },
+          }),
+        );
+      } else {
+        builder.add(
+          start + 2,
+          end - 2,
+          Decoration.mark({
+            class: `cm-wiki-link${missing ? " missing" : ""}`,
+            attributes: { "data-wiki-title": title, title: tip },
+          }),
+        );
+      }
+
+      // Hide ]] brackets
+      builder.add(end - 2, end, Decoration.replace({}));
     }
   }
   return builder.finish();
@@ -110,9 +150,12 @@ export function wikiExtension(index: NoteIndex, onOpen: WikiOpenHandler): Extens
         this.decorations = buildWikiDecorations(view, index);
       }
       update(update: ViewUpdate) {
-        if (update.docChanged || update.viewportChanged) {
-          this.decorations = buildWikiDecorations(update.view, index);
-        } else {
+        if (
+          update.docChanged ||
+          update.viewportChanged ||
+          update.selectionSet ||
+          update.transactions.some((tr) => tr.reconfigured)
+        ) {
           this.decorations = buildWikiDecorations(update.view, index);
         }
       }
@@ -120,7 +163,6 @@ export function wikiExtension(index: NoteIndex, onOpen: WikiOpenHandler): Extens
     {
       decorations: (v) => v.decorations,
       eventHandlers: {
-        // Desktop: double-click opens; single click stays editable.
         dblclick(event, view) {
           if (isTouchPrimary()) return false;
           const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
@@ -131,7 +173,6 @@ export function wikiExtension(index: NoteIndex, onOpen: WikiOpenHandler): Extens
           onOpen(link.title, true);
           return true;
         },
-        // iPhone / touch: long-press opens; short tap edits.
         touchstart(event, view) {
           if (!isTouchPrimary()) return false;
           const touch = event.changedTouches[0];

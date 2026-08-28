@@ -17,6 +17,7 @@ import {
   importMarkdownFiles,
   saveLibraryToDirectory,
 } from "./lib/disk";
+import { EDITOR_FONTS, fontCss, type EditorFontId } from "./lib/fonts";
 import { NoteIndex } from "./lib/noteIndex";
 import { isAppleMobile, isMobileUi } from "./lib/platform";
 import { isTauri } from "./lib/runtime";
@@ -69,6 +70,7 @@ export class FolioApp {
     btnPreview: document.getElementById("btn-preview")!,
     btnTheme: document.getElementById("btn-theme")!,
     btnBacklinks: document.getElementById("btn-backlinks")!,
+    fontSelect: document.getElementById("font-select") as HTMLSelectElement,
   };
 
   async init() {
@@ -86,6 +88,7 @@ export class FolioApp {
     );
 
     this.setupMobileShell();
+    this.applyFont(this.settings.editorFont);
     this.applyChrome();
     this.bindUi();
     this.bindShortcuts();
@@ -229,6 +232,17 @@ export class FolioApp {
       void saveSettings(this.settings);
     });
 
+    this.els.fontSelect.innerHTML = EDITOR_FONTS.map(
+      (f) => `<option value="${f.id}">${f.label}</option>`,
+    ).join("");
+    this.els.fontSelect.value = this.settings.editorFont;
+    this.els.fontSelect.addEventListener("change", () => {
+      const next = this.els.fontSelect.value as EditorFontId;
+      this.settings.editorFont = next;
+      this.applyFont(next);
+      void saveSettings(this.settings);
+    });
+
     this.els.titleInput.addEventListener("input", () => this.previewSidebarTitle());
     this.els.titleInput.addEventListener("blur", () => void this.renameCurrent());
     this.els.titleInput.addEventListener("keydown", (e) => {
@@ -282,6 +296,12 @@ export class FolioApp {
       "content",
       theme === "dark" ? "#121417" : "#f7f7f5",
     );
+  }
+
+  private applyFont(font: EditorFontId) {
+    this.els.app.dataset.font = font;
+    this.els.app.style.setProperty("--font-body", fontCss(font));
+    if (this.els.fontSelect) this.els.fontSelect.value = font;
   }
 
   private applyChrome() {
@@ -666,11 +686,28 @@ export class FolioApp {
   }
 
   private renderPreview(text: string) {
-    const html = marked.parse(text) as string;
+    const withWiki = text.replace(
+      /\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]/g,
+      (_full, title: string, alias?: string) => {
+        const clean = title.trim();
+        const label = (alias ?? title).trim();
+        const missing = !this.index.resolve(clean);
+        const cls = missing ? "wiki-link missing" : "wiki-link";
+        return `<a class="${cls}" href="wiki://${encodeURIComponent(clean)}">${escapeHtml(label)}</a>`;
+      },
+    );
+    const html = marked.parse(withWiki) as string;
     this.els.previewRoot.innerHTML = html;
     this.els.previewRoot.querySelectorAll("a").forEach((a) => {
       const href = a.getAttribute("href") ?? "";
-      if (href.startsWith("[[") || href.includes(".md")) return;
+      if (href.startsWith("wiki://")) {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          const title = decodeURIComponent(href.slice("wiki://".length));
+          void this.openWiki(title, true);
+        });
+        return;
+      }
       a.setAttribute("target", "_blank");
       a.setAttribute("rel", "noreferrer");
     });
