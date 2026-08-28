@@ -1,0 +1,20 @@
+{
+  "name": "Folio + Galactic Empire",
+  "install": "cd folio && npm ci",
+  "terminals": [
+    {
+      "name": "folio-web",
+      "command": "cd folio && npm run web:dev",
+      "description": "Folio markdown writing app — Vite dev server on http://localhost:1420"
+    },
+    {
+      "name": "galactic-empire",
+      "command": "python3 -m http.server 8080",
+      "description": "Static file server for the Galactic Empire browser game on http://localhost:8080"
+    }
+  ],
+  "ports": [
+    { "name": "folio-web", "port": 1420 },
+    { "name": "galactic-empire", "port": 8080 }
+  ]
+}
