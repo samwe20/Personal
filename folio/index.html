@@ -67,16 +67,14 @@
             <input class="title-input" id="note-title" placeholder="Bez názvu" spellcheck="false" enterkeyhint="done" />
           </div>
           <div class="toolbar-right">
-            <label class="font-picker" title="Font editoru">
+            <div class="font-picker" title="Font editoru">
               <span class="font-picker-label">Font</span>
-              <select id="font-select" class="font-select" aria-label="Font editoru">
-                <option value="literata">Literata</option>
-                <option value="jakarta">Plus Jakarta</option>
-                <option value="georgia">Georgia</option>
-                <option value="segoe">Segoe UI</option>
-                <option value="mono">JetBrains Mono</option>
-              </select>
-            </label>
+              <button type="button" class="font-select" id="font-select" aria-haspopup="listbox" aria-expanded="false" aria-label="Font editoru">
+                <span id="font-select-label">Literata</span>
+                <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <div class="font-menu hidden" id="font-menu" role="listbox"></div>
+            </div>
             <button class="chip-btn desktop-only" id="btn-focus" data-active="false" title="Focus Mode">Focus</button>
             <button class="chip-btn desktop-only" id="btn-typewriter" data-active="false" title="Typewriter">Typewriter</button>
             <button class="chip-btn" id="btn-preview" data-active="false" title="Náhled">Preview</button>

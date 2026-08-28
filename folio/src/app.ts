@@ -70,7 +70,10 @@ export class FolioApp {
     btnPreview: document.getElementById("btn-preview")!,
     btnTheme: document.getElementById("btn-theme")!,
     btnBacklinks: document.getElementById("btn-backlinks")!,
-    fontSelect: document.getElementById("font-select") as HTMLSelectElement,
+    fontSelect: document.getElementById("font-select") as HTMLButtonElement,
+    fontSelectLabel: document.getElementById("font-select-label")!,
+    fontMenu: document.getElementById("font-menu")!,
+    fontPicker: document.querySelector(".font-picker") as HTMLElement,
   };
 
   async init() {
@@ -232,16 +235,28 @@ export class FolioApp {
       void saveSettings(this.settings);
     });
 
-    this.els.fontSelect.innerHTML = EDITOR_FONTS.map(
-      (f) => `<option value="${f.id}">${f.label}</option>`,
+    this.els.fontMenu.innerHTML = EDITOR_FONTS.map(
+      (f) =>
+        `<button type="button" class="font-option" role="option" data-font="${f.id}" aria-selected="${
+          f.id === this.settings.editorFont
+        }" style="font-family:${f.css}">${f.label}</button>`,
     ).join("");
-    this.els.fontSelect.value = this.settings.editorFont;
-    this.els.fontSelect.addEventListener("change", () => {
-      const next = this.els.fontSelect.value as EditorFontId;
+    this.els.fontSelect.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.toggleFontMenu();
+    });
+    this.els.fontMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const btn = (e.target as HTMLElement).closest(".font-option") as HTMLElement | null;
+      if (!btn?.dataset.font) return;
+      const next = btn.dataset.font as EditorFontId;
       this.settings.editorFont = next;
       this.applyFont(next);
       void saveSettings(this.settings);
+      this.closeFontMenu();
     });
+    this.els.fontPicker.addEventListener("click", (e) => e.stopPropagation());
+    document.addEventListener("click", () => this.closeFontMenu());
 
     this.els.titleInput.addEventListener("input", () => this.previewSidebarTitle());
     this.els.titleInput.addEventListener("blur", () => void this.renameCurrent());
@@ -284,6 +299,7 @@ export class FolioApp {
       } else if (e.key === "Escape") {
         this.closeCommandPalette();
         this.closeMobileOverlays();
+        this.closeFontMenu();
       }
     });
   }
@@ -301,7 +317,25 @@ export class FolioApp {
   private applyFont(font: EditorFontId) {
     this.els.app.dataset.font = font;
     this.els.app.style.setProperty("--font-body", fontCss(font));
-    if (this.els.fontSelect) this.els.fontSelect.value = font;
+    const label = EDITOR_FONTS.find((f) => f.id === font)?.label ?? font;
+    this.els.fontSelectLabel.textContent = label;
+    this.els.fontMenu.querySelectorAll(".font-option").forEach((el) => {
+      const btn = el as HTMLElement;
+      btn.setAttribute("aria-selected", String(btn.dataset.font === font));
+    });
+  }
+
+  private toggleFontMenu() {
+    const open = this.els.fontMenu.classList.contains("hidden");
+    this.els.fontMenu.classList.toggle("hidden", !open);
+    this.els.fontPicker.classList.toggle("open", open);
+    this.els.fontSelect.setAttribute("aria-expanded", String(open));
+  }
+
+  private closeFontMenu() {
+    this.els.fontMenu.classList.add("hidden");
+    this.els.fontPicker.classList.remove("open");
+    this.els.fontSelect.setAttribute("aria-expanded", "false");
   }
 
   private applyChrome() {
