@@ -218,7 +218,7 @@ export class FolioApp {
       this.els.btnTheme.textContent = next === "light" ? "Dark" : "Light";
       document.querySelector('meta[name="theme-color"]')?.setAttribute(
         "content",
-        next === "dark" ? "#121417" : "#f7f7f5",
+        next === "dark" ? "#16181c" : "#f7f7f5",
       );
       void saveSettings(this.settings);
     });
@@ -310,7 +310,7 @@ export class FolioApp {
     document.documentElement.style.colorScheme = theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
       "content",
-      theme === "dark" ? "#121417" : "#f7f7f5",
+      theme === "dark" ? "#16181c" : "#f7f7f5",
     );
   }
 

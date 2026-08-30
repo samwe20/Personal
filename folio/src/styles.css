@@ -34,7 +34,7 @@ body {
   height: 100%;
   overflow: hidden;
   font-family: var(--font-ui);
-  background: #0f1115;
+  background: #16181c;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
 }
@@ -92,20 +92,21 @@ input {
 }
 
 .app[data-theme="dark"] {
-  --bg: #121417;
-  --bg-elevated: #181b20;
-  --panel: #1b1f26;
-  --panel-strong: #232833;
-  --ink: #ededeb;
-  --muted: #a0a29b;
-  --faint: #6f736c;
-  --border: rgba(237, 237, 235, 0.1);
-  --accent: #8ab4ff;
-  --accent-soft: rgba(138, 180, 255, 0.14);
-  --warn: #f0b27a;
-  --shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
-  --stage-glow: radial-gradient(1000px 420px at 50% -8%, rgba(138, 180, 255, 0.1), transparent 55%),
-    linear-gradient(180deg, #15181d 0%, #101215 100%);
+  /* Slate Graphite — cool neutral, near-monochrome */
+  --bg: #16181c;
+  --bg-elevated: #232830;
+  --panel: #1e2228;
+  --panel-strong: #2a3038;
+  --ink: #e8eaed;
+  --muted: #8b919a;
+  --faint: #5c636c;
+  --border: rgba(232, 234, 237, 0.1);
+  --accent: #7a9eaf;
+  --accent-soft: rgba(122, 158, 175, 0.16);
+  --warn: #c9a07a;
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.4);
+  --stage-glow: radial-gradient(1000px 420px at 50% -8%, rgba(200, 208, 220, 0.05), transparent 55%),
+    linear-gradient(180deg, #1a1d22 0%, #14161a 100%);
 }
 
 .app.sidebar-collapsed {
@@ -728,8 +729,8 @@ input {
 
 .app[data-theme="dark"] .welcome {
   background:
-    radial-gradient(900px 420px at 50% 18%, rgba(138, 180, 255, 0.14), transparent 60%),
-    linear-gradient(180deg, #14171c, #0f1216);
+    radial-gradient(900px 420px at 50% 18%, rgba(122, 158, 175, 0.1), transparent 60%),
+    linear-gradient(180deg, #1a1d22, #14161a);
 }
 
 .welcome-card {
