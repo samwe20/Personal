@@ -1,8 +1,22 @@
-# F.A.S.T Manager — Návrh aplikace ke schválení
+# F.A.S.T Manager — Schváleno & implementováno
 
 > **F**inally **A**wesome and **S**imple **T**ask Manager  
-> Task manager s outlinerem a **supertagy** — inspirace [Tana](https://tana.inc), ale jednodušeji.  
-> Cíl: **Web + Windows desktop** ze stejné codebase.
+> Task manager s outlinerem a **supertagy** — inspirace [Tana](https://tana.inc), ale jednodušeji.
+
+## Schválené požadavky ✓
+
+| Požadavek | Stav |
+|---|---|
+| Název: F.A.S.T Manager | ✓ |
+| Full implementace | ✓ |
+| Sync hned | ✓ (REST + WebSocket server) |
+| Čeština + angličtina | ✓ |
+| Supertagy Task/Question/Inform + další | ✓ (10 typů) |
+| Přepínatelný vzhled | ✓ (light/dark/system) |
+| Open source (MIT) | ✓ |
+| Web + Windows paralelně | ✓ (PWA + Tauri) |
+
+Spusťte viz [README.md](./README.md).
 
 ---
 
