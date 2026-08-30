@@ -1,0 +1,120 @@
+{
+  "app": {
+    "name": "F.A.S.T Manager",
+    "tagline": "Finally Awesome and Simple Task Manager",
+    "shortName": "FAST"
+  },
+  "nav": {
+    "today": "Today",
+    "inbox": "Inbox",
+    "queries": "Queries",
+    "supertags": "Supertags",
+    "settings": "Settings"
+  },
+  "actions": {
+    "addNode": "New node",
+    "addChild": "Child node",
+    "delete": "Delete",
+    "sync": "Sync now",
+    "save": "Save",
+    "search": "Search…"
+  },
+  "fields": {
+    "dueDate": "Due date",
+    "priority": "Priority",
+    "status": "Status",
+    "assignee": "Assignee",
+    "project": "Project",
+    "answer": "Answer",
+    "askedTo": "Ask",
+    "category": "Category",
+    "source": "Source",
+    "importance": "Importance",
+    "verified": "Verified",
+    "email": "Email",
+    "phone": "Phone",
+    "organization": "Organization",
+    "role": "Role",
+    "deadline": "Deadline",
+    "owner": "Owner",
+    "date": "Date",
+    "dateTime": "Date & time",
+    "location": "Location",
+    "decidedAt": "Decided at",
+    "outcome": "Outcome",
+    "rationale": "Rationale",
+    "potential": "Potential"
+  },
+  "status": {
+    "new": "New",
+    "inProgress": "In progress",
+    "done": "Done",
+    "cancelled": "Cancelled",
+    "open": "Open",
+    "researching": "Researching",
+    "answered": "Answered",
+    "archived": "Archived",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High",
+    "normal": "Normal",
+    "critical": "Critical",
+    "raw": "Raw",
+    "developing": "Developing",
+    "accepted": "Accepted",
+    "rejected": "Rejected",
+    "planning": "Planning",
+    "active": "Active",
+    "onHold": "On hold",
+    "completed": "Completed",
+    "scheduled": "Scheduled",
+    "pending": "Pending",
+    "decided": "Decided",
+    "revisited": "Revisited"
+  },
+  "supertags": {
+    "task": "Task",
+    "question": "Question",
+    "inform": "Inform",
+    "person": "Person",
+    "project": "Project",
+    "dailyNote": "Daily note",
+    "meeting": "Meeting",
+    "decision": "Decision",
+    "idea": "Idea",
+    "note": "Note"
+  },
+  "queries": {
+    "myTasks": "My tasks",
+    "openQuestions": "Open questions",
+    "overdue": "Overdue",
+    "results": "Results",
+    "noResults": "No results"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "language": "Language",
+    "syncUrl": "Sync server URL",
+    "syncUrlHint": "Empty = local proxy (/api)",
+    "syncStatus": "Sync status",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "syncing": "Syncing…",
+    "lastSync": "Last sync",
+    "pending": "Pending changes",
+    "openSource": "Open source — MIT license"
+  },
+  "panel": {
+    "fields": "Supertag fields",
+    "noSelection": "Select a node to view fields",
+    "addSupertag": "Add supertag",
+    "removeSupertag": "Remove"
+  },
+  "sync": {
+    "error": "Sync error"
+  }
+}
