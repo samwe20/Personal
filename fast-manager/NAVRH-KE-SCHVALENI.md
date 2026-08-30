@@ -1,7 +1,19 @@
-# Supertag Studio — Návrh aplikace ke schválení
+# F.A.S.T Manager — Návrh aplikace ke schválení
 
-> Znalostní workspace s outlinerem a **supertagy** (princip jako [Tana](https://tana.inc)).
+> **F**inally **A**wesome and **S**imple **T**ask Manager  
+> Task manager s outlinerem a **supertagy** — inspirace [Tana](https://tana.inc), ale jednodušeji.  
 > Cíl: **Web + Windows desktop** ze stejné codebase.
+
+---
+
+## Název a positioning
+
+| | |
+|---|---|
+| **Název** | F.A.S.T Manager |
+| **Rozbalený** | Finally Awesome and Simple Task Manager |
+| **Zkratka v UI** | FAST |
+| **Filozofie** | Síla supertagů z Tany, bez složitosti — rychlé zachycení úkolů, přehledné seznamy, minimum klikání |
 
 ---
 
@@ -15,7 +27,7 @@ Supertag není jen štítek — je to **typ entity** s vlastními poli a chován
 | Ruční formátování | Automatická pole v pravém panelu |
 | Statický seznam | Live dotazy: „všechny #Task kde termín < dnes" |
 
-**Příklad:** Napíšete uzel „Volat Jana" a přidáte `#Task` + `#Person`. Aplikace automaticky zobrazí pole Termín, Priorita, Stav — a u `#Person` jméno, email, firma.
+**Příklad:** Napíšete „Volat Jana" a přidáte `#Task` + `#Person`. F.A.S.T Manager automaticky zobrazí pole Termín, Priorita, Stav — a u `#Person` jméno, email, firma.
 
 ---
 
@@ -23,24 +35,23 @@ Supertag není jen štítek — je to **typ entity** s vlastními poli a chován
 
 ### 1. Hlavní workspace
 
-<img alt="Hlavní workspace" src="/opt/cursor/artifacts/assets/mockup-main-workspace.png" />
+<img alt="Hlavní workspace" src="/opt/cursor/artifacts/assets/fast-mockup-main-workspace.png" />
 
-- **Levý panel:** strom pracovních prostorů, uložené dotazy, seznam supertagů
-- **Střed:** outliner s hierarchií uzlů, supertagy jako barevné pilulky
+- **Levý panel:** Dnes, Inbox, projekty, uložené dotazy
+- **Střed:** outliner s hierarchií úkolů, supertagy jako barevné pilulky
 - **Pravý panel:** pole vybraného supertagu (dynamicky podle definice)
 
 ### 2. Editor supertagu
 
-<img alt="Editor supertagu" src="/opt/cursor/artifacts/assets/mockup-supertag-editor.png" />
+<img alt="Editor supertagu" src="/opt/cursor/artifacts/assets/fast-mockup-supertag-editor.png" />
 
 - Definice názvu, barvy, ikony
 - Tabulka polí: název, typ (Text / Datum / Výběr / Číslo / Reference), povinnost, výchozí hodnota
 - Náhled, jak uzel s tímto supertagem vypadá
-- Dědičnost z nadřazeného supertagu (volitelně)
 
 ### 3. Live dotazy
 
-<img alt="Live dotazy" src="/opt/cursor/artifacts/assets/mockup-live-query.png" />
+<img alt="Live dotazy" src="/opt/cursor/artifacts/assets/fast-mockup-live-query.png" />
 
 - Vizuální query builder (WHERE / AND / SORT BY)
 - Výsledky v tabulce nebo kartách
@@ -48,7 +59,7 @@ Supertag není jen štítek — je to **typ entity** s vlastními poli a chován
 
 ### Interaktivní mockupy
 
-Otevřete v prohlížeči: `supertag-studio/mockups/index.html`  
+Otevřete v prohlížeči: `fast-manager/mockups/index.html`  
 (Přepínání mezi 5 obrazovkami pomocí záložek nahoře.)
 
 ---
@@ -64,7 +75,7 @@ Otevřete v prohlížeči: `supertag-studio/mockups/index.html`
 | Typy polí | Text, Datum, Výběr (enum), Číslo, Checkbox |
 | Panel polí | Pravý panel reaguje na vybraný uzel a jeho supertagy |
 | Denní poznámky | Auto-vytvoření `#DailyNote` pro dnešní datum |
-| Pracovní prostory | Oddělené „složky" (Projekty, Osobní, Práce…) |
+| Inbox + Dnes | Rychlé zachycení úkolů, denní přehled |
 | Local-first | Data lokálně (IndexedDB web / SQLite Windows) |
 | Web PWA | Instalovatelná, funguje offline |
 | Windows app | Tauri wrapper, nativní .exe |
@@ -79,7 +90,7 @@ Otevřete v prohlížeči: `supertag-studio/mockups/index.html`
 - Šablony obsahu při vytvoření uzlu
 - Live dotazy + vizuální builder
 - Fulltextové vyhledávání
-- Klávesové zkratky (Tana-style: `[[` pro reference, `#` pro supertag)
+- Klávesové zkratky (`[[` pro reference, `#` pro supertag)
 
 ### Fáze 3 — Sync & kolaborace
 
@@ -123,13 +134,14 @@ Otevřete v prohlížeči: `supertag-studio/mockups/index.html`
 
 ## Srovnání s Tana
 
-| Vlastnost | Tana | Supertag Studio (návrh) |
+| Vlastnost | Tana | F.A.S.T Manager (návrh) |
 |---|---|---|
 | Outliner | ✓ | ✓ |
 | Supertagy s poli | ✓ | ✓ |
 | Live dotazy | ✓ | ✓ (Fáze 2) |
 | Reference mezi uzly | ✓ | ✓ (Fáze 2) |
-| AI integrace | ✓ | ✓ (Fáze 4) |
+| Složitost | vysoká | **nízká — „simple" je v názvu** |
+| Zaměření | univerzální PKM | **task manager first** |
 | Offline | částečně | ✓ (local-first) |
 | Windows desktop | ✗ (jen web) | ✓ (Tauri) |
 | Self-hosted | ✗ | možné (Fáze 3) |
@@ -139,16 +151,17 @@ Otevřete v prohlížeči: `supertag-studio/mockups/index.html`
 
 ## Otázky ke schválení
 
+Název je **schválen**: F.A.S.T Manager ✓
+
 Prosím potvrďte nebo upravte:
 
-1. **Název** — „Supertag Studio" nebo jiný?
-2. **Rozsah MVP** — stačí Fáze 1, nebo rovnou Fáze 1+2?
-3. **Sync** — local-only na start, nebo sync hned?
-4. **Jazyk UI** — čeština / angličtina / obojí?
-5. **Přednastavené supertagy** — stačí `#Task`, `#Person`, `#Project`, `#DailyNote`, `#Note`?
-6. **Vizuální styl** — tmavý (mockupy), světlý, nebo přepínatelný?
-7. **Open source** — ano / ne / zatím ne?
-8. **Priorita platforem** — nejdřív web, nebo web + Windows paralelně?
+1. **Rozsah MVP** — stačí Fáze 1, nebo rovnou Fáze 1+2?
+2. **Sync** — local-only na start, nebo sync hned?
+3. **Jazyk UI** — čeština / angličtina / obojí?
+4. **Přednastavené supertagy** — stačí `#Task`, `#Person`, `#Project`, `#DailyNote`, `#Note`?
+5. **Vizuální styl** — tmavý (mockupy), světlý, nebo přepínatelný?
+6. **Open source** — ano / ne / zatím ne?
+7. **Priorita platforem** — nejdřív web, nebo web + Windows paralelně?
 
 ---
 
