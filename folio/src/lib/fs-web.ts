@@ -189,9 +189,12 @@ Související: [[Vítejte ve Folio]], [[Backlinky]].
 
   const focus = `# Focus Mode
 
-Focus Mode zesvětlí vše kromě aktuální věty.
+Focus Mode spustí immersivní psaní:
+- zapne Typewriter
+- fullscreen
+- skryje UI (zůstane **Opustit Focus**)
 
-Zapnete ho tlačítkem **Focus** (na širší obrazovce).
+Zapnete ho tlačítkem **Focus** (na širší obrazovce) nebo \`Ctrl+D\`. Esc režim ukončí.
 
 Další tipy: [[Vítejte ve Folio]].
 `;

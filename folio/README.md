@@ -10,7 +10,7 @@ Built with [Tauri 2](https://tauri.app/) as a **native Windows** app, plus:
 ## Features
 
 - Clean, typography-first writing surface
-- Focus Mode + Typewriter scrolling
+- Focus Mode (fullscreen + typewriter + skryté UI) + samostatný Typewriter
 - Markdown syntax highlighting + Preview
 - Local library of `.md` files
 - `[[Wiki links]]` with autocomplete
@@ -87,7 +87,8 @@ On iPhone, Folio stores the library under the app Documents folder and opens wit
 |---|---|
 | `Ctrl/Cmd+N` | New note |
 | `Ctrl/Cmd+S` | Save |
-| `Ctrl/Cmd+D` | Focus Mode |
+| `Ctrl/Cmd+D` | Focus Mode (immersive) |
+| `Esc` | Exit Focus / close overlays |
 | `Ctrl/Cmd+E` | Preview |
 | `Ctrl/Cmd+P` | Quick open |
 | `Ctrl/Cmd+B` | Toggle library |

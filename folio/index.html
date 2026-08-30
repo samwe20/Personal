@@ -75,7 +75,7 @@
               </button>
               <div class="font-menu hidden" id="font-menu" role="listbox"></div>
             </div>
-            <button class="chip-btn desktop-only" id="btn-focus" data-active="false" title="Focus Mode">Focus</button>
+            <button class="chip-btn desktop-only" id="btn-focus" data-active="false" title="Focus Mode — fullscreen, typewriter, bez UI">Focus</button>
             <button class="chip-btn desktop-only" id="btn-typewriter" data-active="false" title="Typewriter">Typewriter</button>
             <button class="chip-btn" id="btn-preview" data-active="false" title="Náhled">Preview</button>
             <button class="chip-btn" id="btn-theme" title="Přepnout motiv">Dark</button>
@@ -117,6 +117,11 @@
           <span id="status-hint" class="desktop-only">[[odkaz]] bez závorek · dvojklik otevře · Ctrl+N nová · Ctrl+P otevření</span>
         </footer>
       </div>
+
+      <button type="button" class="focus-exit-btn hidden" id="btn-exit-focus" title="Opustit Focus (Esc)" aria-label="Opustit Focus Mode">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        <span>Opustit Focus</span>
+      </button>
 
       <div class="command-palette hidden" id="command-palette" role="dialog" aria-modal="true">
         <div class="command-card">

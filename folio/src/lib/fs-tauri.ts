@@ -169,11 +169,14 @@ Související: [[Vítejte ve Folio]], [[Backlinky]].
 
   const focus = `# Focus Mode
 
-Focus Mode zesvětlí vše kromě aktuální věty. Je to stejná logika jako u iA Writeru — pomáhá držet pozornost při dlouhém psaní.
+Focus Mode spustí immersivní psaní:
+- zapne Typewriter (kurzor uprostřed)
+- přepne okno do fullscreen
+- skryje sidebar, toolbar i status bar
+- nechá jen text a tlačítko **Opustit Focus**
+- zesvětlí okolní věty (jako iA Writer)
 
-Zapnete ho tlačítkem **Focus** nebo zkratkou \`Ctrl+D\`.
-
-Typewriter scrolling drží kurzor uprostřed plochy — hodí se při delších textech.
+Zapnete ho tlačítkem **Focus** nebo zkratkou \`Ctrl+D\`. Odejdete přes Esc / **Opustit Focus**.
 
 Další tipy najdete v [[Vítejte ve Folio]].
 `;

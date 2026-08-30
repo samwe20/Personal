@@ -565,6 +565,64 @@ input {
   padding-bottom: 42vh !important;
 }
 
+/* Immersive Focus — hide chrome, keep only the writing surface + exit control */
+.app.immersive-focus {
+  grid-template-columns: 0 1fr;
+}
+
+.app.immersive-focus .sidebar,
+.app.immersive-focus .toolbar,
+.app.immersive-focus .status-bar,
+.app.immersive-focus .backlinks-pane,
+.app.immersive-focus .scrim {
+  display: none !important;
+}
+
+.app.immersive-focus .workspace {
+  grid-template-rows: 0 1fr 0;
+}
+
+.app.immersive-focus .stage {
+  grid-template-columns: 1fr;
+}
+
+.app.immersive-focus .focus-exit-btn {
+  display: inline-flex;
+}
+
+.focus-exit-btn {
+  display: none;
+  position: fixed;
+  top: calc(1rem + var(--safe-top));
+  right: calc(1rem + var(--safe-right));
+  z-index: 40;
+  align-items: center;
+  gap: 0.45rem;
+  height: 36px;
+  padding: 0 0.9rem 0 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.focus-exit-btn:hover {
+  color: var(--ink);
+  background: var(--bg-elevated);
+  transform: translateY(-1px);
+}
+
+.focus-exit-btn.hidden {
+  display: none !important;
+}
+
 .preview-root {
   max-width: 42rem;
   margin: 0 auto;

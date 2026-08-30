@@ -18,6 +18,7 @@ import {
   saveLibraryToDirectory,
 } from "./lib/disk";
 import { EDITOR_FONTS, fontCss, type EditorFontId } from "./lib/fonts";
+import { enterFullscreen, exitFullscreen } from "./lib/fullscreen";
 import { NoteIndex } from "./lib/noteIndex";
 import { isAppleMobile, isMobileUi } from "./lib/platform";
 import { isTauri } from "./lib/runtime";
@@ -43,6 +44,13 @@ export class FolioApp {
   private appleMobile = isAppleMobile();
   private native = isTauri();
   private webOnly = !isTauri();
+  /** Snapshot restored when leaving immersive Focus. */
+  private focusSnapshot: {
+    typewriter: boolean;
+    showBacklinks: boolean;
+    sidebarCollapsed: boolean;
+    previewOn: boolean;
+  } | null = null;
 
   private els = {
     app: document.getElementById("app")!,
@@ -66,6 +74,7 @@ export class FolioApp {
     commandInput: document.getElementById("command-input") as HTMLInputElement,
     commandResults: document.getElementById("command-results")!,
     btnFocus: document.getElementById("btn-focus")!,
+    btnExitFocus: document.getElementById("btn-exit-focus")!,
     btnTypewriter: document.getElementById("btn-typewriter")!,
     btnPreview: document.getElementById("btn-preview")!,
     btnTheme: document.getElementById("btn-theme")!,
@@ -196,13 +205,14 @@ export class FolioApp {
     document.getElementById("btn-save-folder")?.addEventListener("click", () => void this.saveToFolder());
 
     this.els.btnFocus.addEventListener("click", () => {
-      this.settings.focusMode = !this.settings.focusMode;
-      this.editor.setFocusMode(this.settings.focusMode);
-      this.syncChip(this.els.btnFocus, this.settings.focusMode);
-      void saveSettings(this.settings);
+      void this.setImmersiveFocus(!this.settings.focusMode);
+    });
+    this.els.btnExitFocus.addEventListener("click", () => {
+      void this.setImmersiveFocus(false);
     });
 
     this.els.btnTypewriter.addEventListener("click", () => {
+      if (this.settings.focusMode) return;
       this.settings.typewriter = !this.settings.typewriter;
       this.editor.setTypewriter(this.settings.typewriter);
       this.syncChip(this.els.btnTypewriter, this.settings.typewriter);
@@ -286,7 +296,7 @@ export class FolioApp {
         void this.saveCurrent(true);
       } else if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
-        this.els.btnFocus.click();
+        void this.setImmersiveFocus(!this.settings.focusMode);
       } else if (mod && e.key.toLowerCase() === "e") {
         e.preventDefault();
         this.togglePreview();
@@ -295,13 +305,89 @@ export class FolioApp {
         this.openCommandPalette();
       } else if (mod && e.key.toLowerCase() === "b") {
         e.preventDefault();
+        if (this.settings.focusMode) return;
         document.getElementById("btn-toggle-sidebar")!.click();
       } else if (e.key === "Escape") {
+        if (this.settings.focusMode) {
+          e.preventDefault();
+          void this.setImmersiveFocus(false);
+          return;
+        }
         this.closeCommandPalette();
         this.closeMobileOverlays();
         this.closeFontMenu();
       }
     });
+
+    document.addEventListener("fullscreenchange", () => {
+      // Browser Esc / OS exit: keep immersive chrome in sync only when leaving FS while Focus is on.
+      if (!document.fullscreenElement && this.settings.focusMode && this.webOnly) {
+        // Stay in immersive UI without FS — user can still leave via the exit button.
+      }
+    });
+  }
+
+  /** Immersive Focus: typewriter + fullscreen + hide chrome + exit control. */
+  private async setImmersiveFocus(enabled: boolean) {
+    if (enabled === this.settings.focusMode && this.els.app.classList.contains("immersive-focus") === enabled) {
+      return;
+    }
+
+    if (enabled) {
+      this.focusSnapshot = {
+        typewriter: this.settings.typewriter,
+        showBacklinks: this.settings.showBacklinks,
+        sidebarCollapsed: this.els.app.classList.contains("sidebar-collapsed"),
+        previewOn: this.previewOn,
+      };
+
+      this.settings.focusMode = true;
+
+      if (this.previewOn) this.togglePreview();
+      this.closeCommandPalette();
+      this.closeFontMenu();
+      this.closeMobileOverlays();
+
+      this.els.app.classList.add("immersive-focus", "sidebar-collapsed", "backlinks-hidden");
+      this.els.btnExitFocus.classList.remove("hidden");
+
+      this.editor.setFocusMode(true);
+      this.editor.setTypewriter(true);
+      this.syncChip(this.els.btnFocus, true);
+      this.syncChip(this.els.btnTypewriter, true);
+      this.syncChip(this.els.btnBacklinks, false);
+
+      await enterFullscreen();
+      this.editor.focus();
+    } else {
+      const snap = this.focusSnapshot;
+      this.focusSnapshot = null;
+      this.settings.focusMode = false;
+
+      const typewriter = snap?.typewriter ?? this.settings.typewriter;
+      const showBacklinks = snap?.showBacklinks ?? this.settings.showBacklinks;
+      this.settings.typewriter = typewriter;
+      this.settings.showBacklinks = showBacklinks;
+
+      this.els.app.classList.remove("immersive-focus");
+      this.els.btnExitFocus.classList.add("hidden");
+      if (snap) {
+        this.els.app.classList.toggle("sidebar-collapsed", snap.sidebarCollapsed);
+      }
+      this.els.app.classList.toggle("backlinks-hidden", !showBacklinks);
+
+      this.editor.setFocusMode(false);
+      this.editor.setTypewriter(typewriter);
+      this.syncChip(this.els.btnFocus, false);
+      this.syncChip(this.els.btnTypewriter, typewriter);
+      this.syncChip(this.els.btnBacklinks, showBacklinks);
+
+      await exitFullscreen();
+      this.syncScrim();
+      this.editor.focus();
+    }
+
+    void saveSettings(this.settings);
   }
 
   private applyTheme(theme: "light" | "dark") {
@@ -343,8 +429,28 @@ export class FolioApp {
     this.syncChip(this.els.btnTypewriter, this.settings.typewriter);
     this.syncChip(this.els.btnBacklinks, this.settings.showBacklinks);
     this.els.app.classList.toggle("backlinks-hidden", !this.settings.showBacklinks);
-    this.editor?.setFocusMode(this.settings.focusMode);
-    this.editor?.setTypewriter(this.settings.typewriter);
+
+    if (this.settings.focusMode) {
+      // Rehydrate immersive chrome after reload (fullscreen needs a fresh user gesture).
+      this.focusSnapshot = this.focusSnapshot ?? {
+        typewriter: this.settings.typewriter,
+        showBacklinks: this.settings.showBacklinks,
+        sidebarCollapsed: this.els.app.classList.contains("sidebar-collapsed"),
+        previewOn: this.previewOn,
+      };
+      this.els.app.classList.add("immersive-focus", "sidebar-collapsed", "backlinks-hidden");
+      this.els.btnExitFocus.classList.remove("hidden");
+      this.editor?.setFocusMode(true);
+      this.editor?.setTypewriter(true);
+      this.syncChip(this.els.btnTypewriter, true);
+      this.syncChip(this.els.btnBacklinks, false);
+    } else {
+      this.els.app.classList.remove("immersive-focus");
+      this.els.btnExitFocus.classList.add("hidden");
+      this.editor?.setFocusMode(false);
+      this.editor?.setTypewriter(this.settings.typewriter);
+    }
+
     this.syncScrim();
   }
 
