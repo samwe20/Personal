@@ -2,6 +2,7 @@ import {
   AlertCircle,
   Calendar,
   CheckSquare,
+  Command,
   FileText,
   Folder,
   Gavel,
@@ -9,13 +10,17 @@ import {
   Inbox,
   Info,
   Lightbulb,
+  Redo2,
   RefreshCw,
+  Search,
   Settings,
   Sun,
   Moon,
   Monitor,
+  Undo2,
   Users,
   User,
+  Zap,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -37,6 +42,11 @@ const iconMap: Record<string, LucideIcon> = {
   sun: Sun,
   moon: Moon,
   monitor: Monitor,
+  search: Search,
+  undo: Undo2,
+  redo: Redo2,
+  zap: Zap,
+  command: Command,
 };
 
 export function getIcon(name: string): LucideIcon {

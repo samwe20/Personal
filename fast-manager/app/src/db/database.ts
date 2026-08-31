@@ -37,6 +37,7 @@ export async function loadSettings(): Promise<AppSettings> {
     workspaceId: 'default',
     lastSyncAt: null,
     clientId: crypto.randomUUID(),
+    onboardingDone: false,
   };
   await db.settings.put(defaults);
   const { id: _id, ...settings } = defaults;

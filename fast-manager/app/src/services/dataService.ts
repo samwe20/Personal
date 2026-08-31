@@ -1,3 +1,4 @@
+import { nextDueDate } from '../utils/contentUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { BUILTIN_SUPERTAGS, getDefaultFieldValues } from '../data/supertags';
 import { db, loadSettings, saveSettings } from '../db/database';
@@ -185,13 +186,16 @@ export async function createNode(input: {
   parentId: string | null;
   content: string;
   supertagIds?: string[];
+  fieldValues?: NodeRecord['fieldValues'];
   order?: number;
 }): Promise<NodeRecord> {
   const ts = now();
-  const fieldValues: NodeRecord['fieldValues'] = {};
+  const fieldValues: NodeRecord['fieldValues'] = input.fieldValues ? { ...input.fieldValues } : {};
   for (const tagId of input.supertagIds ?? []) {
-    const tag = BUILTIN_SUPERTAGS.find((t) => t.id === tagId);
-    if (tag) fieldValues[tagId] = getDefaultFieldValues(tag);
+    if (!fieldValues[tagId]) {
+      const tag = BUILTIN_SUPERTAGS.find((t) => t.id === tagId);
+      if (tag) fieldValues[tagId] = getDefaultFieldValues(tag);
+    }
   }
 
   const siblings = (await getAllNodes(input.workspaceId)).filter(
@@ -301,7 +305,87 @@ export async function updateNodeField(
   const node = await db.nodes.get(nodeId);
   if (!node) return undefined;
   const tagFields = { ...(node.fieldValues[tagId] ?? {}), [fieldKey]: value };
-  return updateNode(nodeId, { fieldValues: { [tagId]: tagFields } });
+  let updated = await updateNode(nodeId, { fieldValues: { [tagId]: tagFields } });
+
+  if (
+    updated &&
+    tagId === 'task' &&
+    fieldKey === 'status' &&
+    value === 'done'
+  ) {
+    updated = await spawnRecurringTask(updated);
+  }
+
+  return updated;
+}
+
+async function spawnRecurringTask(node: NodeRecord): Promise<NodeRecord> {
+  const taskFields = node.fieldValues.task ?? {};
+  const recurrence = String(taskFields.recurrence ?? 'none');
+  if (recurrence === 'none' || !recurrence) return node;
+
+  const nextDate = nextDueDate(String(taskFields.dueDate ?? ''), recurrence);
+  if (!nextDate) return node;
+
+  await createNode({
+    workspaceId: node.workspaceId,
+    parentId: node.parentId,
+    content: node.content,
+    supertagIds: ['task'],
+    fieldValues: {
+      task: {
+        ...taskFields,
+        dueDate: nextDate,
+        status: 'new',
+        recurrence,
+      },
+    },
+  });
+
+  return node;
+}
+
+export async function moveNode(
+  nodeId: string,
+  newParentId: string | null,
+  newOrder: number,
+): Promise<void> {
+  const node = await db.nodes.get(nodeId);
+  if (!node) return;
+
+  const siblings = (await getAllNodes(node.workspaceId))
+    .filter((n) => n.parentId === newParentId && n.id !== nodeId)
+    .sort((a, b) => a.order - b.order);
+
+  siblings.splice(newOrder, 0, { ...node, parentId: newParentId, order: newOrder });
+
+  for (let i = 0; i < siblings.length; i++) {
+    await updateNode(siblings[i].id, { parentId: newParentId, order: i });
+  }
+}
+
+export async function restoreNodesSnapshot(nodes: NodeRecord[]): Promise<void> {
+  const workspaceIds = [...new Set(nodes.map((n) => n.workspaceId))];
+  for (const wsId of workspaceIds) {
+    const existing = await db.nodes.where('workspaceId').equals(wsId).toArray();
+    for (const n of existing) {
+      await db.nodes.delete(n.id);
+    }
+  }
+  await db.nodes.bulkPut(nodes);
+  for (const node of nodes) {
+    await enqueueSync({
+      entityType: 'node',
+      entityId: node.id,
+      payload: JSON.stringify(node),
+      updatedAt: node.updatedAt,
+      deleted: node.deleted,
+    });
+  }
+}
+
+export async function completeTask(nodeId: string): Promise<NodeRecord | undefined> {
+  return updateNodeField(nodeId, 'task', 'status', 'done');
 }
 
 export async function getWorkspaces(): Promise<WorkspaceRecord[]> {

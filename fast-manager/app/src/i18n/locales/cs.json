@@ -23,6 +23,8 @@
     "dueDate": "Termín",
     "priority": "Priorita",
     "status": "Stav",
+    "recurrence": "Opakování",
+    "reminderTime": "Připomínka",
     "assignee": "Přiřazeno",
     "project": "Projekt",
     "answer": "Odpověď",
@@ -70,7 +72,11 @@
     "scheduled": "Naplánováno",
     "pending": "Čeká",
     "decided": "Rozhodnuto",
-    "revisited": "Revidováno"
+    "revisited": "Revidováno",
+    "none": "Žádné",
+    "daily": "Denně",
+    "weekly": "Týdně",
+    "monthly": "Měsíčně"
   },
   "supertags": {
     "task": "Úkol",
@@ -116,5 +122,47 @@
   },
   "sync": {
     "error": "Chyba synchronizace"
+  },
+  "capture": {
+    "title": "Rychlé zachycení",
+    "hint": "Ctrl+Shift+Space kdykoli · Tab v uzlu přidá checklist",
+    "placeholder": "Co potřebujete udělat?",
+    "supertag": "Supertag",
+    "cancel": "Zrušit",
+    "save": "Uložit"
+  },
+  "commands": {
+    "title": "Příkazy",
+    "placeholder": "Hledat příkaz…",
+    "capture": "Rychlé zachycení",
+    "search": "Fulltextové hledání",
+    "newNode": "Nový uzel",
+    "undo": "Zpět",
+    "redo": "Vpřed",
+    "completeTask": "Dokončit úkol"
+  },
+  "search": {
+    "title": "Hledání",
+    "results": "{{count}} výsledků pro „{{query}}\""
+  },
+  "reference": {
+    "pick": "Vyberte uzel…",
+    "backlinks": "Zpětné odkazy"
+  },
+  "reminders": {
+    "title": "Připomínky",
+    "hint": "Nastavte pole Připomínka u úkolu. Vyžaduje povolení notifikací.",
+    "enable": "Povolit notifikace"
+  },
+  "onboarding": {
+    "welcome": "Vítejte v F.A.S.T Manager",
+    "step1": "Task manager se supertagy — jednodušeji než Tana. Každý uzel může mít typ (#Task, #Question, #Inform…) s vlastními poli.",
+    "step2title": "Klávesové zkratky",
+    "step2": "Pracujte rychle bez myši:",
+    "step3title": "Sync a offline",
+    "step3": "Data jsou lokálně a synchronizují se automaticky. Začněte rychlým zachycením prvního úkolu.",
+    "skip": "Přeskočit",
+    "next": "Další",
+    "start": "Začít"
   }
 }

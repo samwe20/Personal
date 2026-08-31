@@ -23,6 +23,8 @@
     "dueDate": "Due date",
     "priority": "Priority",
     "status": "Status",
+    "recurrence": "Recurrence",
+    "reminderTime": "Reminder",
     "assignee": "Assignee",
     "project": "Project",
     "answer": "Answer",
@@ -70,7 +72,11 @@
     "scheduled": "Scheduled",
     "pending": "Pending",
     "decided": "Decided",
-    "revisited": "Revisited"
+    "revisited": "Revisited",
+    "none": "None",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly"
   },
   "supertags": {
     "task": "Task",
@@ -116,5 +122,47 @@
   },
   "sync": {
     "error": "Sync error"
+  },
+  "capture": {
+    "title": "Quick capture",
+    "hint": "Ctrl+Shift+Space anytime · Tab in node adds checklist",
+    "placeholder": "What needs to be done?",
+    "supertag": "Supertag",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "commands": {
+    "title": "Commands",
+    "placeholder": "Search commands…",
+    "capture": "Quick capture",
+    "search": "Full-text search",
+    "newNode": "New node",
+    "undo": "Undo",
+    "redo": "Redo",
+    "completeTask": "Complete task"
+  },
+  "search": {
+    "title": "Search",
+    "results": "{{count}} results for \"{{query}}\""
+  },
+  "reference": {
+    "pick": "Pick a node…",
+    "backlinks": "Backlinks"
+  },
+  "reminders": {
+    "title": "Reminders",
+    "hint": "Set the Reminder field on tasks. Requires notification permission.",
+    "enable": "Enable notifications"
+  },
+  "onboarding": {
+    "welcome": "Welcome to F.A.S.T Manager",
+    "step1": "Task manager with supertags — simpler than Tana. Each node can have a type (#Task, #Question, #Inform…) with its own fields.",
+    "step2title": "Keyboard shortcuts",
+    "step2": "Work fast without the mouse:",
+    "step3title": "Sync & offline",
+    "step3": "Data stays local and syncs automatically. Start with your first quick capture.",
+    "skip": "Skip",
+    "next": "Next",
+    "start": "Get started"
   }
 }

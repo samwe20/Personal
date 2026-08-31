@@ -1,4 +1,4 @@
-export type FieldType = 'text' | 'date' | 'select' | 'number' | 'checkbox' | 'reference';
+export type FieldType = 'text' | 'date' | 'datetime' | 'select' | 'number' | 'checkbox' | 'reference';
 
 export interface FieldDef {
   key: string;
@@ -84,4 +84,12 @@ export interface AppSettings {
   workspaceId: string;
   lastSyncAt: string | null;
   clientId: string;
+  onboardingDone: boolean;
+}
+
+export interface QuickCaptureInput {
+  content: string;
+  supertagId?: string;
+  dueDate?: string;
+  reminderTime?: string;
 }
