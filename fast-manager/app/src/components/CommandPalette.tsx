@@ -73,18 +73,18 @@ export function CommandPalette() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 pt-[12vh] backdrop-blur-sm" onClick={close}>
-      <div className="w-full max-w-xl animate-[fadeIn_0.15s_ease] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 border-b border-[var(--border)] px-4 py-3">
+      <div className="w-full max-w-lg animate-[fadeIn_0.15s_ease] overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2 border-b border-[var(--border)] px-3 py-2">
           {(() => {
             const Icon = getIcon('search');
-            return <Icon size={18} className="text-[var(--muted)]" />;
+            return <Icon size={14} className="text-[var(--muted)]" />;
           })()}
           <input
             autoFocus
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t('commands.placeholder')}
-            className="flex-1 bg-transparent text-sm outline-none"
+            className="flex-1 bg-transparent text-xs outline-none"
             onKeyDown={(e) => {
               if (e.key === 'Escape') close();
               if (e.key === 'ArrowDown') setIndex((i) => Math.min(i + 1, filtered.length - 1));
@@ -94,22 +94,22 @@ export function CommandPalette() {
           />
           <kbd className="rounded border border-[var(--border)] px-1.5 py-0.5 text-[10px] text-[var(--muted)]">Esc</kbd>
         </div>
-        <ul className="max-h-80 overflow-auto py-2">
+        <ul className="max-h-64 overflow-auto py-1">
           {filtered.map((cmd, i) => (
             <li key={cmd.id}>
               <button
                 type="button"
-                className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-sm ${i === index ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'hover:bg-[var(--surface-2)]'}`}
+                className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-xs ${i === index ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'hover:bg-[var(--surface-2)]'}`}
                 onMouseEnter={() => setIndex(i)}
                 onClick={() => run(cmd)}
               >
                 <span>{cmd.label}</span>
-                {cmd.shortcut && <span className="text-[11px] text-[var(--muted)]">{cmd.shortcut}</span>}
+                {cmd.shortcut && <span className="text-[10px] text-[var(--muted)]">{cmd.shortcut}</span>}
               </button>
             </li>
           ))}
           {filtered.length === 0 && (
-            <li className="px-4 py-6 text-center text-sm text-[var(--muted)]">{t('queries.noResults')}</li>
+            <li className="px-3 py-4 text-center text-xs text-[var(--muted)]">{t('queries.noResults')}</li>
           )}
         </ul>
       </div>

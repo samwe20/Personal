@@ -17,34 +17,34 @@ export function Sidebar() {
     <button
       type="button"
       onClick={() => setView(view)}
-      className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
+      className={`ui-nav ${
         activeView === view ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'
       }`}
     >
       {(() => {
         const Icon = getIcon(icon);
-        return <Icon size={16} />;
+        return <Icon size={14} strokeWidth={2} />;
       })()}
       {label}
     </button>
   );
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface)]">
-      <div className="border-b border-[var(--border)] p-4">
-        <div className="text-lg font-bold text-[var(--accent)]">{t('app.shortName')}</div>
-        <div className="text-[11px] text-[var(--muted)]">{t('app.tagline')}</div>
+    <aside className="flex h-full w-[11.5rem] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface)]">
+      <div className="border-b border-[var(--border)] px-3 py-2.5">
+        <div className="text-sm font-semibold tracking-tight text-[var(--accent)]">{t('app.shortName')}</div>
+        <div className="text-[10px] leading-snug text-[var(--muted)]">{t('app.tagline')}</div>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-auto p-3">
-        <div className="space-y-1">
+      <div className="flex-1 space-y-3 overflow-auto p-2">
+        <div className="space-y-0.5">
           {navItem('inbox', t('nav.inbox'), 'inbox')}
           {navItem('today', t('nav.today'), 'calendar')}
         </div>
 
         <div>
-          <div className="mb-2 px-3 text-[11px] uppercase tracking-wide text-[var(--muted)]">{t('nav.queries')}</div>
-          <div className="space-y-1">
+          <div className="ui-section-title">{t('nav.queries')}</div>
+          <div className="space-y-0.5">
             {queries.map((q) => {
               const Icon = getIcon(q.icon);
               const queryLabels: Record<string, string> = {
@@ -57,13 +57,13 @@ export function Sidebar() {
                   key={q.id}
                   type="button"
                   onClick={() => setView('query', q.id)}
-                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition ${
+                  className={`ui-nav ${
                     activeView === 'query' && activeQueryId === q.id
                       ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
                       : 'text-[var(--muted)] hover:bg-[var(--surface-2)]'
                   }`}
                 >
-                  <Icon size={16} />
+                  <Icon size={14} strokeWidth={2} />
                   {queryLabels[q.id] ?? q.name}
                 </button>
               );
@@ -72,8 +72,8 @@ export function Sidebar() {
         </div>
 
         <div>
-          <div className="mb-2 px-3 text-[11px] uppercase tracking-wide text-[var(--muted)]">{t('nav.supertags')}</div>
-          <div className="flex flex-wrap gap-2 px-2">
+          <div className="ui-section-title">{t('nav.supertags')}</div>
+          <div className="flex flex-wrap gap-1 px-1">
             {BUILTIN_SUPERTAGS.slice(0, 6).map((tag) => (
               <SupertagPill key={tag.id} tagId={tag.id} />
             ))}
@@ -81,18 +81,18 @@ export function Sidebar() {
         </div>
       </div>
 
-      <div className="space-y-2 border-t border-[var(--border)] p-3">
+      <div className="space-y-1 border-t border-[var(--border)] p-2">
         <button
           type="button"
           onClick={() => useAppStore.getState().openQuickCapture()}
-          className="w-full rounded-lg bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90"
+          className="w-full rounded-md bg-[var(--accent)] px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
         >
           ⚡ {t('capture.title')}
         </button>
         <button
           type="button"
           onClick={() => void addRootNode()}
-          className="w-full rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:bg-[var(--surface-2)]"
+          className="w-full rounded-md border border-[var(--border)] px-2 py-1.5 text-xs text-[var(--muted)] hover:bg-[var(--surface-2)]"
         >
           + {t('actions.addNode')}
         </button>
@@ -100,11 +100,11 @@ export function Sidebar() {
           type="button"
           onClick={() => void syncNow()}
           disabled={!syncStatus.enabled}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:bg-[var(--surface-2)] disabled:opacity-40"
+          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-[var(--border)] px-2 py-1.5 text-[11px] text-[var(--muted)] hover:bg-[var(--surface-2)] disabled:opacity-40"
         >
           {(() => {
             const Icon = getIcon('refresh');
-            return <Icon size={14} className={syncStatus.syncing ? 'animate-spin' : ''} />;
+            return <Icon size={12} className={syncStatus.syncing ? 'animate-spin' : ''} />;
           })()}
           {!syncStatus.enabled
             ? t('settings.localMode')

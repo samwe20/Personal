@@ -72,8 +72,8 @@ export default function App() {
                 className={[
                   'border-l border-[var(--border)] bg-[var(--surface)]',
                   showMobilePanel && selectedNodeId
-                    ? 'fixed inset-y-0 right-0 z-40 w-full max-w-sm shadow-2xl lg:relative lg:block lg:w-80 lg:shrink-0 lg:shadow-none'
-                    : 'hidden lg:block lg:w-80 lg:shrink-0',
+                    ? 'fixed inset-y-0 right-0 z-40 w-full max-w-xs shadow-2xl lg:relative lg:block lg:w-64 lg:shrink-0 lg:shadow-none'
+                    : 'hidden lg:block lg:w-64 lg:shrink-0',
                   !selectedNodeId && 'lg:block',
                 ]
                   .filter(Boolean)

@@ -21,7 +21,7 @@ export function NodeContent({ value, selected, onChange, onTagTrigger }: NodeCon
   if (hasChecklist && !selected) {
     const lines = value.split('\n');
     return (
-      <div className="space-y-0.5 text-sm">
+      <div className="space-y-0.5 text-xs">
         {lines.map((line, i) => {
           const match = line.match(/^(\s*)-\s*\[([ xX])\]\s*(.*)$/);
           if (!match) return <div key={i}>{line || '\u00A0'}</div>;
@@ -47,7 +47,7 @@ export function NodeContent({ value, selected, onChange, onTagTrigger }: NodeCon
       ref={ref}
       contentEditable={selected}
       suppressContentEditableWarning
-      className="min-h-[1.5rem] whitespace-pre-wrap text-sm outline-none"
+      className="min-h-[1.25rem] whitespace-pre-wrap text-xs leading-snug outline-none"
       onBlur={(e) => {
         const text = e.currentTarget.textContent ?? '';
         if (text !== value) onChange(text);

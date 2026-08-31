@@ -62,14 +62,14 @@ export function Outliner() {
             e.preventDefault();
             handleDrop(node.id, e.shiftKey ? 'inside' : 'before');
           }}
-          className={`group flex items-start gap-2 rounded-xl border border-transparent px-2 py-2 transition ${isSelected ? 'border-[var(--accent)]/30 bg-[var(--accent-soft)]' : 'hover:border-[var(--border)] hover:bg-[var(--surface-2)]'} ${dragOverId === node.id ? 'ring-2 ring-[var(--accent)]' : ''} ${isDone ? 'opacity-60' : ''}`}
-          style={{ marginLeft: `${depth * 16}px` }}
+          className={`group flex items-start gap-1.5 rounded-lg border border-transparent px-1.5 py-1 transition ${isSelected ? 'border-[var(--accent)]/30 bg-[var(--accent-soft)]' : 'hover:border-[var(--border)] hover:bg-[var(--surface-2)]'} ${dragOverId === node.id ? 'ring-1 ring-[var(--accent)]' : ''} ${isDone ? 'opacity-60' : ''}`}
+          style={{ marginLeft: `${depth * 12}px` }}
           onClick={() => selectNode(node.id)}
         >
           {isTask ? (
             <button
               type="button"
-              className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface)]"
+              className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface)] text-[10px]"
               onClick={(e) => {
                 e.stopPropagation();
                 void completeTask(node.id);
@@ -78,10 +78,10 @@ export function Outliner() {
               {isDone ? '✓' : ''}
             </button>
           ) : (
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--muted)]" />
+            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--muted)]" />
           )}
           <div className="min-w-0 flex-1">
-            <div className="mb-1 flex flex-wrap gap-1">
+            <div className="mb-0.5 flex flex-wrap gap-0.5">
               {node.supertagIds.map((tagId) => (
                 <SupertagPill key={tagId} tagId={tagId} />
               ))}
@@ -102,7 +102,7 @@ export function Outliner() {
             <div className="flex shrink-0 gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
               <button
                 type="button"
-                className="rounded-lg px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--surface)]"
+                className="rounded px-1.5 py-0.5 text-[10px] text-[var(--muted)] hover:bg-[var(--surface)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   void addChildNode(node.id);
@@ -112,7 +112,7 @@ export function Outliner() {
               </button>
               <button
                 type="button"
-                className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-[var(--surface)]"
+                className="rounded px-1.5 py-0.5 text-[10px] text-red-400 hover:bg-[var(--surface)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   void removeNode(node.id);
@@ -131,16 +131,16 @@ export function Outliner() {
   if (activeView === 'query') return <QueryResults />;
 
   return (
-    <div className="space-y-1 p-4">
+    <div className="space-y-0.5 p-2.5">
       {activeView === 'search' && searchQuery && (
-        <p className="mb-3 text-xs text-[var(--muted)]">
+        <p className="mb-2 text-[11px] text-[var(--muted)]">
           {t('search.results', { count: nodes.length, query: searchQuery })}
         </p>
       )}
       {nodes.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[var(--border)] p-8 text-center">
-          <p className="text-sm text-[var(--muted)]">{t('queries.noResults')}</p>
-          <p className="mt-2 text-xs text-[var(--muted)]">{t('capture.hint')}</p>
+        <div className="rounded-lg border border-dashed border-[var(--border)] p-5 text-center">
+          <p className="text-xs text-[var(--muted)]">{t('queries.noResults')}</p>
+          <p className="mt-1 text-[11px] text-[var(--muted)]">{t('capture.hint')}</p>
         </div>
       ) : (
         nodes.map((node) => renderNode(node))
@@ -158,22 +158,22 @@ function QueryResults() {
 
   if (results.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-sm text-[var(--muted)]">{t('queries.noResults')}</p>
+      <div className="p-5 text-center">
+        <p className="text-xs text-[var(--muted)]">{t('queries.noResults')}</p>
       </div>
     );
   }
 
   return (
-    <div className="overflow-auto p-4">
-      <table className="w-full text-sm">
+    <div className="overflow-auto p-2.5">
+      <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-[var(--border)] text-left text-[11px] uppercase tracking-wide text-[var(--muted)]">
-            <th className="px-3 py-2">#</th>
-            <th className="px-3 py-2">{t('fields.status')}</th>
-            <th className="px-3 py-2">{t('fields.dueDate')}</th>
-            <th className="px-3 py-2">{t('fields.priority')}</th>
-            <th className="px-3 py-2" />
+          <tr className="border-b border-[var(--border)] text-left text-[10px] uppercase tracking-wide text-[var(--muted)]">
+            <th className="px-2 py-1.5">#</th>
+            <th className="px-2 py-1.5">{t('fields.status')}</th>
+            <th className="px-2 py-1.5">{t('fields.dueDate')}</th>
+            <th className="px-2 py-1.5">{t('fields.priority')}</th>
+            <th className="px-2 py-1.5" />
           </tr>
         </thead>
         <tbody>
@@ -185,23 +185,23 @@ function QueryResults() {
                 key={node.id}
                 className={`border-b border-[var(--border)] transition hover:bg-[var(--surface-2)] ${selectedNodeId === node.id ? 'bg-[var(--accent-soft)]' : ''}`}
               >
-                <td className="cursor-pointer px-3 py-2" onClick={() => selectNode(node.id)}>
-                  <div className="flex flex-wrap items-center gap-2">
+                <td className="cursor-pointer px-2 py-1.5" onClick={() => selectNode(node.id)}>
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {node.supertagIds.map((id) => (
                       <SupertagPill key={id} tagId={id} />
                     ))}
                     <span>{node.content}</span>
                   </div>
                 </td>
-                <td className="px-3 py-2">{t(`status.${fields.status}`, String(fields.status ?? ''))}</td>
-                <td className="px-3 py-2">{String(fields.dueDate ?? fields.date ?? '')}</td>
-                <td className="px-3 py-2">{t(`status.${fields.priority}`, String(fields.priority ?? ''))}</td>
-                <td className="px-3 py-2">
+                <td className="px-2 py-1.5">{t(`status.${fields.status}`, String(fields.status ?? ''))}</td>
+                <td className="px-2 py-1.5">{String(fields.dueDate ?? fields.date ?? '')}</td>
+                <td className="px-2 py-1.5">{t(`status.${fields.priority}`, String(fields.priority ?? ''))}</td>
+                <td className="px-2 py-1.5">
                   {node.supertagIds.includes('task') && fields.status !== 'done' && (
                     <button
                       type="button"
                       onClick={() => void completeTask(node.id)}
-                      className="rounded-lg bg-[var(--accent-soft)] px-2 py-1 text-xs text-[var(--accent)]"
+                      className="rounded bg-[var(--accent-soft)] px-1.5 py-0.5 text-[10px] text-[var(--accent)]"
                     >
                       ✓
                     </button>
@@ -231,7 +231,7 @@ export function FieldPanel() {
 
   if (!node) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-center text-sm text-[var(--muted)]">
+      <div className="flex h-full items-center justify-center p-4 text-center text-xs text-[var(--muted)]">
         {t('panel.noSelection')}
       </div>
     );
@@ -240,27 +240,25 @@ export function FieldPanel() {
   const backlinks = getNodeBacklinks(node.id);
 
   return (
-    <div className="flex h-full flex-col overflow-auto p-4">
-      <h2 className="mb-1 line-clamp-2 text-base font-semibold">{node.content.trim() || '—'}</h2>
-      <p className="mb-4 text-xs text-[var(--muted)]">{t('panel.fields')}</p>
+    <div className="flex h-full flex-col overflow-auto p-2.5">
+      <h2 className="mb-0.5 line-clamp-2 text-sm font-medium leading-snug">{node.content.trim() || '—'}</h2>
+      <p className="mb-2 text-[10px] text-[var(--muted)]">{t('panel.fields')}</p>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-2 flex flex-wrap gap-1">
         {node.supertagIds.map((tagId) => (
           <SupertagPill key={tagId} tagId={tagId} onRemove={() => void detachTag(node.id, tagId)} />
         ))}
       </div>
 
-      <div className="mb-4">
-        <label className="mb-2 block text-[11px] uppercase tracking-wide text-[var(--muted)]">
-          {t('panel.addSupertag')}
-        </label>
-        <div className="flex flex-wrap gap-2">
+      <div className="mb-2">
+        <label className="ui-label">{t('panel.addSupertag')}</label>
+        <div className="flex flex-wrap gap-1">
           {BUILTIN_SUPERTAGS.filter((tag) => !node.supertagIds.includes(tag.id)).map((tag) => (
             <button
               key={tag.id}
               type="button"
               onClick={() => void attachTag(node.id, tag.id)}
-              className="rounded-full px-2 py-1 text-[11px] font-semibold transition hover:opacity-80"
+              className="rounded px-1.5 py-px text-[10px] font-medium transition hover:opacity-80"
               style={{ background: `${tag.color}22`, color: tag.color }}
             >
               + #{t(`supertags.${tag.id}`, tag.name)}
@@ -269,16 +267,16 @@ export function FieldPanel() {
         </div>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2">
         {node.supertagIds.map((tagId) => {
           const tag = SUPERTAG_MAP[tagId];
           if (!tag) return null;
           return (
-            <div key={tagId} className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3">
-              <div className="mb-3 text-xs font-semibold" style={{ color: tag.color }}>
+            <div key={tagId} className="rounded-lg border border-[var(--border)] bg-[var(--surface-2)] p-2">
+              <div className="mb-2 text-[11px] font-medium" style={{ color: tag.color }}>
                 #{t(`supertags.${tagId}`, tag.name)}
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {tag.fields.map((field) => (
                   <FieldEditor
                     key={field.key}
@@ -294,15 +292,15 @@ export function FieldPanel() {
       </div>
 
       {backlinks.length > 0 && (
-        <div className="mt-6 border-t border-[var(--border)] pt-4">
-          <h3 className="mb-2 text-[11px] uppercase tracking-wide text-[var(--muted)]">{t('reference.backlinks')}</h3>
-          <ul className="space-y-1">
+        <div className="mt-4 border-t border-[var(--border)] pt-3">
+          <h3 className="ui-label">{t('reference.backlinks')}</h3>
+          <ul className="space-y-0.5">
             {backlinks.map((bl) => (
               <li key={bl.id}>
                 <button
                   type="button"
                   onClick={() => selectNode(bl.id)}
-                  className="w-full rounded-lg px-2 py-1.5 text-left text-sm hover:bg-[var(--surface-2)]"
+                  className="w-full rounded-md px-1.5 py-1 text-left text-xs hover:bg-[var(--surface-2)]"
                 >
                   {resolveNodeTitle(bl.id)}
                 </button>

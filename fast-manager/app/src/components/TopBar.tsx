@@ -32,13 +32,13 @@ export function TopBar() {
   void historyTick;
 
   return (
-    <header className="flex shrink-0 items-center gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4 py-3">
-      <h1 className="hidden text-sm font-semibold sm:block">{viewTitle}</h1>
+    <header className="flex shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-1.5">
+      <h1 className="hidden text-xs font-semibold text-[var(--text)] sm:block">{viewTitle}</h1>
 
       <div className="relative min-w-0 flex-1">
         {(() => {
           const SearchIcon = getIcon('search');
-          return <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />;
+          return <SearchIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />;
         })()}
         <input
           value={searchQuery}
@@ -50,11 +50,11 @@ export function TopBar() {
             if (searchQuery) setView('search');
           }}
           placeholder={t('actions.search')}
-          className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-[var(--accent)]"
+          className="ui-input pl-8"
         />
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         <ToolbarButton
           icon="undo"
           label={t('commands.undo')}
@@ -73,7 +73,7 @@ export function TopBar() {
           <button
             type="button"
             onClick={toggleMobilePanel}
-            className="rounded-lg border border-[var(--border)] px-3 py-2 text-xs lg:hidden"
+            className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] lg:hidden"
           >
             {t('panel.fields')}
           </button>
@@ -103,9 +103,9 @@ function ToolbarButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-lg p-2 transition ${accent ? 'bg-[var(--accent)] text-white hover:opacity-90' : 'text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'} disabled:opacity-30`}
+      className={`rounded-md p-1.5 transition ${accent ? 'bg-[var(--accent)] text-white hover:opacity-90' : 'text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'} disabled:opacity-30`}
     >
-      <Icon size={16} />
+      <Icon size={14} strokeWidth={2} />
     </button>
   );
 }

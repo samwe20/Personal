@@ -19,7 +19,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
 
   if (field.type === 'checkbox') {
     return (
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-1.5 text-xs">
         <input
           type="checkbox"
           checked={!!value}
@@ -37,11 +37,11 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
 
     return (
       <div className="relative">
-        <label className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--muted)]">{label}</label>
+        <label className="ui-label">{label}</label>
         <button
           type="button"
           onClick={() => setPickerOpen(!pickerOpen)}
-          className="flex w-full items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-left text-sm"
+          className="ui-input flex items-center justify-between text-left"
         >
           <span className={selectedId ? '' : 'text-[var(--muted)]'}>
             {selectedId ? resolveNodeTitle(selectedId) : t('reference.pick')}
@@ -49,10 +49,10 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
           <span className="text-[var(--muted)]">▾</span>
         </button>
         {pickerOpen && (
-          <div className="absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-[var(--border)] bg-[var(--surface)] shadow-lg">
+          <div className="absolute z-20 mt-0.5 max-h-40 w-full overflow-auto rounded-md border border-[var(--border)] bg-[var(--surface)] shadow-lg">
             <button
               type="button"
-              className="block w-full px-3 py-2 text-left text-sm text-[var(--muted)] hover:bg-[var(--surface-2)]"
+              className="block w-full px-2 py-1.5 text-left text-xs text-[var(--muted)] hover:bg-[var(--surface-2)]"
               onClick={() => {
                 onChange('');
                 setPickerOpen(false);
@@ -64,7 +64,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
               <button
                 key={node.id}
                 type="button"
-                className={`block w-full px-3 py-2 text-left text-sm hover:bg-[var(--surface-2)] ${selectedId === node.id ? 'bg-[var(--accent-soft)]' : ''}`}
+                className={`block w-full px-2 py-1.5 text-left text-xs hover:bg-[var(--surface-2)] ${selectedId === node.id ? 'bg-[var(--accent-soft)]' : ''}`}
                 onClick={() => {
                   onChange(node.id);
                   setPickerOpen(false);
@@ -82,12 +82,8 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
   if (field.type === 'select') {
     return (
       <div>
-        <label className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--muted)]">{label}</label>
-        <select
-          value={String(value ?? '')}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm"
-        >
+        <label className="ui-label">{label}</label>
+        <select value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} className="ui-input">
           <option value="">—</option>
           {field.options?.map((opt) => (
             <option key={opt} value={opt}>
@@ -102,12 +98,12 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
   if (field.type === 'datetime') {
     return (
       <div>
-        <label className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--muted)]">{label}</label>
+        <label className="ui-label">{label}</label>
         <input
           type="datetime-local"
           value={String(value ?? '')}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm"
+          className="ui-input"
         />
       </div>
     );
@@ -116,25 +112,20 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
   if (field.type === 'date') {
     return (
       <div>
-        <label className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--muted)]">{label}</label>
-        <input
-          type="date"
-          value={String(value ?? '')}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm"
-        />
+        <label className="ui-label">{label}</label>
+        <input type="date" value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} className="ui-input" />
       </div>
     );
   }
 
   return (
     <div>
-      <label className="mb-1 block text-[11px] uppercase tracking-wide text-[var(--muted)]">{label}</label>
+      <label className="ui-label">{label}</label>
       <input
         type={field.type === 'number' ? 'number' : 'text'}
         value={String(value ?? '')}
         onChange={(e) => onChange(field.type === 'number' ? Number(e.target.value) : e.target.value)}
-        className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm"
+        className="ui-input"
       />
     </div>
   );

@@ -15,7 +15,7 @@ export function SupertagPill({ tagId, onRemove, onClick }: SupertagPillProps) {
 
   return (
     <span
-      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold transition hover:opacity-90"
+      className="inline-flex items-center gap-0.5 rounded px-1.5 py-px text-[10px] font-medium transition hover:opacity-90"
       style={{ background: `${tag.color}22`, color: tag.color }}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
