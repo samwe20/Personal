@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { BUILTIN_SUPERTAGS, getDefaultFieldValues } from '../data/supertags';
+import i18n from '../i18n';
 import {
   addSupertagToNode,
   completeTask as completeTaskNode,
@@ -135,7 +136,6 @@ export const useAppStore = create<AppState>((set, get) => ({
 
       document.documentElement.lang = settings.language;
       if (settings.language) {
-        const { default: i18n } = await import('../i18n');
         await i18n.changeLanguage(settings.language);
       }
       get().applyTheme(settings.theme);
@@ -324,7 +324,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (patch.theme) get().applyTheme(patch.theme);
     if (patch.language) {
       document.documentElement.lang = patch.language;
-      const { default: i18n } = await import('../i18n');
       await i18n.changeLanguage(patch.language);
     }
     if (patch.theme || patch.language || patch.syncUrl || patch.syncEnabled) {

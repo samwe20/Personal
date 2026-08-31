@@ -66,8 +66,18 @@ npm run dev:sync
 
 ```bash
 cd fast-manager/app
-npm run tauri:dev      # development
-npm run tauri:build    # production .exe / installer
+npm run tauri:dev      # development (otevre okno automaticky)
+npm run tauri:build    # production .exe / installer (nespousti aplikaci!)
+npm run tauri:run      # spusti posledni build
+npm run tauri:build:run  # build + spusteni najednou
+```
+
+Po `tauri:build` spustte aplikaci rucne:
+
+```powershell
+npm run tauri:run
+# nebo
+.\src-tauri\target\release\fast-manager.exe
 ```
 
 ## Architecture
