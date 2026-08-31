@@ -1,0 +1,120 @@
+{
+  "app": {
+    "name": "F.A.S.T Manager",
+    "tagline": "Finally Awesome and Simple Task Manager",
+    "shortName": "FAST"
+  },
+  "nav": {
+    "today": "Dnes",
+    "inbox": "Inbox",
+    "queries": "Dotazy",
+    "supertags": "Supertagy",
+    "settings": "Nastavení"
+  },
+  "actions": {
+    "addNode": "Nový uzel",
+    "addChild": "Poduzel",
+    "delete": "Smazat",
+    "sync": "Synchronizovat",
+    "save": "Uložit",
+    "search": "Hledat…"
+  },
+  "fields": {
+    "dueDate": "Termín",
+    "priority": "Priorita",
+    "status": "Stav",
+    "assignee": "Přiřazeno",
+    "project": "Projekt",
+    "answer": "Odpověď",
+    "askedTo": "Zeptat se",
+    "category": "Kategorie",
+    "source": "Zdroj",
+    "importance": "Důležitost",
+    "verified": "Ověřeno",
+    "email": "E-mail",
+    "phone": "Telefon",
+    "organization": "Organizace",
+    "role": "Role",
+    "deadline": "Termín projektu",
+    "owner": "Vlastník",
+    "date": "Datum",
+    "dateTime": "Datum a čas",
+    "location": "Místo",
+    "decidedAt": "Rozhodnuto",
+    "outcome": "Výsledek",
+    "rationale": "Zdůvodnění",
+    "potential": "Potenciál"
+  },
+  "status": {
+    "new": "Nový",
+    "inProgress": "V procesu",
+    "done": "Hotovo",
+    "cancelled": "Zrušeno",
+    "open": "Otevřeno",
+    "researching": "Zjišťuji",
+    "answered": "Zodpovězeno",
+    "archived": "Archivováno",
+    "low": "Nízká",
+    "medium": "Střední",
+    "high": "Vysoká",
+    "normal": "Normální",
+    "critical": "Kritická",
+    "raw": "Surový",
+    "developing": "Rozpracováno",
+    "accepted": "Přijato",
+    "rejected": "Zamítnuto",
+    "planning": "Plánování",
+    "active": "Aktivní",
+    "onHold": "Pozastaveno",
+    "completed": "Dokončeno",
+    "scheduled": "Naplánováno",
+    "pending": "Čeká",
+    "decided": "Rozhodnuto",
+    "revisited": "Revidováno"
+  },
+  "supertags": {
+    "task": "Úkol",
+    "question": "Otázka",
+    "inform": "Informace",
+    "person": "Osoba",
+    "project": "Projekt",
+    "dailyNote": "Denní poznámka",
+    "meeting": "Schůzka",
+    "decision": "Rozhodnutí",
+    "idea": "Nápad",
+    "note": "Poznámka"
+  },
+  "queries": {
+    "myTasks": "Moje úkoly",
+    "openQuestions": "Otevřené otázky",
+    "overdue": "Po termínu",
+    "results": "Výsledky",
+    "noResults": "Žádné výsledky"
+  },
+  "settings": {
+    "title": "Nastavení",
+    "theme": "Vzhled",
+    "themeLight": "Světlý",
+    "themeDark": "Tmavý",
+    "themeSystem": "Systém",
+    "language": "Jazyk",
+    "syncUrl": "URL sync serveru",
+    "syncUrlHint": "Prázdné = lokální proxy (/api)",
+    "syncStatus": "Stav synchronizace",
+    "connected": "Připojeno",
+    "disconnected": "Odpojeno",
+    "syncing": "Synchronizuji…",
+    "lastSync": "Poslední sync",
+    "pending": "Čekající změny",
+    "openSource": "Open source — MIT licence"
+  },
+  "panel": {
+    "fields": "Pole supertagu",
+    "noSelection": "Vyberte uzel pro zobrazení polí",
+    "addSupertag": "Přidat supertag",
+    "removeSupertag": "Odebrat"
+  },
+  "sync": {
+    "error": "Chyba synchronizace"
+  }
+}

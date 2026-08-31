@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef1f5;
+  --border: #d8dee6;
+  --text: #111827;
+  --muted: #6b7280;
+  --accent: #0d9488;
+  --accent-soft: rgba(13, 148, 136, 0.12);
+}
+
+.dark {
+  --bg: #0b0f14;
+  --surface: #141a22;
+  --surface-2: #1c2430;
+  --border: #2a3444;
+  --text: #e8edf4;
+  --muted: #8b98a8;
+  --accent: #14b8a6;
+  --accent-soft: rgba(20, 184, 166, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+input, textarea, select, button {
+  font: inherit;
+}
