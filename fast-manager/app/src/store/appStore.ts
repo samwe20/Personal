@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { BUILTIN_SUPERTAGS } from '../data/supertags';
+import { BUILTIN_SUPERTAGS, getDefaultFieldValues } from '../data/supertags';
 import {
   addSupertagToNode,
+  completeTask as completeTaskNode,
   createNode,
   deleteNode,
   evaluateQuery,
@@ -9,16 +10,35 @@ import {
   getQueries,
   getWorkspaces,
   loadSettings,
+  moveNode,
   removeSupertagFromNode,
+  restoreNodesSnapshot,
   saveSettings,
   seedIfEmpty,
   updateNode,
   updateNodeField,
 } from '../services/dataService';
+import {
+  canRedo,
+  canUndo,
+  clearHistory,
+  popRedo,
+  popUndo,
+  pushHistory,
+} from '../services/historyService';
+import { requestNotificationPermission, startReminderChecker } from '../services/reminderService';
 import { SyncClient, type SyncStatus } from '../sync/syncClient';
-import type { AppSettings, NodeRecord, SavedQueryRecord, Theme, WorkspaceRecord } from '../types';
+import type {
+  AppSettings,
+  NodeRecord,
+  QuickCaptureInput,
+  SavedQueryRecord,
+  Theme,
+  WorkspaceRecord,
+} from '../types';
+import { getBacklinks, resolveNodeTitle, searchNodes } from '../utils/nodeUtils';
 
-export type ViewMode = 'inbox' | 'today' | 'query' | 'settings';
+export type ViewMode = 'inbox' | 'today' | 'query' | 'settings' | 'search';
 
 interface AppState {
   ready: boolean;
@@ -29,24 +49,47 @@ interface AppState {
   selectedNodeId: string | null;
   activeView: ViewMode;
   activeQueryId: string | null;
+  searchQuery: string;
+  commandPaletteOpen: boolean;
+  quickCaptureOpen: boolean;
+  showMobilePanel: boolean;
   syncStatus: SyncStatus;
   syncClient: SyncClient | null;
+  historyTick: number;
   init: () => Promise<void>;
   refresh: () => Promise<void>;
+  withHistory: <T>(fn: () => Promise<T>) => Promise<T>;
   selectNode: (id: string | null) => void;
   setView: (view: ViewMode, queryId?: string | null) => void;
+  setSearchQuery: (q: string) => void;
+  openQuickCapture: () => void;
+  closeQuickCapture: () => void;
+  openCommandPalette: () => void;
+  closeCommandPalette: () => void;
+  toggleMobilePanel: () => void;
   addRootNode: (content?: string) => Promise<void>;
   addChildNode: (parentId: string) => Promise<void>;
+  quickCapture: (input: QuickCaptureInput) => Promise<void>;
   editNodeContent: (id: string, content: string) => Promise<void>;
   removeNode: (id: string) => Promise<void>;
   attachTag: (nodeId: string, tagId: string) => Promise<void>;
   detachTag: (nodeId: string, tagId: string) => Promise<void>;
   setField: (nodeId: string, tagId: string, key: string, value: string | number | boolean) => Promise<void>;
+  completeTask: (nodeId: string) => Promise<void>;
+  moveNodeTo: (nodeId: string, parentId: string | null, order: number) => Promise<void>;
+  undo: () => Promise<void>;
+  redo: () => Promise<void>;
   updateSettings: (patch: Partial<AppSettings>) => Promise<void>;
+  markOnboardingDone: () => Promise<void>;
   applyTheme: (theme: Theme) => void;
   syncNow: () => Promise<void>;
   getVisibleNodes: () => NodeRecord[];
   getQueryResults: () => NodeRecord[];
+  getSearchResults: () => NodeRecord[];
+  getNodeBacklinks: (nodeId: string) => NodeRecord[];
+  resolveNodeTitle: (nodeId: string) => string;
+  canUndoAction: () => boolean;
+  canRedoAction: () => boolean;
 }
 
 function resolveTheme(theme: Theme): 'light' | 'dark' {
@@ -65,6 +108,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedNodeId: null,
   activeView: 'inbox',
   activeQueryId: 'q-tasks',
+  searchQuery: '',
+  commandPaletteOpen: false,
+  quickCaptureOpen: false,
+  showMobilePanel: false,
   syncStatus: {
     connected: false,
     syncing: false,
@@ -73,6 +120,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     pendingCount: 0,
   },
   syncClient: null,
+  historyTick: 0,
 
   init: async () => {
     await seedIfEmpty();
@@ -87,14 +135,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       await i18n.changeLanguage(settings.language);
     }
     get().applyTheme(settings.theme);
+    void requestNotificationPermission();
 
     const syncClient = new SyncClient(settings);
     syncClient.subscribe((status) => set({ syncStatus: status }));
     void syncClient.connect();
 
+    startReminderChecker(
+      () => get().nodes,
+      () => get().settings?.language ?? 'cs',
+    );
+
+    clearHistory();
     set({
       ready: true,
-      settings: { ...settings, workspaceId: wsId },
+      settings: { ...settings, workspaceId: wsId, onboardingDone: settings.onboardingDone ?? false },
       workspaces,
       nodes,
       queries,
@@ -114,57 +169,140 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ nodes, queries, workspaces });
   },
 
-  selectNode: (id) => set({ selectedNodeId: id }),
+  withHistory: async (fn) => {
+    pushHistory(get().nodes);
+    const result = await fn();
+    set((s) => ({ historyTick: s.historyTick + 1 }));
+    void get().syncClient?.syncNow();
+    return result;
+  },
+
+  selectNode: (id) => set({ selectedNodeId: id, showMobilePanel: !!id }),
 
   setView: (view, queryId = null) =>
-    set({ activeView: view, activeQueryId: queryId ?? get().activeQueryId }),
+    set({ activeView: view, activeQueryId: queryId ?? get().activeQueryId, searchQuery: view === 'search' ? get().searchQuery : '' }),
+
+  setSearchQuery: (q) => set({ searchQuery: q, activeView: q ? 'search' : get().activeView === 'search' ? 'inbox' : get().activeView }),
+
+  openQuickCapture: () => set({ quickCaptureOpen: true }),
+  closeQuickCapture: () => set({ quickCaptureOpen: false }),
+  openCommandPalette: () => set({ commandPaletteOpen: true }),
+  closeCommandPalette: () => set({ commandPaletteOpen: false }),
+  toggleMobilePanel: () => set((s) => ({ showMobilePanel: !s.showMobilePanel })),
 
   addRootNode: async (content = '') => {
-    const { settings } = get();
-    if (!settings) return;
-    const node = await createNode({ workspaceId: settings.workspaceId, parentId: null, content: content || ' ' });
-    await get().refresh();
-    set({ selectedNodeId: node.id });
-    void get().syncClient?.syncNow();
+    await get().withHistory(async () => {
+      const { settings } = get();
+      if (!settings) return;
+      const node = await createNode({ workspaceId: settings.workspaceId, parentId: null, content: content || ' ' });
+      await get().refresh();
+      set({ selectedNodeId: node.id });
+    });
   },
 
   addChildNode: async (parentId) => {
-    const { settings } = get();
-    if (!settings) return;
-    const node = await createNode({ workspaceId: settings.workspaceId, parentId, content: ' ' });
-    await get().refresh();
-    set({ selectedNodeId: node.id });
-    void get().syncClient?.syncNow();
+    await get().withHistory(async () => {
+      const { settings } = get();
+      if (!settings) return;
+      const node = await createNode({ workspaceId: settings.workspaceId, parentId, content: ' ' });
+      await get().refresh();
+      set({ selectedNodeId: node.id });
+    });
+  },
+
+  quickCapture: async (input) => {
+    await get().withHistory(async () => {
+      const { settings } = get();
+      if (!settings || !input.content.trim()) return;
+
+      const tagId = input.supertagId ?? 'task';
+      const tag = BUILTIN_SUPERTAGS.find((t) => t.id === tagId);
+      const fieldValues: NodeRecord['fieldValues'] = {};
+      if (tag) {
+        fieldValues[tagId] = {
+          ...getDefaultFieldValues(tag),
+          ...(input.dueDate ? { dueDate: input.dueDate } : {}),
+          ...(input.reminderTime ? { reminderTime: input.reminderTime } : {}),
+        };
+      }
+
+      const node = await createNode({
+        workspaceId: settings.workspaceId,
+        parentId: null,
+        content: input.content.trim(),
+        supertagIds: [tagId],
+        fieldValues,
+      });
+      await get().refresh();
+      set({ selectedNodeId: node.id, activeView: 'inbox', quickCaptureOpen: false });
+    });
   },
 
   editNodeContent: async (id, content) => {
-    await updateNode(id, { content });
-    await get().refresh();
-    void get().syncClient?.syncNow();
+    await get().withHistory(async () => {
+      await updateNode(id, { content });
+      await get().refresh();
+    });
   },
 
   removeNode: async (id) => {
-    await deleteNode(id);
-    await get().refresh();
-    if (get().selectedNodeId === id) set({ selectedNodeId: null });
-    void get().syncClient?.syncNow();
+    await get().withHistory(async () => {
+      await deleteNode(id);
+      await get().refresh();
+      if (get().selectedNodeId === id) set({ selectedNodeId: null });
+    });
   },
 
   attachTag: async (nodeId, tagId) => {
-    await addSupertagToNode(nodeId, tagId);
-    await get().refresh();
-    void get().syncClient?.syncNow();
+    await get().withHistory(async () => {
+      await addSupertagToNode(nodeId, tagId);
+      await get().refresh();
+    });
   },
 
   detachTag: async (nodeId, tagId) => {
-    await removeSupertagFromNode(nodeId, tagId);
-    await get().refresh();
-    void get().syncClient?.syncNow();
+    await get().withHistory(async () => {
+      await removeSupertagFromNode(nodeId, tagId);
+      await get().refresh();
+    });
   },
 
   setField: async (nodeId, tagId, key, value) => {
-    await updateNodeField(nodeId, tagId, key, value);
+    await get().withHistory(async () => {
+      await updateNodeField(nodeId, tagId, key, value);
+      await get().refresh();
+    });
+  },
+
+  completeTask: async (nodeId) => {
+    await get().withHistory(async () => {
+      await completeTaskNode(nodeId);
+      await get().refresh();
+    });
+  },
+
+  moveNodeTo: async (nodeId, parentId, order) => {
+    await get().withHistory(async () => {
+      await moveNode(nodeId, parentId, order);
+      await get().refresh();
+    });
+  },
+
+  undo: async () => {
+    const snapshot = popUndo(get().nodes);
+    if (!snapshot) return;
+    await restoreNodesSnapshot(snapshot);
     await get().refresh();
+    set((s) => ({ historyTick: s.historyTick + 1 }));
+    void get().syncClient?.syncNow();
+  },
+
+  redo: async () => {
+    const snapshot = popRedo(get().nodes);
+    if (!snapshot) return;
+    await restoreNodesSnapshot(snapshot);
+    await get().refresh();
+    set((s) => ({ historyTick: s.historyTick + 1 }));
     void get().syncClient?.syncNow();
   },
 
@@ -183,6 +321,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       get().syncClient?.updateSettings(next);
     }
     set({ settings: next });
+  },
+
+  markOnboardingDone: async () => {
+    await get().updateSettings({ onboardingDone: true });
   },
 
   applyTheme: (theme) => {
@@ -207,11 +349,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (activeView === 'today') {
       return nodes.filter(
         (n) =>
-          n.supertagIds.includes('dailyNote') &&
-          n.fieldValues.dailyNote?.date === today,
+          (n.supertagIds.includes('dailyNote') && n.fieldValues.dailyNote?.date === today) ||
+          (n.supertagIds.includes('task') &&
+            n.fieldValues.task?.dueDate === today &&
+            n.fieldValues.task?.status !== 'done'),
       );
     }
-    return nodes.filter((n) => n.parentId === null);
+    if (activeView === 'search') return get().getSearchResults();
+    return nodes.filter((n) => n.parentId === null).sort((a, b) => a.order - b.order);
   },
 
   getQueryResults: () => {
@@ -220,6 +365,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!query) return [];
     return evaluateQuery(nodes, query.expression);
   },
+
+  getSearchResults: () => {
+    const { nodes, searchQuery } = get();
+    return searchNodes(nodes, searchQuery);
+  },
+
+  getNodeBacklinks: (nodeId) => getBacklinks(get().nodes, nodeId),
+
+  resolveNodeTitle: (nodeId) => resolveNodeTitle(get().nodes, nodeId),
+
+  canUndoAction: () => canUndo(),
+  canRedoAction: () => canRedo(),
 }));
 
 export { BUILTIN_SUPERTAGS };

@@ -1,57 +1,107 @@
-import { useEffect, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SUPERTAG_MAP } from '../data/supertags';
 import { BUILTIN_SUPERTAGS, useAppStore } from '../store/appStore';
+import { FieldEditor } from './FieldEditor';
+import { NodeContent } from './NodeContent';
 import { SupertagPill } from './SupertagPill';
-import { FieldEditor } from './SupertagPill';
 
 export function Outliner() {
   const { t } = useTranslation();
   const nodes = useAppStore((s) => s.getVisibleNodes());
   const allNodes = useAppStore((s) => s.nodes);
   const selectedNodeId = useAppStore((s) => s.selectedNodeId);
+  const activeView = useAppStore((s) => s.activeView);
+  const searchQuery = useAppStore((s) => s.searchQuery);
   const selectNode = useAppStore((s) => s.selectNode);
   const editNodeContent = useAppStore((s) => s.editNodeContent);
   const addChildNode = useAppStore((s) => s.addChildNode);
   const removeNode = useAppStore((s) => s.removeNode);
   const attachTag = useAppStore((s) => s.attachTag);
-  const activeView = useAppStore((s) => s.activeView);
+  const completeTask = useAppStore((s) => s.completeTask);
+  const moveNodeTo = useAppStore((s) => s.moveNodeTo);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const dragNodeId = useRef<string | null>(null);
+
+  const handleDrop = (targetId: string, position: 'before' | 'inside') => {
+    const draggedId = dragNodeId.current;
+    if (!draggedId || draggedId === targetId) return;
+    const target = allNodes.find((n) => n.id === targetId);
+    if (!target) return;
+
+    const parentId = position === 'inside' ? targetId : target.parentId;
+    const siblings = allNodes.filter((n) => n.parentId === parentId && n.id !== draggedId).sort((a, b) => a.order - b.order);
+    const targetIndex = siblings.findIndex((n) => n.id === targetId);
+    const insertIndex = position === 'inside' ? 0 : targetIndex + (position === 'before' ? 0 : 1);
+
+    void moveNodeTo(draggedId, parentId, insertIndex);
+    dragNodeId.current = null;
+    setDragOverId(null);
+  };
 
   const renderNode = (node: (typeof nodes)[0], depth = 0) => {
-    const children = allNodes.filter((n) => n.parentId === node.id);
+    const children = allNodes.filter((n) => n.parentId === node.id).sort((a, b) => a.order - b.order);
     const isSelected = selectedNodeId === node.id;
+    const isTask = node.supertagIds.includes('task');
+    const isDone = node.fieldValues.task?.status === 'done';
 
     return (
       <div key={node.id}>
         <div
-          className={`group flex items-start gap-2 rounded-lg px-2 py-1.5 ${isSelected ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--surface-2)]'}`}
-          style={{ paddingLeft: `${depth * 20 + 8}px` }}
+          draggable
+          onDragStart={() => {
+            dragNodeId.current = node.id;
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOverId(node.id);
+          }}
+          onDragLeave={() => setDragOverId(null)}
+          onDrop={(e) => {
+            e.preventDefault();
+            handleDrop(node.id, e.shiftKey ? 'inside' : 'before');
+          }}
+          className={`group flex items-start gap-2 rounded-xl border border-transparent px-2 py-2 transition ${isSelected ? 'border-[var(--accent)]/30 bg-[var(--accent-soft)]' : 'hover:border-[var(--border)] hover:bg-[var(--surface-2)]'} ${dragOverId === node.id ? 'ring-2 ring-[var(--accent)]' : ''} ${isDone ? 'opacity-60' : ''}`}
+          style={{ marginLeft: `${depth * 16}px` }}
           onClick={() => selectNode(node.id)}
         >
-          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--muted)]" />
+          {isTask ? (
+            <button
+              type="button"
+              className="mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border border-[var(--border)] bg-[var(--surface)]"
+              onClick={(e) => {
+                e.stopPropagation();
+                void completeTask(node.id);
+              }}
+            >
+              {isDone ? '✓' : ''}
+            </button>
+          ) : (
+            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--muted)]" />
+          )}
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap gap-1">
               {node.supertagIds.map((tagId) => (
                 <SupertagPill key={tagId} tagId={tagId} />
               ))}
             </div>
-            <EditableContent
+            <NodeContent
               value={node.content}
               selected={isSelected}
               onChange={(v) => editNodeContent(node.id, v)}
               onTagTrigger={(tagName) => {
                 const tag = BUILTIN_SUPERTAGS.find(
-                  (t) => t.name.toLowerCase() === tagName.toLowerCase() || t.id.toLowerCase() === tagName.toLowerCase(),
+                  (tg) => tg.name.toLowerCase() === tagName.toLowerCase() || tg.id.toLowerCase() === tagName.toLowerCase(),
                 );
                 if (tag) void attachTag(node.id, tag.id);
               }}
             />
           </div>
           {isSelected && (
-            <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100">
+            <div className="flex shrink-0 gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
               <button
                 type="button"
-                className="rounded px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--surface)]"
+                className="rounded-lg px-2 py-1 text-xs text-[var(--muted)] hover:bg-[var(--surface)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   void addChildNode(node.id);
@@ -61,7 +111,7 @@ export function Outliner() {
               </button>
               <button
                 type="button"
-                className="rounded px-2 py-1 text-xs text-red-400 hover:bg-[var(--surface)]"
+                className="rounded-lg px-2 py-1 text-xs text-red-400 hover:bg-[var(--surface)]"
                 onClick={(e) => {
                   e.stopPropagation();
                   void removeNode(node.id);
@@ -77,14 +127,20 @@ export function Outliner() {
     );
   };
 
-  if (activeView === 'query') {
-    return <QueryResults />;
-  }
+  if (activeView === 'query') return <QueryResults />;
 
   return (
     <div className="space-y-1 p-4">
+      {activeView === 'search' && searchQuery && (
+        <p className="mb-3 text-xs text-[var(--muted)]">
+          {t('search.results', { count: nodes.length, query: searchQuery })}
+        </p>
+      )}
       {nodes.length === 0 ? (
-        <p className="text-sm text-[var(--muted)]">{t('queries.noResults')}</p>
+        <div className="rounded-xl border border-dashed border-[var(--border)] p-8 text-center">
+          <p className="text-sm text-[var(--muted)]">{t('queries.noResults')}</p>
+          <p className="mt-2 text-xs text-[var(--muted)]">{t('capture.hint')}</p>
+        </div>
       ) : (
         nodes.map((node) => renderNode(node))
       )}
@@ -97,9 +153,14 @@ function QueryResults() {
   const results = useAppStore((s) => s.getQueryResults());
   const selectNode = useAppStore((s) => s.selectNode);
   const selectedNodeId = useAppStore((s) => s.selectedNodeId);
+  const completeTask = useAppStore((s) => s.completeTask);
 
   if (results.length === 0) {
-    return <p className="p-4 text-sm text-[var(--muted)]">{t('queries.noResults')}</p>;
+    return (
+      <div className="p-8 text-center">
+        <p className="text-sm text-[var(--muted)]">{t('queries.noResults')}</p>
+      </div>
+    );
   }
 
   return (
@@ -111,6 +172,7 @@ function QueryResults() {
             <th className="px-3 py-2">{t('fields.status')}</th>
             <th className="px-3 py-2">{t('fields.dueDate')}</th>
             <th className="px-3 py-2">{t('fields.priority')}</th>
+            <th className="px-3 py-2" />
           </tr>
         </thead>
         <tbody>
@@ -120,10 +182,9 @@ function QueryResults() {
             return (
               <tr
                 key={node.id}
-                className={`cursor-pointer border-b border-[var(--border)] hover:bg-[var(--surface-2)] ${selectedNodeId === node.id ? 'bg-[var(--accent-soft)]' : ''}`}
-                onClick={() => selectNode(node.id)}
+                className={`border-b border-[var(--border)] transition hover:bg-[var(--surface-2)] ${selectedNodeId === node.id ? 'bg-[var(--accent-soft)]' : ''}`}
               >
-                <td className="px-3 py-2">
+                <td className="cursor-pointer px-3 py-2" onClick={() => selectNode(node.id)}>
                   <div className="flex flex-wrap items-center gap-2">
                     {node.supertagIds.map((id) => (
                       <SupertagPill key={id} tagId={id} />
@@ -134,54 +195,22 @@ function QueryResults() {
                 <td className="px-3 py-2">{t(`status.${fields.status}`, String(fields.status ?? ''))}</td>
                 <td className="px-3 py-2">{String(fields.dueDate ?? fields.date ?? '')}</td>
                 <td className="px-3 py-2">{t(`status.${fields.priority}`, String(fields.priority ?? ''))}</td>
+                <td className="px-3 py-2">
+                  {node.supertagIds.includes('task') && fields.status !== 'done' && (
+                    <button
+                      type="button"
+                      onClick={() => void completeTask(node.id)}
+                      className="rounded-lg bg-[var(--accent-soft)] px-2 py-1 text-xs text-[var(--accent)]"
+                    >
+                      ✓
+                    </button>
+                  )}
+                </td>
               </tr>
             );
           })}
         </tbody>
       </table>
-    </div>
-  );
-}
-
-function EditableContent({
-  value,
-  selected,
-  onChange,
-  onTagTrigger,
-}: {
-  value: string;
-  selected: boolean;
-  onChange: (v: string) => void;
-  onTagTrigger: (tag: string) => void;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (selected && ref.current && document.activeElement !== ref.current) {
-      ref.current.focus();
-    }
-  }, [selected]);
-
-  return (
-    <div
-      ref={ref}
-      contentEditable={selected}
-      suppressContentEditableWarning
-      className="min-h-[1.5rem] outline-none"
-      onBlur={(e) => {
-        const text = e.currentTarget.textContent ?? '';
-        if (text !== value) onChange(text);
-        const match = text.match(/#(\w+)\s*$/);
-        if (match) onTagTrigger(match[1]);
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          (e.target as HTMLElement).blur();
-        }
-      }}
-    >
-      {value}
     </div>
   );
 }
@@ -193,6 +222,9 @@ export function FieldPanel() {
   const setField = useAppStore((s) => s.setField);
   const attachTag = useAppStore((s) => s.attachTag);
   const detachTag = useAppStore((s) => s.detachTag);
+  const selectNode = useAppStore((s) => s.selectNode);
+  const getNodeBacklinks = useAppStore((s) => s.getNodeBacklinks);
+  const resolveNodeTitle = useAppStore((s) => s.resolveNodeTitle);
 
   const node = nodes.find((n) => n.id === selectedNodeId);
 
@@ -204,9 +236,11 @@ export function FieldPanel() {
     );
   }
 
+  const backlinks = getNodeBacklinks(node.id);
+
   return (
     <div className="flex h-full flex-col overflow-auto p-4">
-      <h2 className="mb-1 text-base font-semibold">{node.content.trim() || '—'}</h2>
+      <h2 className="mb-1 line-clamp-2 text-base font-semibold">{node.content.trim() || '—'}</h2>
       <p className="mb-4 text-xs text-[var(--muted)]">{t('panel.fields')}</p>
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -257,6 +291,25 @@ export function FieldPanel() {
           );
         })}
       </div>
+
+      {backlinks.length > 0 && (
+        <div className="mt-6 border-t border-[var(--border)] pt-4">
+          <h3 className="mb-2 text-[11px] uppercase tracking-wide text-[var(--muted)]">{t('reference.backlinks')}</h3>
+          <ul className="space-y-1">
+            {backlinks.map((bl) => (
+              <li key={bl.id}>
+                <button
+                  type="button"
+                  onClick={() => selectNode(bl.id)}
+                  className="w-full rounded-lg px-2 py-1.5 text-left text-sm hover:bg-[var(--surface-2)]"
+                >
+                  {resolveNodeTitle(bl.id)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

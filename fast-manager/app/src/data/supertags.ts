@@ -20,6 +20,8 @@ export const BUILTIN_SUPERTAGS: SupertagDef[] = [
       { key: 'dueDate', type: 'date' },
       { key: 'priority', type: 'select', options: priorityOptions, defaultValue: 'medium' },
       { key: 'status', type: 'select', options: statusOptions, defaultValue: 'new', required: true },
+      { key: 'recurrence', type: 'select', options: ['none', 'daily', 'weekly', 'monthly'], defaultValue: 'none' },
+      { key: 'reminderTime', type: 'datetime' },
       { key: 'assignee', type: 'reference', referenceSupertag: 'person' },
       { key: 'project', type: 'reference', referenceSupertag: 'project' },
     ],
