@@ -61,40 +61,61 @@ export function SettingsPanel() {
       </section>
 
       <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
-        <h2 className="mb-2 text-sm font-semibold">{t('settings.syncUrl')}</h2>
-        <p className="mb-3 text-xs text-[var(--muted)]">{t('settings.syncUrlHint')}</p>
-        <input
-          type="url"
-          value={settings.syncUrl}
-          onChange={(e) => void updateSettings({ syncUrl: e.target.value })}
-          placeholder="http://localhost:3847"
-          className="mb-3 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm"
-        />
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg bg-[var(--surface-2)] p-3">
-            <div className="text-[11px] uppercase text-[var(--muted)]">{t('settings.syncStatus')}</div>
-            <div className={syncStatus.connected ? 'text-green-500' : 'text-amber-500'}>
-              {syncStatus.connected ? t('settings.connected') : t('settings.disconnected')}
-              {syncStatus.syncing && ` · ${t('settings.syncing')}`}
+        <h2 className="mb-2 text-sm font-semibold">{t('settings.syncSection')}</h2>
+        <p className="mb-4 text-xs text-[var(--muted)]">{t('settings.localModeHint')}</p>
+
+        <label className="mb-4 flex items-center gap-3 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.syncEnabled}
+            onChange={(e) => void updateSettings({ syncEnabled: e.target.checked })}
+            className="accent-[var(--accent)]"
+          />
+          {t('settings.syncEnabled')}
+        </label>
+
+        {!settings.syncEnabled ? (
+          <div className="rounded-lg bg-[var(--accent-soft)] px-4 py-3 text-sm text-[var(--accent)]">
+            {t('settings.localMode')}
+          </div>
+        ) : (
+          <>
+            <label className="mb-1 block text-xs text-[var(--muted)]">{t('settings.syncUrl')}</label>
+            <input
+              type="url"
+              value={settings.syncUrl}
+              onChange={(e) => void updateSettings({ syncUrl: e.target.value })}
+              placeholder="http://localhost:3847"
+              className="mb-3 w-full rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm"
+            />
+            <p className="mb-3 text-xs text-[var(--muted)]">{t('settings.syncUrlHint')}</p>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg bg-[var(--surface-2)] p-3">
+                <div className="text-[11px] uppercase text-[var(--muted)]">{t('settings.syncStatus')}</div>
+                <div className={syncStatus.connected ? 'text-green-500' : 'text-amber-500'}>
+                  {syncStatus.connected ? t('settings.connected') : t('settings.disconnected')}
+                  {syncStatus.syncing && ` · ${t('settings.syncing')}`}
+                </div>
+              </div>
+              <div className="rounded-lg bg-[var(--surface-2)] p-3">
+                <div className="text-[11px] uppercase text-[var(--muted)]">{t('settings.pending')}</div>
+                <div>{syncStatus.pendingCount}</div>
+              </div>
             </div>
-          </div>
-          <div className="rounded-lg bg-[var(--surface-2)] p-3">
-            <div className="text-[11px] uppercase text-[var(--muted)]">{t('settings.pending')}</div>
-            <div>{syncStatus.pendingCount}</div>
-          </div>
-        </div>
-        {syncStatus.error && (
-          <p className="mt-3 text-sm text-red-400">
-            {t('sync.error')}: {syncStatus.error}
-          </p>
+            {syncStatus.error && (
+              <p className="mt-3 text-sm text-red-400">
+                {t('sync.error')}: {syncStatus.error}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={() => void syncNow()}
+              className="mt-4 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm text-white"
+            >
+              {t('actions.sync')}
+            </button>
+          </>
         )}
-        <button
-          type="button"
-          onClick={() => void syncNow()}
-          className="mt-4 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm text-white"
-        >
-          {t('actions.sync')}
-        </button>
       </section>
 
       <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">

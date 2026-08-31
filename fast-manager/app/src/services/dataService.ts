@@ -14,6 +14,8 @@ import type {
 const now = () => new Date().toISOString();
 
 async function enqueueSync(change: Omit<SyncChange, 'id'>): Promise<void> {
+  const settings = await loadSettings();
+  if (!settings.syncEnabled) return;
   await db.syncQueue.put({ id: uuidv4(), ...change });
 }
 

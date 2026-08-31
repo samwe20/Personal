@@ -113,6 +113,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   quickCaptureOpen: false,
   showMobilePanel: false,
   syncStatus: {
+    enabled: false,
     connected: false,
     syncing: false,
     lastSyncAt: null,
@@ -139,7 +140,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const syncClient = new SyncClient(settings);
     syncClient.subscribe((status) => set({ syncStatus: status }));
-    void syncClient.connect();
+    if (settings.syncEnabled) void syncClient.connect();
 
     startReminderChecker(
       () => get().nodes,
@@ -149,7 +150,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     clearHistory();
     set({
       ready: true,
-      settings: { ...settings, workspaceId: wsId, onboardingDone: settings.onboardingDone ?? false },
+      settings: { ...settings, workspaceId: wsId, onboardingDone: settings.onboardingDone ?? false, syncEnabled: settings.syncEnabled ?? false },
       workspaces,
       nodes,
       queries,
@@ -317,7 +318,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const { default: i18n } = await import('../i18n');
       await i18n.changeLanguage(patch.language);
     }
-    if (patch.theme || patch.language || patch.syncUrl) {
+    if (patch.theme || patch.language || patch.syncUrl || patch.syncEnabled) {
       get().syncClient?.updateSettings(next);
     }
     set({ settings: next });

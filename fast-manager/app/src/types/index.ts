@@ -80,6 +80,7 @@ export type Language = 'cs' | 'en';
 export interface AppSettings {
   theme: Theme;
   language: Language;
+  syncEnabled: boolean;
   syncUrl: string;
   workspaceId: string;
   lastSyncAt: string | null;

@@ -112,7 +112,11 @@
     "syncing": "Syncing…",
     "lastSync": "Last sync",
     "pending": "Pending changes",
-    "openSource": "Open source — MIT license"
+    "openSource": "Open source — MIT license",
+    "syncSection": "Synchronization",
+    "syncEnabled": "Enable sync server",
+    "localMode": "Local mode — data stays on this device",
+    "localModeHint": "Default is local-only with no server. Enable sync when you want to share data across devices."
   },
   "panel": {
     "fields": "Supertag fields",

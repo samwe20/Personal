@@ -99,13 +99,18 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => void syncNow()}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:bg-[var(--surface-2)]"
+          disabled={!syncStatus.enabled}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 text-sm text-[var(--muted)] hover:bg-[var(--surface-2)] disabled:opacity-40"
         >
           {(() => {
             const Icon = getIcon('refresh');
             return <Icon size={14} className={syncStatus.syncing ? 'animate-spin' : ''} />;
           })()}
-          {syncStatus.connected ? t('settings.connected') : t('settings.disconnected')}
+          {!syncStatus.enabled
+            ? t('settings.localMode')
+            : syncStatus.connected
+              ? t('settings.connected')
+              : t('settings.disconnected')}
         </button>
         {navItem('settings', t('nav.settings'), 'settings')}
       </div>

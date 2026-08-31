@@ -112,7 +112,11 @@
     "syncing": "Synchronizuji…",
     "lastSync": "Poslední sync",
     "pending": "Čekající změny",
-    "openSource": "Open source — MIT licence"
+    "openSource": "Open source — MIT licence",
+    "syncSection": "Synchronizace",
+    "syncEnabled": "Zapnout synchronizaci se serverem",
+    "localMode": "Lokální režim — data jen v tomto počítači",
+    "localModeHint": "Výchozí je lokální režim bez serveru. Sync zapněte až budete chtít sdílet data mezi zařízeními."
   },
   "panel": {
     "fields": "Pole supertagu",

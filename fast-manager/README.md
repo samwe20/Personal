@@ -38,21 +38,29 @@ For Windows desktop builds additionally:
 - Rust (stable)
 - Platform-specific Tauri dependencies ([docs](https://v2.tauri.app/start/prerequisites/))
 
-### Development
+### Development (local-only, no server)
 
 ```bash
 cd fast-manager
 npm install
-npm --prefix sync-server install
 npm --prefix app install
 
-# Start sync server + web app together
-npm install concurrently --prefix .
+# Web app only — no sync server needed
 npm run dev
 ```
 
 - Web app: http://localhost:5173
+- Data stored locally in browser (IndexedDB)
+
+### Development with sync server (optional)
+
+```bash
+npm --prefix sync-server install
+npm run dev:sync
+```
+
 - Sync server: http://localhost:3847
+- Enable in app: **Settings → Zapnout synchronizaci**
 
 ### Windows desktop (Tauri)
 
@@ -108,7 +116,7 @@ Type `#Task` at the end of a node line to attach a supertag, or use the field pa
 
 The sync server stores an append-only change log in SQLite. Clients push local changes and pull updates since `lastSyncAt`. WebSocket broadcasts changes to connected clients.
 
-Configure a custom sync URL in **Settings**, or leave empty to use the Vite dev proxy (`/api` → `localhost:3847`).
+Configure sync in **Settings** (off by default). When enabled, set sync server URL or leave empty to use the Vite dev proxy (`/api` → `localhost:3847`).
 
 ## License
 
