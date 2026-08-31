@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 import { SUPERTAG_MAP } from '../data/supertags';
 import { BUILTIN_SUPERTAGS, useAppStore } from '../store/appStore';
 import { FieldEditor } from './FieldEditor';
@@ -8,7 +9,7 @@ import { SupertagPill } from './SupertagPill';
 
 export function Outliner() {
   const { t } = useTranslation();
-  const nodes = useAppStore((s) => s.getVisibleNodes());
+  const nodes = useAppStore(useShallow((s) => s.getVisibleNodes()));
   const allNodes = useAppStore((s) => s.nodes);
   const selectedNodeId = useAppStore((s) => s.selectedNodeId);
   const activeView = useAppStore((s) => s.activeView);
@@ -150,7 +151,7 @@ export function Outliner() {
 
 function QueryResults() {
   const { t } = useTranslation();
-  const results = useAppStore((s) => s.getQueryResults());
+  const results = useAppStore(useShallow((s) => s.getQueryResults()));
   const selectNode = useAppStore((s) => s.selectNode);
   const selectedNodeId = useAppStore((s) => s.selectedNodeId);
   const completeTask = useAppStore((s) => s.completeTask);
