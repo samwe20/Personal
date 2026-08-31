@@ -1,0 +1,48 @@
+{
+  "name": "folio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "web:dev": "vite --host 0.0.0.0 --port 1420",
+    "web:build": "tsc && vite build",
+    "web:preview": "vite preview --host 0.0.0.0 --port 4173",
+    "tauri": "tauri",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build",
+    "desktop:build:windows": "tauri build --target x86_64-pc-windows-msvc",
+    "ios:init": "tauri ios init",
+    "ios:dev": "tauri ios dev",
+    "ios:build": "tauri ios build"
+  },
+  "dependencies": {
+    "@codemirror/autocomplete": "^6.18.6",
+    "@codemirror/commands": "^6.8.0",
+    "@codemirror/lang-markdown": "^6.3.2",
+    "@codemirror/language": "^6.11.0",
+    "@codemirror/lint": "^6.8.4",
+    "@codemirror/search": "^6.5.10",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.36.4",
+    "@fontsource-variable/literata": "^5.2.5",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.5",
+    "@fontsource/jetbrains-mono": "^5.2.5",
+    "@lezer/highlight": "^1.2.1",
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-fs": "^2",
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-store": "^2",
+    "fflate": "^0.8.3",
+    "marked": "^15.0.7"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2",
+    "@types/marked": "^5.0.2",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  }
+}

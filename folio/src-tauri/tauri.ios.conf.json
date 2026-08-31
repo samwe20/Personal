@@ -1,0 +1,20 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.folio.writer",
+  "bundle": {
+    "active": true,
+    "targets": ["app"],
+    "iOS": {
+      "minimumSystemVersion": "15.0"
+    }
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Folio",
+        "fullscreen": false,
+        "resizable": true
+      }
+    ]
+  }
+}
