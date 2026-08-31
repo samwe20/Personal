@@ -11,6 +11,16 @@ Open-source task manager with Tana-inspired **supertags** — outliner UI, struc
 - Dynamic field panel per supertag (dates, selects, references, checkboxes)
 - Live saved queries (My Tasks, Open Questions, Overdue)
 - **Real-time sync** via included sync server (REST + WebSocket)
+- **Quick capture** (Ctrl+Shift+Space) with supertag, due date, reminder
+- **Command palette** (Ctrl+K) and full keyboard shortcuts
+- **Full-text search** across nodes and fields
+- **Reference picker** + backlinks between nodes
+- **Recurring tasks** (daily / weekly / monthly)
+- **Reminders** via browser notifications
+- **Undo / redo** (Ctrl+Z / Ctrl+Y)
+- **Drag & drop** reordering in outliner
+- **Checklists** in node content (`- [ ]` / Tab to add)
+- **Onboarding** tour for new users
 - **Czech + English** UI (i18next)
 - **Light / Dark / System** theme
 - Local-first storage (IndexedDB) with offline support
@@ -81,6 +91,18 @@ sync-server/      Express + SQLite + WebSocket sync
 | `#Note` | Plain notes | — |
 
 Type `#Task` at the end of a node line to attach a supertag, or use the field panel.
+
+### Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| Ctrl+Shift+Space | Quick capture |
+| Ctrl+K | Command palette |
+| Ctrl+F | Search |
+| Ctrl+N | New node |
+| Ctrl+Enter | Complete task |
+| Ctrl+Z / Ctrl+Y | Undo / redo |
+| Tab (in node) | Insert checklist line |
 
 ## Sync
 
