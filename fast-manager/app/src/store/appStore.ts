@@ -42,6 +42,7 @@ export type ViewMode = 'inbox' | 'today' | 'query' | 'settings' | 'search';
 
 interface AppState {
   ready: boolean;
+  initError: string | null;
   settings: AppSettings | null;
   workspaces: WorkspaceRecord[];
   nodes: NodeRecord[];
@@ -101,6 +102,7 @@ function resolveTheme(theme: Theme): 'light' | 'dark' {
 
 export const useAppStore = create<AppState>((set, get) => ({
   ready: false,
+  initError: null,
   settings: null,
   workspaces: [],
   nodes: [],
@@ -124,39 +126,46 @@ export const useAppStore = create<AppState>((set, get) => ({
   historyTick: 0,
 
   init: async () => {
-    await seedIfEmpty();
-    const settings = await loadSettings();
-    const [workspaces, queries] = await Promise.all([getWorkspaces(), getQueries()]);
-    const wsId = settings.workspaceId || workspaces[0]?.id || 'default';
-    const nodes = await getAllNodes(wsId);
+    try {
+      await seedIfEmpty();
+      const settings = await loadSettings();
+      const [workspaces, queries] = await Promise.all([getWorkspaces(), getQueries()]);
+      const wsId = settings.workspaceId || workspaces[0]?.id || 'default';
+      const nodes = await getAllNodes(wsId);
 
-    document.documentElement.lang = settings.language;
-    if (settings.language) {
-      const { default: i18n } = await import('../i18n');
-      await i18n.changeLanguage(settings.language);
+      document.documentElement.lang = settings.language;
+      if (settings.language) {
+        const { default: i18n } = await import('../i18n');
+        await i18n.changeLanguage(settings.language);
+      }
+      get().applyTheme(settings.theme);
+      void requestNotificationPermission();
+
+      const syncClient = new SyncClient(settings);
+      syncClient.subscribe((status) => set({ syncStatus: status }));
+      if (settings.syncEnabled) void syncClient.connect();
+
+      startReminderChecker(
+        () => get().nodes,
+        () => get().settings?.language ?? 'cs',
+      );
+
+      clearHistory();
+      set({
+        ready: true,
+        initError: null,
+        settings: { ...settings, workspaceId: wsId, onboardingDone: settings.onboardingDone ?? false, syncEnabled: settings.syncEnabled ?? false },
+        workspaces,
+        nodes,
+        queries,
+        selectedNodeId: nodes[0]?.id ?? null,
+        syncClient,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('FAST init failed:', err);
+      set({ ready: false, initError: message });
     }
-    get().applyTheme(settings.theme);
-    void requestNotificationPermission();
-
-    const syncClient = new SyncClient(settings);
-    syncClient.subscribe((status) => set({ syncStatus: status }));
-    if (settings.syncEnabled) void syncClient.connect();
-
-    startReminderChecker(
-      () => get().nodes,
-      () => get().settings?.language ?? 'cs',
-    );
-
-    clearHistory();
-    set({
-      ready: true,
-      settings: { ...settings, workspaceId: wsId, onboardingDone: settings.onboardingDone ?? false, syncEnabled: settings.syncEnabled ?? false },
-      workspaces,
-      nodes,
-      queries,
-      selectedNodeId: nodes[0]?.id ?? null,
-      syncClient,
-    });
   },
 
   refresh: async () => {
