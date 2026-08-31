@@ -4,6 +4,7 @@ import { BUILTIN_SUPERTAGS, getDefaultFieldValues } from '../data/supertags';
 import { db, loadSettings, saveSettings } from '../db/database';
 import type {
   AppSettings,
+  NodeEmbed,
   NodeRecord,
   QueryExpression,
   SavedQueryRecord,
@@ -212,6 +213,7 @@ export async function createNode(input: {
     order: input.order ?? siblings.length,
     supertagIds: input.supertagIds ?? [],
     fieldValues,
+    embeds: [],
     createdAt: ts,
     updatedAt: ts,
     deleted: false,
@@ -230,7 +232,7 @@ export async function createNode(input: {
 
 export async function updateNode(
   id: string,
-  patch: Partial<Pick<NodeRecord, 'content' | 'parentId' | 'order' | 'supertagIds' | 'fieldValues'>>,
+  patch: Partial<Pick<NodeRecord, 'content' | 'parentId' | 'order' | 'supertagIds' | 'fieldValues' | 'embeds'>>,
 ): Promise<NodeRecord | undefined> {
   const node = await db.nodes.get(id);
   if (!node || node.deleted) return undefined;
@@ -388,6 +390,38 @@ export async function restoreNodesSnapshot(nodes: NodeRecord[]): Promise<void> {
 
 export async function completeTask(nodeId: string): Promise<NodeRecord | undefined> {
   return updateNodeField(nodeId, 'task', 'status', 'done');
+}
+
+export async function addNodeEmbed(
+  nodeId: string,
+  expression: QueryExpression,
+  title?: string,
+): Promise<NodeRecord | undefined> {
+  const node = await db.nodes.get(nodeId);
+  if (!node || node.deleted) return undefined;
+  const embed: NodeEmbed = {
+    id: uuidv4(),
+    title: title ?? '',
+    expression,
+  };
+  return updateNode(nodeId, { embeds: [...(node.embeds ?? []), embed] });
+}
+
+export async function removeNodeEmbed(nodeId: string, embedId: string): Promise<NodeRecord | undefined> {
+  const node = await db.nodes.get(nodeId);
+  if (!node) return undefined;
+  return updateNode(nodeId, { embeds: (node.embeds ?? []).filter((e) => e.id !== embedId) });
+}
+
+export async function updateNodeEmbed(
+  nodeId: string,
+  embedId: string,
+  patch: Partial<Pick<NodeEmbed, 'title' | 'expression'>>,
+): Promise<NodeRecord | undefined> {
+  const node = await db.nodes.get(nodeId);
+  if (!node) return undefined;
+  const embeds = (node.embeds ?? []).map((e) => (e.id === embedId ? { ...e, ...patch } : e));
+  return updateNode(nodeId, { embeds });
 }
 
 export async function getWorkspaces(): Promise<WorkspaceRecord[]> {

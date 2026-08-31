@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { SUPERTAG_MAP } from '../data/supertags';
 import { BUILTIN_SUPERTAGS, useAppStore } from '../store/appStore';
+import { isFolderNode } from '../utils/folderUtils';
 import { FieldEditor } from './FieldEditor';
 import { NodeContent } from './NodeContent';
+import { NodeEmbeds } from './NodeEmbeds';
 import { SupertagPill } from './SupertagPill';
 
 export function Outliner() {
@@ -21,6 +23,9 @@ export function Outliner() {
   const attachTag = useAppStore((s) => s.attachTag);
   const completeTask = useAppStore((s) => s.completeTask);
   const moveNodeTo = useAppStore((s) => s.moveNodeTo);
+  const openFolder = useAppStore((s) => s.openFolder);
+  const activeFolderId = useAppStore((s) => s.activeFolderId);
+  const resolveFolderTitle = useAppStore((s) => s.resolveFolderTitle);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragNodeId = useRef<string | null>(null);
 
@@ -65,6 +70,9 @@ export function Outliner() {
           className={`group flex items-start gap-1.5 rounded-lg border border-transparent px-1.5 py-1 transition ${isSelected ? 'border-[var(--accent)]/30 bg-[var(--accent-soft)]' : 'hover:border-[var(--border)] hover:bg-[var(--surface-2)]'} ${dragOverId === node.id ? 'ring-1 ring-[var(--accent)]' : ''} ${isDone ? 'opacity-60' : ''}`}
           style={{ marginLeft: `${depth * 12}px` }}
           onClick={() => selectNode(node.id)}
+          onDoubleClick={() => {
+            if (isFolderNode(node)) openFolder(node.id);
+          }}
         >
           {isTask ? (
             <button
@@ -97,6 +105,9 @@ export function Outliner() {
                 if (tag) void attachTag(node.id, tag.id);
               }}
             />
+            {(node.embeds?.length ?? 0) > 0 && (
+              <NodeEmbeds node={node} compact />
+            )}
           </div>
           {isSelected && (
             <div className="flex shrink-0 gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
@@ -130,8 +141,13 @@ export function Outliner() {
 
   if (activeView === 'query') return <QueryResults />;
 
+  const folderTitle = activeView === 'folder' && activeFolderId ? resolveFolderTitle(activeFolderId) : null;
+
   return (
     <div className="space-y-0.5 p-2.5">
+      {activeView === 'folder' && folderTitle && (
+        <p className="mb-2 text-[11px] text-[var(--muted)]">{t('folders.viewing', { name: folderTitle })}</p>
+      )}
       {activeView === 'search' && searchQuery && (
         <p className="mb-2 text-[11px] text-[var(--muted)]">
           {t('search.results', { count: nodes.length, query: searchQuery })}
@@ -290,6 +306,8 @@ export function FieldPanel() {
           );
         })}
       </div>
+
+      <NodeEmbeds node={node} />
 
       {backlinks.length > 0 && (
         <div className="mt-4 border-t border-[var(--border)] pt-3">

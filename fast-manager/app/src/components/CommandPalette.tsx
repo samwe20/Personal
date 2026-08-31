@@ -30,7 +30,8 @@ export function CommandPalette() {
     () => [
       { id: 'capture', label: t('commands.capture'), shortcut: 'Ctrl+Shift+Space', action: () => { close(); openQuickCapture(); } },
       { id: 'search', label: t('commands.search'), shortcut: 'Ctrl+F', action: () => { close(); setView('search'); } },
-      { id: 'new', label: t('commands.newNode'), shortcut: 'Ctrl+N', action: () => { close(); void addRootNode(); } },
+      { id: 'newFolder', label: t('folders.newFolder'), action: () => { close(); void useAppStore.getState().addFolder(); } },
+      { id: 'newDoc', label: t('folders.newDocument'), action: () => { close(); void useAppStore.getState().addDocument(); } },
       { id: 'tasks', label: t('queries.myTasks'), action: () => { close(); setView('query', 'q-tasks'); } },
       { id: 'today', label: t('nav.today'), action: () => { close(); setView('today'); } },
       { id: 'inbox', label: t('nav.inbox'), action: () => { close(); setView('inbox'); } },

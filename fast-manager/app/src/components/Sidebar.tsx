@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { BUILTIN_SUPERTAGS, useAppStore } from '../store/appStore';
 import { getIcon } from '../utils/icons';
 import { SupertagPill } from './SupertagPill';
+import { FolderActions, FolderTree } from './FolderTree';
 
 export function Sidebar() {
   const { t } = useTranslation();
@@ -40,6 +41,14 @@ export function Sidebar() {
         <div className="space-y-0.5">
           {navItem('inbox', t('nav.inbox'), 'inbox')}
           {navItem('today', t('nav.today'), 'calendar')}
+        </div>
+
+        <div>
+          <div className="ui-section-title">{t('nav.folders')}</div>
+          <FolderTree parentId={null} />
+          <div className="mt-1.5 px-1">
+            <FolderActions />
+          </div>
         </div>
 
         <div>

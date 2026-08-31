@@ -16,18 +16,22 @@ export function TopBar() {
   const canRedoAction = useAppStore((s) => s.canRedoAction);
   const toggleMobilePanel = useAppStore((s) => s.toggleMobilePanel);
   const selectedNodeId = useAppStore((s) => s.selectedNodeId);
+  const activeFolderId = useAppStore((s) => s.activeFolderId);
+  const resolveFolderTitle = useAppStore((s) => s.resolveFolderTitle);
   const historyTick = useAppStore((s) => s.historyTick);
 
   const viewTitle =
-    activeView === 'today'
-      ? t('nav.today')
-      : activeView === 'search'
-        ? t('search.title')
-        : activeView === 'query'
-          ? t('nav.queries')
-          : activeView === 'settings'
-            ? t('nav.settings')
-            : t('nav.inbox');
+    activeView === 'folder' && activeFolderId
+      ? resolveFolderTitle(activeFolderId)
+      : activeView === 'today'
+        ? t('nav.today')
+        : activeView === 'search'
+          ? t('search.title')
+          : activeView === 'query'
+            ? t('nav.queries')
+            : activeView === 'settings'
+              ? t('nav.settings')
+              : t('nav.inbox');
 
   void historyTick;
 

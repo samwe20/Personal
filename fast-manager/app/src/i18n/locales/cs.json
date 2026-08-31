@@ -7,6 +7,7 @@
   "nav": {
     "today": "Dnes",
     "inbox": "Inbox",
+    "folders": "Složky",
     "queries": "Dotazy",
     "supertags": "Supertagy",
     "settings": "Nastavení"
@@ -45,7 +46,8 @@
     "decidedAt": "Rozhodnuto",
     "outcome": "Výsledek",
     "rationale": "Zdůvodnění",
-    "potential": "Potenciál"
+    "potential": "Potenciál",
+    "description": "Popis"
   },
   "status": {
     "new": "Nový",
@@ -88,7 +90,24 @@
     "meeting": "Schůzka",
     "decision": "Rozhodnutí",
     "idea": "Nápad",
-    "note": "Poznámka"
+    "note": "Poznámka",
+    "folder": "Složka"
+  },
+  "folders": {
+    "newFolder": "Složka",
+    "newDocument": "Dokument",
+    "empty": "Zatím žádné složky",
+    "unnamed": "Bez názvu",
+    "viewing": "Složka: {{name}}"
+  },
+  "embeds": {
+    "title": "Vložené výpisy",
+    "add": "Přidat výpis",
+    "filterByTag": "Filtrovat podle tagu",
+    "anyStatus": "Libovolný stav",
+    "insert": "Vložit",
+    "empty": "Přidejte výpis uzlů filtrovaný podle supertagu.",
+    "untitled": "Výpis"
   },
   "queries": {
     "myTasks": "Moje úkoly",

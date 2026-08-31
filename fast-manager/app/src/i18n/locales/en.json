@@ -7,6 +7,7 @@
   "nav": {
     "today": "Today",
     "inbox": "Inbox",
+    "folders": "Folders",
     "queries": "Queries",
     "supertags": "Supertags",
     "settings": "Settings"
@@ -45,7 +46,8 @@
     "decidedAt": "Decided at",
     "outcome": "Outcome",
     "rationale": "Rationale",
-    "potential": "Potential"
+    "potential": "Potential",
+    "description": "Description"
   },
   "status": {
     "new": "New",
@@ -88,7 +90,24 @@
     "meeting": "Meeting",
     "decision": "Decision",
     "idea": "Idea",
-    "note": "Note"
+    "note": "Note",
+    "folder": "Folder"
+  },
+  "folders": {
+    "newFolder": "Folder",
+    "newDocument": "Document",
+    "empty": "No folders yet",
+    "unnamed": "Untitled",
+    "viewing": "Folder: {{name}}"
+  },
+  "embeds": {
+    "title": "Embedded lists",
+    "add": "Add list",
+    "filterByTag": "Filter by tag",
+    "anyStatus": "Any status",
+    "insert": "Insert",
+    "empty": "Add a live list of nodes filtered by supertag.",
+    "untitled": "List"
   },
   "queries": {
     "myTasks": "My tasks",

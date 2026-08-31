@@ -18,6 +18,12 @@ export interface SupertagDef {
   description?: string;
 }
 
+export interface NodeEmbed {
+  id: string;
+  title?: string;
+  expression: QueryExpression;
+}
+
 export interface NodeRecord {
   id: string;
   workspaceId: string;
@@ -26,6 +32,7 @@ export interface NodeRecord {
   order: number;
   supertagIds: string[];
   fieldValues: Record<string, Record<string, string | number | boolean>>;
+  embeds?: NodeEmbed[];
   createdAt: string;
   updatedAt: string;
   deleted: boolean;
