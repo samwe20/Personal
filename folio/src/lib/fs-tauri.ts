@@ -1,3 +1,4 @@
+import { safeNoteTitle } from "./names";
 import {
   exists,
   mkdir,
@@ -75,7 +76,13 @@ export async function readNote(path: string): Promise<string> {
 export async function writeNote(path: string, content: string): Promise<void> {
   const parent = await dirname(path);
   await ensureDir(parent);
-  await writeTextFile(path, content);
+  const temporary = await join(parent, ".folio-" + crypto.randomUUID() + ".tmp");
+  try {
+    await writeTextFile(temporary, content);
+    await rename(temporary, path);
+  } finally {
+    if (await exists(temporary)) await remove(temporary);
+  }
 }
 
 export async function createNote(
@@ -83,12 +90,7 @@ export async function createNote(
   title: string,
   content = "",
 ): Promise<string> {
-  const safe =
-    title
-      .trim()
-      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
-      .replace(/\s+/g, " ")
-      .slice(0, 120) || "Bez názvu";
+  const safe = safeNoteTitle(title);
 
   let fileName = `${safe}.md`;
   let path = await join(libraryPath, fileName);
@@ -104,12 +106,7 @@ export async function createNote(
 
 export async function renameNote(oldPath: string, newTitle: string): Promise<string> {
   const dir = await dirname(oldPath);
-  const safe =
-    newTitle
-      .trim()
-      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
-      .replace(/\s+/g, " ")
-      .slice(0, 120) || "Bez názvu";
+  const safe = safeNoteTitle(newTitle);
   let next = await join(dir, `${safe}.md`);
   if (next === oldPath) return oldPath;
 
@@ -128,6 +125,8 @@ export async function deleteNote(path: string): Promise<void> {
 
 export async function createDemoLibrary(libraryPath: string): Promise<string> {
   await ensureDir(libraryPath);
+  const existing = await listNotes(libraryPath);
+  if (existing.length) return existing[0].path;
 
   const welcome = `---
 title: Vítejte ve Folio

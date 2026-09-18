@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -12,9 +12,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="theme-color" content="#f3f4f3" />
     <title>Folio</title>
-    <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
     <link rel="stylesheet" href="/src/styles.css" />
     <script type="module" src="/src/main.ts"></script>
   </head>
@@ -112,7 +112,7 @@
           <span class="dot" aria-hidden="true"></span>
           <span id="status-chars">0 znaků</span>
           <span class="dot desktop-only" aria-hidden="true"></span>
-          <span id="status-save">Připraveno</span>
+          <span id="status-save" role="status" aria-live="polite">Připraveno</span>
           <span class="spacer"></span>
           <span id="status-hint" class="desktop-only">[[odkaz]] bez závorek · dvojklik otevře · Ctrl+N nová · Ctrl+P otevření</span>
         </footer>
@@ -123,9 +123,9 @@
         <span>Opustit Focus</span>
       </button>
 
-      <div class="command-palette hidden" id="command-palette" role="dialog" aria-modal="true">
+      <div class="command-palette hidden" id="command-palette" role="dialog" aria-modal="true" aria-label="Otevřít poznámku">
         <div class="command-card">
-          <input id="command-input" class="command-input" placeholder="Otevřít poznámku…" autocomplete="off" spellcheck="false" />
+          <input id="command-input" class="command-input" aria-label="Vyhledat poznámku" placeholder="Otevřít poznámku…" autocomplete="off" spellcheck="false" />
           <div id="command-results" class="command-results"></div>
         </div>
       </div>

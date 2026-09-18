@@ -1,6 +1,6 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { EditorState } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import {
   drawSelection,
   EditorView,
@@ -21,6 +21,7 @@ export interface EditorHooks {
 export interface FolioEditor {
   view: EditorView;
   setText: (text: string) => void;
+  setReadOnly: (enabled: boolean) => void;
   getText: () => string;
   focus: () => void;
   setTheme: (theme: "light" | "dark") => void;
@@ -56,6 +57,11 @@ export function createEditor(
   let typewriterOn = false;
   let focusOn = false;
   let centering = false;
+  let readOnly = false;
+  const themeConfig = new Compartment();
+  const wikiConfig = new Compartment();
+  const editableConfig = new Compartment();
+  const editable = () => [EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)];
 
   const buildExtensions = () => [
     history(),
@@ -64,9 +70,10 @@ export function createEditor(
     markdown({ base: markdownLanguage }),
     placeholder("Začněte psát…  [[odkaz]] propojí poznámky"),
     keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
-    createEditorTheme(currentTheme),
+    themeConfig.of(createEditorTheme(currentTheme)),
+    editableConfig.of(editable()),
     focusExtension(),
-    wikiExtension(index, hooks.onOpenWiki),
+    wikiConfig.of(wikiExtension(index, hooks.onOpenWiki)),
     EditorView.updateListener.of((update) => {
       if (update.docChanged) hooks.onChange(update.state.doc.toString());
       if (!typewriterOn || centering) return;
@@ -89,28 +96,17 @@ export function createEditor(
     }),
   });
 
-  const reconfigure = () => {
-    const doc = view.state.doc;
-    const selection = view.state.selection;
-    view.setState(
-      EditorState.create({
-        doc,
-        selection,
-        extensions: buildExtensions(),
-      }),
-    );
-    setFocusMode(view, focusOn);
-    if (typewriterOn) {
-      requestAnimationFrame(() => centerCursor(view));
-    }
-  };
-
   return {
     view,
     setText(text) {
-      view.dispatch({
-        changes: { from: 0, to: view.state.doc.length, insert: text },
-      });
+      // Loading a document must never be an undoable edit to another document.
+      view.setState(EditorState.create({ doc: text, extensions: buildExtensions() }));
+      setFocusMode(view, focusOn);
+      view.scrollDOM.scrollTop = 0;
+    },
+    setReadOnly(enabled) {
+      readOnly = enabled;
+      view.dispatch({ effects: editableConfig.reconfigure(editable()) });
     },
     getText() {
       return view.state.doc.toString();
@@ -120,7 +116,7 @@ export function createEditor(
     },
     setTheme(next) {
       currentTheme = next;
-      reconfigure();
+      view.dispatch({ effects: themeConfig.reconfigure(createEditorTheme(next)) });
     },
     setFocusMode(enabled) {
       focusOn = enabled;
@@ -134,7 +130,7 @@ export function createEditor(
       }
     },
     reconfigureWiki() {
-      reconfigure();
+      view.dispatch({ effects: wikiConfig.reconfigure(wikiExtension(index, hooks.onOpenWiki)) });
     },
     destroy() {
       view.destroy();
