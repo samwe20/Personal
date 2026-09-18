@@ -1,0 +1,66 @@
+name: Folio checks
+on:
+  push:
+    paths: ["folio/**", ".github/workflows/folio.yml"]
+  pull_request:
+    paths: ["folio/**", ".github/workflows/folio.yml"]
+permissions:
+  contents: read
+jobs:
+  windows:
+    if: github.event_name == 'pull_request' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: folio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: folio/package-lock.json
+      - run: npm ci
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: folio/src-tauri
+      - name: Build Windows application and installer
+        run: npm run desktop:build -- --bundles nsis
+      - name: Test the actual Windows application
+        run: npm run test:desktop
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: folio-windows
+          path: |
+            folio/src-tauri/target/release/folio.exe
+            folio/src-tauri/target/release/bundle/nsis/*.exe
+            folio/test-results/desktop/*.png
+            folio/test-results/desktop/*.json
+            folio/test-results/desktop/*.html
+  web:
+    if: github.event_name == 'pull_request' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: folio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: folio/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:offline
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: folio-browser-results
+          path: folio/test-results

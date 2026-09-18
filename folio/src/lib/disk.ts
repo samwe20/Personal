@@ -1,5 +1,5 @@
 import { strToU8, zipSync } from "fflate";
-import { listNotes, readNote, writeNote } from "./fs";
+import { createNote, listNotes, readNote } from "./fs";
 import { WEB_LIBRARY_PATH } from "./runtime";
 
 export async function buildLibraryZip(libraryPath: string): Promise<Blob> {
@@ -93,8 +93,7 @@ export async function importMarkdownFiles(
   for (const file of files) {
     const text = await file.text();
     const safeName = file.name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "").trim() || "import.md";
-    const path = `${libraryPath}/${safeName.endsWith(".md") ? safeName : `${safeName}.md`}`;
-    await writeNote(path, text);
+    const path = await createNote(libraryPath, safeName.replace(/\.md$/i, ""), text);
     imported.push(path);
   }
   return imported;
@@ -114,14 +113,18 @@ export async function saveLibraryToDirectory(libraryPath: string): Promise<numbe
       showDirectoryPicker: (opts?: { mode?: string }) => Promise<FileSystemDirectoryHandle>;
     }
   ).showDirectoryPicker;
-  const dir = await picker({ mode: "readwrite" });
+  const dir = await picker.call(window, { mode: "readwrite" });
 
   const notes = await listNotes(libraryPath);
   let count = 0;
   for (const note of notes) {
     const content = await readNote(note.path);
-    const name = (note.relativePath.split("/").pop() || `${note.title}.md`).replace(/[\\/]/g, "-");
-    const handle = await dir.getFileHandle(name.endsWith(".md") ? name : `${name}.md`, {
+    const segments = note.relativePath.replace(/\\/g, "/").split("/");
+    if (segments.some((s) => !s || s === "." || s === "..")) throw new Error("Neplatná cesta poznámky.");
+    const name = segments.pop()!;
+    let parent = dir;
+    for (const segment of segments) parent = await parent.getDirectoryHandle(segment, { create: true });
+    const handle = await parent.getFileHandle(/\.md$/i.test(name) ? name : `${name}.md`, {
       create: true,
     });
     const writable = await handle.createWritable();

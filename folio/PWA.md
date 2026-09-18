@@ -50,3 +50,11 @@ Na desktop Chrome/Edge je navíc **Uložit do složky** (File System Access API)
 - Není to nativní iOS appka ze App Store
 - Primární úložiště zůstává IndexedDB; disk je přes export/import
 - Na telefonu otevřeš `[[odkaz]]` **dlouhým stiskem**
+
+## Offline provoz a aktualizace
+
+Pro instalaci a offline provoz musí být web dostupný přes HTTPS (na vývojovém počítači funguje i localhost). Obyčejná HTTP adresa počítače v místní síti nestačí pro service worker na iPhonu.
+
+Použij produkční sestavení `npm run web:build`. Při první návštěvě vyčkej na dokončení instalace service workeru; ten stáhne celý aplikační balíček včetně písem. Vývojový server service worker neregistruje.
+
+Aktualizace se aktivuje po zavření všech karet/oken Folia. Data poznámek zůstávají v IndexedDB. Import stejnojmenného souboru vytvoří další poznámku s číselným suffixem a zachová původní obsah.

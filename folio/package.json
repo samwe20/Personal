@@ -4,6 +4,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "test": "node tests/regression.cjs",
+    "test:offline": "node tests/offline.cjs",
+    "test:e2e": "playwright test",
+    "test:desktop": "node tests/desktop.cjs",
+    "check": "tsc --noEmit",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview --host 0.0.0.0 --port 4173",
@@ -36,12 +41,16 @@
     "@tauri-apps/plugin-fs": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-store": "^2",
+    "dompurify": "^3.4.15",
     "fflate": "^0.8.3",
     "marked": "^15.0.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tauri-apps/cli": "^2",
     "@types/marked": "^5.0.2",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^29.1.1",
     "typescript": "~5.6.2",
     "vite": "^6.0.3"
   }
