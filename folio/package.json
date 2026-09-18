@@ -7,6 +7,7 @@
     "test": "node tests/regression.cjs",
     "test:offline": "node tests/offline.cjs",
     "test:e2e": "playwright test",
+    "test:desktop": "node tests/desktop.cjs",
     "check": "tsc --noEmit",
     "dev": "vite",
     "build": "tsc && vite build",
