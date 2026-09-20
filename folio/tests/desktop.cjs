@@ -2,7 +2,8 @@
 // WebView2 connection follows https://playwright.dev/docs/webview2.
 // Only run on an ephemeral GitHub runner; never touch a developer's real library.
 const {chromium,expect}=require('@playwright/test');
-const {spawn}=require('node:child_process');
+const {spawn,execFile}=require('node:child_process');
+const {promisify}=require('node:util');
 const fs=require('node:fs/promises');
 const path=require('node:path');
 const assert=require('node:assert/strict');
@@ -108,6 +109,7 @@ async function main() {
 }
 main().catch(async error=>{
   console.error(error);errors.push(String(error));process.exitCode=1;
+  await promisify(execFile)('powershell.exe',['-NoProfile','-File',path.join(__dirname,'desktop-diagnostics.ps1'),'-OutputDirectory',output],{windowsHide:true,timeout:15000}).catch(error=>processLog.push(String(error)));
   if(page) {
     await page.screenshot({path:path.join(output,'failure.png')}).catch(()=>{});
     await fs.writeFile(path.join(output,'failure.html'),await page.content().catch(()=>''));
