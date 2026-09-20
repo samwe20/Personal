@@ -122,6 +122,8 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-GitHub Actions runs these checks and browser scenarios for desktop and mobile Chromium. Native Windows compilation is checked separately. iOS still requires a Mac, Xcode and a physical-device check.
+GitHub Actions runs these checks and browser scenarios for desktop and mobile Chromium. The Windows job builds the release application and NSIS installer, installs it (including WebView2 when needed), and drives the installed application's real WebView2 and filesystem. Its smoke scenarios cover startup, note creation/rename/autosave, isolated Undo, theme changes, native fullscreen, wiki navigation, saving on close and reopening the saved note. The executable, installer and test diagnostics are uploaded as `folio-windows`. Desktop tests deliberately require an ephemeral Windows GitHub Actions runner so they cannot modify a developer's personal library.
+
+Folders selected with the native library picker grant access to their subfolders, and that access is persisted across restarts. iOS still requires a Mac, Xcode and a physical-device check.
 
 Browser and desktop libraries remain separate; there is no cloud synchronization. Export important notes regularly. A recovery journal is not a version history or a backup, and simultaneous editing from multiple applications should be avoided. Renaming a note does not yet rewrite references in other notes.

@@ -37,7 +37,12 @@ jobs:
           if ($installation.ExitCode -ne 0) { throw "Installer failed: $($installation.ExitCode)" }
           $executable = Join-Path $installDirectory 'folio.exe'
           if (!(Test-Path -LiteralPath $executable)) { throw 'Installed executable is missing' }
-          if ((Get-FileHash $executable).Hash -ne (Get-FileHash src-tauri/target/release/folio.exe).Hash) { throw 'Installed executable differs from the release build' }
+          # Tauri patches bundle metadata (UNK -> NSS) in the packaged executable.
+          # Compare with the actual installer payload, not the standalone binary.
+          $payloadDirectory = Join-Path $env:RUNNER_TEMP 'Folio Payload'
+          & 7z e $installer.FullName folio.exe "-o$payloadDirectory" -y
+          if ($LASTEXITCODE -ne 0) { throw 'Could not inspect installer payload' }
+          if ((Get-FileHash $executable).Hash -ne (Get-FileHash (Join-Path $payloadDirectory 'folio.exe')).Hash) { throw 'Installed executable differs from installer payload' }
           "FOLIO_DESKTOP_EXE=$executable" >> $env:GITHUB_ENV
       - name: Test the actual Windows application
         run: npm run test:desktop
