@@ -10,16 +10,23 @@ const {once}=require('node:events');
 if(process.platform!=='win32'||process.env.GITHUB_ACTIONS!=='true')throw new Error('Desktop smoke tests require an ephemeral Windows GitHub Actions runner.');
 const root=path.resolve(__dirname,'..');
 const output=path.join(root,'test-results/desktop');
-const executable=path.join(root,'src-tauri/target/release/folio.exe');
+const executable=process.env.FOLIO_DESKTOP_EXE||path.join(root,'src-tauri/target/release/folio.exe');
 let child,browser,page,library;
 const errors=[],checks=[];
+const processLog=[];
 const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const editor=()=>page.locator('.cm-content');
 async function launch() {
+  browser=null;page=null;
+  processLog.push(`Launching ${executable}`);
   child=spawn(executable,[],{windowsHide:true,env:{...process.env,WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:'--remote-debugging-port=9224',WEBVIEW2_USER_DATA_FOLDER:path.join(output,'webview-profile')}});
   child.on('error',error=>errors.push(String(error)));
+  child.stdout.on('data',data=>processLog.push(`stdout: ${data}`));
+  child.stderr.on('data',data=>processLog.push(`stderr: ${data}`));
+  child.on('exit',(code,signal)=>processLog.push(`Exit: code=${code}, signal=${signal}`));
   let lastError;
   for(let i=0;i<90;i++) {
+    if(child.exitCode!==null||child.signalCode!==null)throw new Error(`Native process exited before WebView2 connected: ${processLog.join('\n')}`);
     try{browser=await chromium.connectOverCDP('http://127.0.0.1:9224',{timeout:1000});break;}catch(error){lastError=error;await pause(500);}
   }
   if(!browser)throw lastError;
@@ -107,4 +114,5 @@ main().catch(async error=>{
 }).finally(async()=>{
   await browser?.close().catch(()=>{});
   if(child&&!child.killed)child.kill();
+  await fs.writeFile(path.join(output,'process.log'),processLog.join('\n'));
 });

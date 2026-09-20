@@ -27,6 +27,17 @@ jobs:
           workspaces: folio/src-tauri
       - name: Build Windows application and installer
         run: npm run desktop:build -- --bundles nsis
+      - name: Install Folio and its WebView2 prerequisite
+        shell: pwsh
+        run: |
+          $installer = Get-Item src-tauri/target/release/bundle/nsis/*-setup.exe
+          $installDirectory = Join-Path $env:RUNNER_TEMP 'Folio Installed'
+          $installation = Start-Process -FilePath $installer.FullName -ArgumentList "/S /D=$installDirectory" -WindowStyle Hidden -Wait -PassThru
+          if ($installation.ExitCode -ne 0) { throw "Installer failed: $($installation.ExitCode)" }
+          $executable = Join-Path $installDirectory 'folio.exe'
+          if (!(Test-Path -LiteralPath $executable)) { throw 'Installed executable is missing' }
+          if ((Get-FileHash $executable).Hash -ne (Get-FileHash src-tauri/target/release/folio.exe).Hash) { throw 'Installed executable differs from the release build' }
+          "FOLIO_DESKTOP_EXE=$executable" >> $env:GITHUB_ENV
       - name: Test the actual Windows application
         run: npm run test:desktop
       - uses: actions/upload-artifact@v4
@@ -39,6 +50,7 @@ jobs:
             folio/test-results/desktop/*.png
             folio/test-results/desktop/*.json
             folio/test-results/desktop/*.html
+            folio/test-results/desktop/*.log
   web:
     if: github.event_name == 'pull_request' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
