@@ -532,6 +532,7 @@ export class FolioApp {
     const { open } = await import("@tauri-apps/plugin-dialog");
     const selected = await open({
       directory: true,
+      recursive: true,
       multiple: false,
       title: "Vyberte složku knihovny Folio",
     });

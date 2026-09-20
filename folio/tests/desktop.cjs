@@ -82,7 +82,9 @@ async function main() {
   await editor().fill('Theme test draft');await page.locator('#btn-theme').click();
   await editor().press('Control+z');await expect(editor()).toHaveText('Original desktop A');
   await page.locator('#btn-focus').click();await expect(page.locator('#app')).toHaveClass(/immersive-focus/);
+  await expect.poll(()=>page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('plugin:window|is_fullscreen',{label:'main'}))).toBe(true);
   await page.locator('#btn-exit-focus').click();await expect(page.locator('#app')).not.toHaveClass(/immersive-focus/);
+  await expect.poll(()=>page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('plugin:window|is_fullscreen',{label:'main'}))).toBe(false);
   checks.push('Theme keeps Undo; native fullscreen Focus enters and exits');
 
   await editor().fill('[[Desktop QA B|Open B]]');await page.locator('#btn-preview').click();

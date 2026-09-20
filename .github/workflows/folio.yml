@@ -25,6 +25,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: folio/src-tauri
+          cache-on-failure: true
       - name: Build Windows application and installer
         run: npm run desktop:build -- --bundles nsis
       - name: Install Folio and its WebView2 prerequisite
@@ -51,6 +52,7 @@ jobs:
             folio/test-results/desktop/*.json
             folio/test-results/desktop/*.html
             folio/test-results/desktop/*.log
+            folio/src-tauri/Cargo.lock
   web:
     if: github.event_name == 'pull_request' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
     runs-on: ubuntu-latest
