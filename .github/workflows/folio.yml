@@ -44,8 +44,26 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Could not inspect installer payload' }
           if ((Get-FileHash $executable).Hash -ne (Get-FileHash (Join-Path $payloadDirectory 'folio.exe')).Hash) { throw 'Installed executable differs from installer payload' }
           "FOLIO_DESKTOP_EXE=$executable" >> $env:GITHUB_ENV
+      - name: Enable Folio automation on the ephemeral runner
+        shell: pwsh
+        run: |
+          # Hosted Windows runners are elevated. Recent WebView2 ignores
+          # WEBVIEW2_* environment overrides in elevated processes.
+          # https://learn.microsoft.com/microsoft-edge/webview2/concepts/security
+          $policyRoot = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2'
+          New-Item "$policyRoot\AdditionalBrowserArguments" -Force | Out-Null
+          New-ItemProperty "$policyRoot\AdditionalBrowserArguments" -Name 'folio.exe' -PropertyType String -Value '--remote-debugging-port=9224' -Force | Out-Null
+          New-Item "$policyRoot\UserDataFolder" -Force | Out-Null
+          New-ItemProperty "$policyRoot\UserDataFolder" -Name 'folio.exe' -PropertyType String -Value (Join-Path (Get-Location) 'test-results/desktop/webview-profile') -Force | Out-Null
       - name: Test the actual Windows application
         run: npm run test:desktop
+      - name: Remove Folio automation configuration
+        if: always()
+        shell: pwsh
+        run: |
+          $policyRoot = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2'
+          Remove-ItemProperty "$policyRoot\AdditionalBrowserArguments" -Name 'folio.exe' -ErrorAction SilentlyContinue
+          Remove-ItemProperty "$policyRoot\UserDataFolder" -Name 'folio.exe' -ErrorAction SilentlyContinue
       - uses: actions/upload-artifact@v4
         if: always()
         with:
