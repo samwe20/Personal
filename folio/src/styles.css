@@ -567,7 +567,8 @@ input {
 
 /* Immersive Focus — hide chrome, keep only the writing surface + exit control */
 .app.immersive-focus {
-  grid-template-columns: 0 1fr;
+  /* Hidden panels leave the grid: the workspace is the only remaining item. */
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .app.immersive-focus .sidebar,
@@ -579,7 +580,7 @@ input {
 }
 
 .app.immersive-focus .workspace {
-  grid-template-rows: 0 1fr 0;
+  grid-template-rows: minmax(0, 1fr);
 }
 
 .app.immersive-focus .stage {

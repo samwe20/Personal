@@ -1,4 +1,5 @@
 const {test,expect}=require('@playwright/test');
+const {focusLayout}=require('../focus-layout.cjs');
 const editor=page=>page.locator('.cm-content');
 async function newNote(page) {
   if((await page.locator('#app').getAttribute('class')).includes('sidebar-collapsed')) await page.locator('#btn-toggle-sidebar').click();
@@ -46,4 +47,22 @@ test('importing the same file twice retains both notes',async({page})=>{
   await expect(editor(page)).toHaveText('second copy');
   await expect(page.locator('#note-title')).toHaveValue('Imported 2');
   expect(await page.locator('.note-item-title').allTextContents()).toContain('Imported');
+});
+
+test('Focus keeps the writing surface and caret visible with Typewriter on or off',async({page})=>{
+  await newNote(page);
+  const text='# Focus regression\n\nFirst paragraph.\n\nThe active line stays visible';
+  for(const typewriter of [false,true]) {
+    if((await page.locator('#btn-typewriter').getAttribute('data-active'))!==String(typewriter))await page.locator('#btn-typewriter').click();
+    await editor(page).fill(text);await editor(page).press('Control+End');
+    await page.locator('#btn-focus').click();
+    await expect.poll(()=>focusLayout(page)).toEqual({fillsViewport:true,caretVisible:true});
+    await page.keyboard.insertText(' while typing.');
+    await expect(editor(page)).toContainText('The active line stays visible while typing.');
+    await expect.poll(()=>focusLayout(page)).toEqual({fillsViewport:true,caretVisible:true});
+    await page.locator('#btn-exit-focus').click();
+    await expect(page.locator('#app')).not.toHaveClass(/immersive-focus/);
+    await expect(page.locator('#btn-typewriter')).toHaveAttribute('data-active',String(typewriter));
+    await expect.poll(async()=>(await focusLayout(page)).caretVisible).toBe(true);
+  }
 });
