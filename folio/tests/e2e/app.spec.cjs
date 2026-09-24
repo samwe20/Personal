@@ -1,5 +1,6 @@
 const {test,expect}=require('@playwright/test');
 const {focusLayout,expectLineNavigation}=require('../focus-layout.cjs');
+const {previewDocument,expectPreviewScrolling}=require('../preview-layout.cjs');
 const editor=page=>page.locator('.cm-content');
 async function newNote(page) {
   if((await page.locator('#app').getAttribute('class')).includes('sidebar-collapsed')) await page.locator('#btn-toggle-sidebar').click();
@@ -85,4 +86,22 @@ test('Focus respects Typewriter during line navigation and after reload',async({
     await expect(page.locator('#btn-typewriter')).toHaveAttribute('data-active',String(typewriter));
     await expectLineNavigation(page,expect,typewriter);
   }
+});
+
+test('Preview renders Markdown, scrolls across the surface and resets for another note',async({page})=>{
+  await newNote(page);
+  const firstTitle=await page.locator('#note-title').inputValue();
+  const firstText=previewDocument('First preview');
+  await editor(page).fill(firstText);
+  await newNote(page);await editor(page).fill(previewDocument('Second preview'));
+  if(!(await page.locator('#app').getAttribute('class')).includes('sidebar-collapsed'))await page.locator('#btn-toggle-sidebar').click();
+  await page.locator('#btn-preview').click();
+  await expectPreviewScrolling(page,expect,'Second preview');
+  await page.locator('#btn-toggle-sidebar').click();
+  await page.locator('.note-item').filter({has:page.locator('.note-item-title',{hasText:firstTitle})}).click();
+  await expect(page.locator('#preview-root h1')).toHaveText('First preview');
+  await expect.poll(()=>page.locator('#preview-pane').evaluate(el=>el.scrollTop)).toBe(0);
+  await page.locator('#btn-preview').click();
+  await expect(editor(page)).toHaveText(firstText);
+  await expect(editor(page)).toBeFocused();
 });

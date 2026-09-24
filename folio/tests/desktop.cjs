@@ -9,6 +9,7 @@ const path=require('node:path');
 const assert=require('node:assert/strict');
 const {once}=require('node:events');
 const {focusLayout,expectLineNavigation}=require('./focus-layout.cjs');
+const {previewDocument,expectPreviewScrolling}=require('./preview-layout.cjs');
 if(process.platform!=='win32'||process.env.GITHUB_ACTIONS!=='true')throw new Error('Desktop smoke tests require an ephemeral Windows GitHub Actions runner.');
 const root=path.resolve(__dirname,'..');
 const output=path.join(root,'test-results/desktop');
@@ -114,6 +115,22 @@ async function main() {
     await expectLineNavigation(page,expect,typewriter);
   }
   checks.push('Typewriter alone controls line centering, inside and outside native fullscreen Focus');
+
+  await create('Desktop Preview Source',previewDocument('First preview'));
+  await create('Desktop Preview Target',previewDocument('Second preview'));
+  await page.locator('#btn-toggle-sidebar').click();
+  await page.locator('#btn-preview').click();
+  await expectPreviewScrolling(page,expect,'Second preview');
+  await page.locator('#btn-toggle-sidebar').click();
+  await page.locator('.note-item').filter({has:page.locator('.note-item-title',{hasText:/^Desktop Preview Source$/})}).click();
+  await expect(page.locator('#preview-root h1')).toHaveText('First preview');
+  await expect.poll(()=>page.locator('#preview-pane').evaluate(el=>el.scrollTop)).toBe(0);
+  await page.locator('#btn-toggle-sidebar').click();
+  await page.screenshot({path:path.join(output,'folio-preview.png')});
+  await page.locator('#btn-preview').click();
+  await expect(editor()).toHaveText(previewDocument('First preview'));
+  await expect(editor()).toBeFocused();
+  checks.push('Preview renders Markdown, supports wheel in margins and PageDown, resets scroll for another note, returns to editing');
 
   await editor().fill('[[Desktop QA B|Open B]]');await page.locator('#btn-preview').click();
   await page.locator('#preview-root [data-wiki-title]').click();

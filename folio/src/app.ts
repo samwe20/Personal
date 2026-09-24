@@ -63,6 +63,7 @@ export class FolioApp {
     titleInput: document.getElementById("note-title") as HTMLInputElement,
     editorRoot: document.getElementById("editor-root")!,
     previewRoot: document.getElementById("preview-root")!,
+    previewPane: document.getElementById("preview-pane")!,
     backlinksPane: document.getElementById("backlinks-pane")!,
     backlinksList: document.getElementById("backlinks-list")!,
     outgoingList: document.getElementById("outgoing-list")!,
@@ -705,7 +706,10 @@ export class FolioApp {
 
     this.els.titleInput.value = note.title;
     this.suppressChange = true;
-    if (!sameDocument) this.editor.setText(text);
+    if (!sameDocument) {
+      this.editor.setText(text);
+      this.els.previewPane.scrollTop = 0;
+    }
     this.suppressChange = false;
     this.index.setContent(note.path, text);
     this.dirty = text !== stored;
@@ -719,7 +723,8 @@ export class FolioApp {
     if (this.previewOn) this.renderPreview(text);
     this.closeMobileOverlays();
     if (!this.busy) this.editor.setReadOnly(false);
-    this.editor.focus();
+    if (this.previewOn) this.els.previewPane.focus({ preventScroll: true });
+    else this.editor.focus();
   }
 
   private async openWiki(title: string, createIfMissing: boolean) {
@@ -919,8 +924,11 @@ export class FolioApp {
     this.previewOn = !this.previewOn;
     this.syncChip(this.els.btnPreview, this.previewOn);
     this.els.editorRoot.classList.toggle("hidden", this.previewOn);
-    this.els.previewRoot.classList.toggle("hidden", !this.previewOn);
-    if (this.previewOn) this.renderPreview(this.editor.getText());
+    this.els.previewPane.classList.toggle("hidden", !this.previewOn);
+    if (this.previewOn) {
+      this.renderPreview(this.editor.getText());
+      this.els.previewPane.focus({ preventScroll: true });
+    }
     else this.editor.focus();
   }
 

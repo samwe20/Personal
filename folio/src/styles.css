@@ -308,12 +308,14 @@ input {
 
 .note-list::-webkit-scrollbar,
 .backlinks-pane::-webkit-scrollbar,
+.preview-pane::-webkit-scrollbar,
 .cm-scroller::-webkit-scrollbar {
   width: 10px;
 }
 
 .note-list::-webkit-scrollbar-thumb,
 .backlinks-pane::-webkit-scrollbar-thumb,
+.preview-pane::-webkit-scrollbar-thumb,
 .cm-scroller::-webkit-scrollbar-thumb {
   background: rgba(127, 127, 127, 0.28);
   border-radius: 999px;
@@ -549,10 +551,15 @@ input {
 }
 
 .editor-root,
-.preview-root {
+.preview-pane {
   position: absolute;
   inset: 0;
   overflow: auto;
+}
+
+.preview-pane:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .editor-root .cm-editor {
@@ -631,6 +638,12 @@ input {
   font-family: var(--font-body);
   font-size: 19px;
   line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.preview-root img {
+  max-width: 100%;
+  height: auto;
 }
 
 .preview-root h1,
