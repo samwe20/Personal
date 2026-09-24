@@ -24,13 +24,11 @@ export function createEditorTheme(theme: "light" | "dark") {
         lineHeight: "1.75",
         fontWeight: "400",
         letterSpacing: "0.005em",
-        padding: "2.5rem 0 8rem",
-        transition: "padding 180ms ease",
       },
       ".cm-content": {
         maxWidth: "42rem",
         margin: "0 auto",
-        padding: "0 1.5rem",
+        padding: "2.5rem 1.5rem 8rem",
         caretColor: accent,
       },
       ".cm-line": {

@@ -1,0 +1,103 @@
+name: Folio checks
+on:
+  push:
+    paths: ["folio/**", ".github/workflows/folio.yml"]
+  pull_request:
+    paths: ["folio/**", ".github/workflows/folio.yml"]
+permissions:
+  contents: read
+jobs:
+  windows:
+    if: github.event_name == 'pull_request' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: folio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: folio/package-lock.json
+      - run: npm ci
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: folio/src-tauri
+          cache-on-failure: true
+      - name: Build Windows application and installer
+        run: npm run desktop:build -- --bundles nsis
+      - name: Install Folio and its WebView2 prerequisite
+        shell: pwsh
+        run: |
+          $installer = Get-Item src-tauri/target/release/bundle/nsis/*-setup.exe
+          $installDirectory = Join-Path $env:RUNNER_TEMP 'Folio Installed'
+          $installation = Start-Process -FilePath $installer.FullName -ArgumentList "/S /D=$installDirectory" -WindowStyle Hidden -Wait -PassThru
+          if ($installation.ExitCode -ne 0) { throw "Installer failed: $($installation.ExitCode)" }
+          $executable = Join-Path $installDirectory 'folio.exe'
+          if (!(Test-Path -LiteralPath $executable)) { throw 'Installed executable is missing' }
+          # Tauri patches bundle metadata (UNK -> NSS) in the packaged executable.
+          # Compare with the actual installer payload, not the standalone binary.
+          $payloadDirectory = Join-Path $env:RUNNER_TEMP 'Folio Payload'
+          & 7z e $installer.FullName folio.exe "-o$payloadDirectory" -y
+          if ($LASTEXITCODE -ne 0) { throw 'Could not inspect installer payload' }
+          if ((Get-FileHash $executable).Hash -ne (Get-FileHash (Join-Path $payloadDirectory 'folio.exe')).Hash) { throw 'Installed executable differs from installer payload' }
+          "FOLIO_DESKTOP_EXE=$executable" >> $env:GITHUB_ENV
+      - name: Enable Folio automation on the ephemeral runner
+        shell: pwsh
+        run: |
+          # Hosted Windows runners are elevated. Recent WebView2 ignores
+          # WEBVIEW2_* environment overrides in elevated processes.
+          # https://learn.microsoft.com/microsoft-edge/webview2/concepts/security
+          $policyRoot = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2'
+          New-Item "$policyRoot\AdditionalBrowserArguments" -Force | Out-Null
+          New-ItemProperty "$policyRoot\AdditionalBrowserArguments" -Name 'folio.exe' -PropertyType String -Value '--remote-debugging-port=9224' -Force | Out-Null
+          New-Item "$policyRoot\UserDataFolder" -Force | Out-Null
+          New-ItemProperty "$policyRoot\UserDataFolder" -Name 'folio.exe' -PropertyType String -Value (Join-Path (Get-Location) 'test-results/desktop/webview-profile') -Force | Out-Null
+      - name: Test the actual Windows application
+        run: npm run test:desktop
+      - name: Remove Folio automation configuration
+        if: always()
+        shell: pwsh
+        run: |
+          $policyRoot = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge\WebView2'
+          Remove-ItemProperty "$policyRoot\AdditionalBrowserArguments" -Name 'folio.exe' -ErrorAction SilentlyContinue
+          Remove-ItemProperty "$policyRoot\UserDataFolder" -Name 'folio.exe' -ErrorAction SilentlyContinue
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: folio-windows
+          path: |
+            folio/src-tauri/target/release/folio.exe
+            folio/src-tauri/target/release/bundle/nsis/*.exe
+            folio/test-results/desktop/*.png
+            folio/test-results/desktop/*.json
+            folio/test-results/desktop/*.html
+            folio/test-results/desktop/*.log
+            folio/src-tauri/Cargo.lock
+  web:
+    if: github.event_name == 'pull_request' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: folio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: folio/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: npm run test:offline
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: folio-browser-results
+          path: folio/test-results

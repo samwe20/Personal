@@ -53,10 +53,10 @@ function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet
   const builder = new RangeSetBuilder<Decoration>();
   const sel = view.state.selection.main;
   const action = touch ? "Dlouhý stisk" : "Dvojklik";
+  const scan = stripCodeForLinks(view.state.doc.toString());
 
   for (const { from, to } of view.visibleRanges) {
-    const raw = view.state.doc.sliceString(from, to);
-    const text = stripCodeForLinks(raw);
+    const text = scan.slice(from, to);
     WIKI_RE.lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = WIKI_RE.exec(text))) {
@@ -118,7 +118,7 @@ function buildWikiDecorations(view: EditorView, index: NoteIndex): DecorationSet
 
 function linkAt(view: EditorView, pos: number): { title: string; from: number; to: number } | null {
   const line = view.state.doc.lineAt(pos);
-  const text = stripCodeForLinks(line.text);
+  const text = stripCodeForLinks(view.state.doc.toString()).slice(line.from, line.to);
   WIKI_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = WIKI_RE.exec(text))) {
@@ -149,6 +149,7 @@ export function wikiExtension(index: NoteIndex, onOpen: WikiOpenHandler): Extens
       constructor(view: EditorView) {
         this.decorations = buildWikiDecorations(view, index);
       }
+      destroy() { clearPress(); }
       update(update: ViewUpdate) {
         if (
           update.docChanged ||

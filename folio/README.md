@@ -10,7 +10,7 @@ Built with [Tauri 2](https://tauri.app/) as a **native Windows** app, plus:
 ## Features
 
 - Clean, typography-first writing surface
-- Focus Mode (fullscreen + typewriter + skryté UI) + samostatný Typewriter
+- Focus Mode (celá obrazovka + skryté UI) a nezávislý Typewriter; Focus respektuje jeho zapnutí i vypnutí.
 - Markdown syntax highlighting + Preview
 - Local library of `.md` files
 - `[[Wiki links]]` with autocomplete
@@ -25,7 +25,7 @@ Built with [Tauri 2](https://tauri.app/) as a **native Windows** app, plus:
 ### Requirements
 
 - Windows 10/11
-- Node.js 20+
+- Node.js 22.13+ (22 LTS recommended; the test runner uses modern jsdom)
 - Rust
 - WebView2
 - Visual Studio Build Tools with C++ (`link.exe`)
@@ -101,3 +101,29 @@ folio/
   src-tauri/           # Native shell (Tauri / Rust)
   IOS.md               # iOS build instructions
 ```
+
+## Reliability and verification
+
+- Undo history is isolated per loaded note. Theme changes and index refreshes preserve the active history.
+- Saves are serialized and only mark the exact saved revision as clean. Navigation waits for edits to commit.
+- A local recovery journal restores edits interrupted before autosave. If localStorage is unavailable or full, the editor reports that recovery is unavailable; normal saves still work.
+- Browser writes and renames wait for the IndexedDB transaction to commit. Native writes replace the file through a temporary file in the same directory.
+- Import creates a numbered copy when a filename already exists. Folder exports preserve subfolders.
+- Markdown preview is sanitized, and wiki examples in code remain literal.
+- Production builds precache all scripts, styles and fonts, including when hosted below a subpath. Close all Folio tabs to activate an available new version.
+
+```bash
+npm ci
+npm run check
+npm test
+npm run build
+npm run test:offline
+npx playwright install chromium
+npm run test:e2e
+```
+
+GitHub Actions runs these checks and browser scenarios for desktop and mobile Chromium. The Windows job builds the release application and NSIS installer, installs it (including WebView2 when needed), and drives the installed application's real WebView2 and filesystem. Its smoke scenarios cover startup, note creation/rename/autosave, isolated Undo, theme changes, native fullscreen, wiki navigation, saving on close and reopening the saved note. The executable, installer and test diagnostics are uploaded as `folio-windows`. Desktop tests deliberately require an ephemeral Windows GitHub Actions runner so they cannot modify a developer's personal library.
+
+Folders selected with the native library picker grant access to their subfolders, and that access is persisted across restarts. iOS still requires a Mac, Xcode and a physical-device check.
+
+Browser and desktop libraries remain separate; there is no cloud synchronization. Export important notes regularly. A recovery journal is not a version history or a backup, and simultaneous editing from multiple applications should be avoided. Renaming a note does not yet rewrite references in other notes.
