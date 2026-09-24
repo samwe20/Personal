@@ -7,10 +7,14 @@ async function expectPreviewScrolling(page,expect,title) {
   await expect(page.locator('#preview-root h1')).toHaveText(title);
   await expect(page.locator('#preview-root strong')).toHaveText('Bold text');
   await expect(page.locator('#preview-root em')).toHaveText('emphasis');
+  await expect(page.locator('#preview-root p')).toHaveCount(41);
+  await page.evaluate(()=>Promise.all(document.getAnimations().filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))));
+  await expect.poll(()=>page.evaluate(()=>{
+    const surface=document.querySelector('.editor-pane').getBoundingClientRect();
+    const pane=document.querySelector('#preview-pane').getBoundingClientRect();
+    return Math.max(Math.abs(pane.width-surface.width),Math.abs(pane.height-surface.height),surface.right-innerWidth);
+  })).toBeLessThan(2);
   const surface=await page.locator('.editor-pane').boundingBox();
-  const scrollArea=await pane.boundingBox();
-  expect(Math.abs(scrollArea.width-surface.width)).toBeLessThan(2);
-  expect(Math.abs(scrollArea.height-surface.height)).toBeLessThan(2);
   // The wheel must work in the empty margin too, not only over the text column.
   await page.mouse.move(surface.x+surface.width-24,surface.y+surface.height/2);
   await page.mouse.wheel(0,450);
@@ -19,4 +23,14 @@ async function expectPreviewScrolling(page,expect,title) {
   await pane.press('PageDown');
   await expect.poll(()=>pane.evaluate(el=>el.scrollTop)).toBeGreaterThan(before+100);
 }
-module.exports={previewDocument,expectPreviewScrolling};
+async function expectEditingRestored(page,expect,title) {
+  const editor=page.locator('.cm-content');
+  await expect(editor).toBeFocused();
+  // CodeMirror only renders the visible portion of a long document.
+  await editor.press('Control+Home');
+  await expect(editor).toContainText(`# ${title}`);
+  await expect(editor).toContainText('Paragraph 1:');
+  await editor.press('Control+End');
+  await expect(editor).toContainText('Paragraph 40:');
+}
+module.exports={previewDocument,expectPreviewScrolling,expectEditingRestored};

@@ -9,7 +9,7 @@ const path=require('node:path');
 const assert=require('node:assert/strict');
 const {once}=require('node:events');
 const {focusLayout,expectLineNavigation}=require('./focus-layout.cjs');
-const {previewDocument,expectPreviewScrolling}=require('./preview-layout.cjs');
+const {previewDocument,expectPreviewScrolling,expectEditingRestored}=require('./preview-layout.cjs');
 if(process.platform!=='win32'||process.env.GITHUB_ACTIONS!=='true')throw new Error('Desktop smoke tests require an ephemeral Windows GitHub Actions runner.');
 const root=path.resolve(__dirname,'..');
 const output=path.join(root,'test-results/desktop');
@@ -126,10 +126,11 @@ async function main() {
   await expect(page.locator('#preview-root h1')).toHaveText('First preview');
   await expect.poll(()=>page.locator('#preview-pane').evaluate(el=>el.scrollTop)).toBe(0);
   await page.locator('#btn-toggle-sidebar').click();
+  await page.evaluate(()=>Promise.all(document.getAnimations().filter(a=>a.effect.getTiming().iterations!==Infinity).map(a=>a.finished.catch(()=>{}))));
   await page.screenshot({path:path.join(output,'folio-preview.png')});
   await page.locator('#btn-preview').click();
-  await expect(editor()).toHaveText(previewDocument('First preview'));
-  await expect(editor()).toBeFocused();
+  await expectEditingRestored(page,expect,'First preview');
+  assert.equal(await fs.readFile(path.join(library,'Desktop Preview Source.md'),'utf8'),previewDocument('First preview'));
   checks.push('Preview renders Markdown, supports wheel in margins and PageDown, resets scroll for another note, returns to editing');
 
   await editor().fill('[[Desktop QA B|Open B]]');await page.locator('#btn-preview').click();

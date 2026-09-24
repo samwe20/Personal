@@ -1,6 +1,6 @@
 const {test,expect}=require('@playwright/test');
 const {focusLayout,expectLineNavigation}=require('../focus-layout.cjs');
-const {previewDocument,expectPreviewScrolling}=require('../preview-layout.cjs');
+const {previewDocument,expectPreviewScrolling,expectEditingRestored}=require('../preview-layout.cjs');
 const editor=page=>page.locator('.cm-content');
 async function newNote(page) {
   if((await page.locator('#app').getAttribute('class')).includes('sidebar-collapsed')) await page.locator('#btn-toggle-sidebar').click();
@@ -98,10 +98,9 @@ test('Preview renders Markdown, scrolls across the surface and resets for anothe
   await page.locator('#btn-preview').click();
   await expectPreviewScrolling(page,expect,'Second preview');
   await page.locator('#btn-toggle-sidebar').click();
-  await page.locator('.note-item').filter({has:page.locator('.note-item-title',{hasText:firstTitle})}).click();
+  await page.locator('.note-item').filter({has:page.getByText(firstTitle,{exact:true})}).click();
   await expect(page.locator('#preview-root h1')).toHaveText('First preview');
   await expect.poll(()=>page.locator('#preview-pane').evaluate(el=>el.scrollTop)).toBe(0);
   await page.locator('#btn-preview').click();
-  await expect(editor(page)).toHaveText(firstText);
-  await expect(editor(page)).toBeFocused();
+  await expectEditingRestored(page,expect,'First preview');
 });
