@@ -23,4 +23,32 @@ async function focusLayout(page) {
     };
   });
 }
-module.exports={focusLayout};
+// Check behavior, not just the button state: with Typewriter off, visible-line
+// navigation moves the caret down the page without scrolling the document.
+async function expectLineNavigation(page,expect,typewriter) {
+  const settle=()=>page.evaluate(async()=>{
+    for(let i=0;i<10;i++)await new Promise(requestAnimationFrame);
+  });
+  const position=()=>page.evaluate(()=>{
+    const selection=window.getSelection();
+    const range=document.createRange();
+    range.setStart(selection.focusNode,selection.focusOffset);range.collapse(true);
+    return {scroll:document.querySelector('.cm-scroller').scrollTop,y:range.getBoundingClientRect().top};
+  });
+  await page.locator('.cm-content').press('Control+Home');
+  for(let i=0;i<6;i++)await page.keyboard.press('ArrowDown');
+  await settle();
+  const before=await position();
+  for(let i=0;i<2;i++)await page.keyboard.press('ArrowDown');
+  await settle();
+  const after=await position();
+  if(typewriter) {
+    expect(after.scroll-before.scroll).toBeGreaterThan(20);
+    expect(Math.abs(after.y-before.y)).toBeLessThan(3);
+  } else {
+    expect(Math.abs(after.scroll-before.scroll)).toBeLessThan(3);
+    expect(after.y-before.y).toBeGreaterThan(20);
+  }
+  await expect.poll(async()=>(await focusLayout(page)).caretVisible).toBe(true);
+}
+module.exports={focusLayout,expectLineNavigation};

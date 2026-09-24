@@ -1,5 +1,5 @@
 const {test,expect}=require('@playwright/test');
-const {focusLayout}=require('../focus-layout.cjs');
+const {focusLayout,expectLineNavigation}=require('../focus-layout.cjs');
 const editor=page=>page.locator('.cm-content');
 async function newNote(page) {
   if((await page.locator('#app').getAttribute('class')).includes('sidebar-collapsed')) await page.locator('#btn-toggle-sidebar').click();
@@ -65,5 +65,24 @@ test('Focus keeps the writing surface and caret visible with Typewriter on or of
     await expect(page.locator('#app')).not.toHaveClass(/immersive-focus/);
     await expect(page.locator('#btn-typewriter')).toHaveAttribute('data-active',String(typewriter));
     await expect.poll(async()=>(await focusLayout(page)).caretVisible).toBe(true);
+  }
+});
+
+test('Focus respects Typewriter during line navigation and after reload',async({page,isMobile})=>{
+  test.skip(isMobile,'Focus and Typewriter controls are desktop-only.');
+  await newNote(page);
+  await editor(page).fill(Array.from({length:40},(_,i)=>`Line ${i+1}: writing without distractions.`).join('\n'));
+  await expect(page.locator('#status-save')).toHaveText('Automaticky uloženo');
+  for(const typewriter of [false,true,false]) {
+    if((await page.locator('#btn-typewriter').getAttribute('data-active'))!==String(typewriter))await page.locator('#btn-typewriter').click();
+    await expectLineNavigation(page,expect,typewriter);
+    await page.locator('#btn-focus').click();
+    await expectLineNavigation(page,expect,typewriter);
+    await page.reload();
+    await expect(page.locator('#app')).toHaveClass(/immersive-focus/);
+    await expectLineNavigation(page,expect,typewriter);
+    await page.locator('#btn-exit-focus').click();
+    await expect(page.locator('#btn-typewriter')).toHaveAttribute('data-active',String(typewriter));
+    await expectLineNavigation(page,expect,typewriter);
   }
 });

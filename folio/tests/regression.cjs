@@ -37,6 +37,24 @@ async function pair() {
   const b = await web.createNote('', 'B', 'original B');
   await app.refreshLibrary(a); return {a,b};
 }
+
+test('Focus preserves the independent Typewriter preference on entry, reload and exit', async () => {
+  for(const typewriter of [false,true,false]) {
+    app.settings.typewriter=typewriter;
+    app.applyChrome();
+    await app.setImmersiveFocus(true);
+    const verify=()=>{
+      assert.equal(app.settings.typewriter,typewriter);
+      assert.equal(document.getElementById('app').classList.contains('typewriter-on'),typewriter);
+      assert.equal(document.getElementById('btn-typewriter').dataset.active,String(typewriter));
+    };
+    verify();
+    app.clearSaveTimer();app.editor.destroy();
+    app=new FolioApp();await app.init();
+    assert.equal(app.settings.focusMode,true);verify();
+    await app.setImmersiveFocus(false);verify();
+  }
+});
 test('undo never replaces a note with another note', async () => {
   const {a,b}=await pair(); edit('edited A'); await app.openNote(note(b));
   const {undo}=require('@codemirror/commands');

@@ -10,7 +10,7 @@ Built with [Tauri 2](https://tauri.app/) as a **native Windows** app, plus:
 ## Features
 
 - Clean, typography-first writing surface
-- Focus Mode (fullscreen + typewriter + skryté UI) + samostatný Typewriter
+- Focus Mode (celá obrazovka + skryté UI) a nezávislý Typewriter; Focus respektuje jeho zapnutí i vypnutí.
 - Markdown syntax highlighting + Preview
 - Local library of `.md` files
 - `[[Wiki links]]` with autocomplete

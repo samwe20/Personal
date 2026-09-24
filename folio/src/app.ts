@@ -49,7 +49,6 @@ export class FolioApp {
   private webOnly = !isTauri();
   /** Snapshot restored when leaving immersive Focus. */
   private focusSnapshot: {
-    typewriter: boolean;
     showBacklinks: boolean;
     sidebarCollapsed: boolean;
     previewOn: boolean;
@@ -388,7 +387,7 @@ export class FolioApp {
     });
   }
 
-  /** Immersive Focus: typewriter + fullscreen + hide chrome + exit control. */
+  /** Immersive Focus hides chrome; Typewriter remains an independent preference. */
   private async setImmersiveFocus(enabled: boolean) {
     if (enabled === this.settings.focusMode && this.els.app.classList.contains("immersive-focus") === enabled) {
       return;
@@ -396,7 +395,6 @@ export class FolioApp {
 
     if (enabled) {
       this.focusSnapshot = {
-        typewriter: this.settings.typewriter,
         showBacklinks: this.settings.showBacklinks,
         sidebarCollapsed: this.els.app.classList.contains("sidebar-collapsed"),
         previewOn: this.previewOn,
@@ -413,9 +411,9 @@ export class FolioApp {
       this.els.btnExitFocus.classList.remove("hidden");
 
       this.editor.setFocusMode(true);
-      this.editor.setTypewriter(true);
+      this.editor.setTypewriter(this.settings.typewriter);
       this.syncChip(this.els.btnFocus, true);
-      this.syncChip(this.els.btnTypewriter, true);
+      this.syncChip(this.els.btnTypewriter, this.settings.typewriter);
       this.syncChip(this.els.btnBacklinks, false);
 
       await enterFullscreen();
@@ -425,9 +423,7 @@ export class FolioApp {
       this.focusSnapshot = null;
       this.settings.focusMode = false;
 
-      const typewriter = snap?.typewriter ?? this.settings.typewriter;
       const showBacklinks = snap?.showBacklinks ?? this.settings.showBacklinks;
-      this.settings.typewriter = typewriter;
       this.settings.showBacklinks = showBacklinks;
 
       this.els.app.classList.remove("immersive-focus");
@@ -438,9 +434,9 @@ export class FolioApp {
       this.els.app.classList.toggle("backlinks-hidden", !showBacklinks);
 
       this.editor.setFocusMode(false);
-      this.editor.setTypewriter(typewriter);
+      this.editor.setTypewriter(this.settings.typewriter);
       this.syncChip(this.els.btnFocus, false);
-      this.syncChip(this.els.btnTypewriter, typewriter);
+      this.syncChip(this.els.btnTypewriter, this.settings.typewriter);
       this.syncChip(this.els.btnBacklinks, showBacklinks);
 
       await exitFullscreen();
@@ -494,7 +490,6 @@ export class FolioApp {
     if (this.settings.focusMode) {
       // Rehydrate immersive chrome after reload (fullscreen needs a fresh user gesture).
       this.focusSnapshot = this.focusSnapshot ?? {
-        typewriter: this.settings.typewriter,
         showBacklinks: this.settings.showBacklinks,
         sidebarCollapsed: this.els.app.classList.contains("sidebar-collapsed"),
         previewOn: this.previewOn,
@@ -502,8 +497,7 @@ export class FolioApp {
       this.els.app.classList.add("immersive-focus", "sidebar-collapsed", "backlinks-hidden");
       this.els.btnExitFocus.classList.remove("hidden");
       this.editor?.setFocusMode(true);
-      this.editor?.setTypewriter(true);
-      this.syncChip(this.els.btnTypewriter, true);
+      this.editor?.setTypewriter(this.settings.typewriter);
       this.syncChip(this.els.btnBacklinks, false);
     } else {
       this.els.app.classList.remove("immersive-focus");

@@ -46,7 +46,25 @@ export function createEditor(
   let typewriterOn = false;
   let focusOn = false;
   let centering = false;
+  let centerFrame: number | null = null;
   let readOnly = false;
+  const cancelCenter = () => {
+    if (centerFrame !== null) cancelAnimationFrame(centerFrame);
+    centerFrame = null;
+  };
+  const scheduleCenter = (view: EditorView) => {
+    if (centerFrame !== null || centering) return;
+    centerFrame = requestAnimationFrame(() => {
+      centerFrame = null;
+      if (!typewriterOn) return;
+      centering = true;
+      try {
+        centerCursor(view);
+      } finally {
+        centering = false;
+      }
+    });
+  };
   const themeConfig = new Compartment();
   const wikiConfig = new Compartment();
   const editableConfig = new Compartment();
@@ -68,11 +86,7 @@ export function createEditor(
       if (!typewriterOn || centering) return;
       if (!update.selectionSet && !update.docChanged && !update.geometryChanged) return;
 
-      centering = true;
-      requestAnimationFrame(() => {
-        centerCursor(update.view);
-        centering = false;
-      });
+      scheduleCenter(update.view);
     }),
     EditorView.lineWrapping,
   ];
@@ -115,13 +129,16 @@ export function createEditor(
       typewriterOn = enabled;
       document.getElementById("app")?.classList.toggle("typewriter-on", enabled);
       if (enabled) {
-        requestAnimationFrame(() => centerCursor(view));
+        scheduleCenter(view);
+      } else {
+        cancelCenter();
       }
     },
     reconfigureWiki() {
       view.dispatch({ effects: wikiConfig.reconfigure(wikiExtension(index, hooks.onOpenWiki)) });
     },
     destroy() {
+      cancelCenter();
       view.destroy();
     },
   };

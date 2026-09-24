@@ -140,7 +140,7 @@ Související: [[Vítejte ve Folio]], [[Backlinky]].
   const focus = `# Focus Mode
 
 Focus Mode spustí immersivní psaní:
-- zapne Typewriter
+- zachová vaše nastavení Typewriteru
 - fullscreen
 - skryje UI (zůstane **Opustit Focus**)
 

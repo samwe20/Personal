@@ -8,7 +8,7 @@ const fs=require('node:fs/promises');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const {once}=require('node:events');
-const {focusLayout}=require('./focus-layout.cjs');
+const {focusLayout,expectLineNavigation}=require('./focus-layout.cjs');
 if(process.platform!=='win32'||process.env.GITHUB_ACTIONS!=='true')throw new Error('Desktop smoke tests require an ephemeral Windows GitHub Actions runner.');
 const root=path.resolve(__dirname,'..');
 const output=path.join(root,'test-results/desktop');
@@ -102,6 +102,18 @@ async function main() {
   await expect.poll(async()=>(await focusLayout(page)).caretVisible).toBe(true);
   await page.locator('#btn-typewriter').click();
   checks.push('Theme keeps Undo; native Focus keeps text and caret visible with Typewriter on/off');
+
+  await editor().fill(Array.from({length:40},(_,i)=>`Line ${i+1}: writing without distractions.`).join('\n'));
+  for(const typewriter of [false,true,false]) {
+    if((await page.locator('#btn-typewriter').getAttribute('data-active'))!==String(typewriter))await page.locator('#btn-typewriter').click();
+    await expectLineNavigation(page,expect,typewriter);
+    await page.locator('#btn-focus').click();
+    await expectLineNavigation(page,expect,typewriter);
+    await page.locator('#btn-exit-focus').click();
+    await expect(page.locator('#btn-typewriter')).toHaveAttribute('data-active',String(typewriter));
+    await expectLineNavigation(page,expect,typewriter);
+  }
+  checks.push('Typewriter alone controls line centering, inside and outside native fullscreen Focus');
 
   await editor().fill('[[Desktop QA B|Open B]]');await page.locator('#btn-preview').click();
   await page.locator('#preview-root [data-wiki-title]').click();

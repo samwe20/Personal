@@ -169,7 +169,7 @@ Související: [[Vítejte ve Folio]], [[Backlinky]].
   const focus = `# Focus Mode
 
 Focus Mode spustí immersivní psaní:
-- zapne Typewriter (kurzor uprostřed)
+- zachová vaše nastavení Typewriteru
 - přepne okno do fullscreen
 - skryje sidebar, toolbar i status bar
 - nechá jen text a tlačítko **Opustit Focus**
