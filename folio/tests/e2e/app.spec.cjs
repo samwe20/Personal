@@ -49,7 +49,8 @@ test('importing the same file twice retains both notes',async({page})=>{
   expect(await page.locator('.note-item-title').allTextContents()).toContain('Imported');
 });
 
-test('Focus keeps the writing surface and caret visible with Typewriter on or off',async({page})=>{
+test('Focus keeps the writing surface and caret visible with Typewriter on or off',async({page,isMobile})=>{
+  test.skip(isMobile,'Focus and Typewriter controls are desktop-only.');
   await newNote(page);
   const text='# Focus regression\n\nFirst paragraph.\n\nThe active line stays visible';
   for(const typewriter of [false,true]) {
