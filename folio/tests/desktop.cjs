@@ -86,6 +86,7 @@ async function main() {
   await page.locator('#btn-focus').click();await expect(page.locator('#app')).toHaveClass(/immersive-focus/);
   await expect.poll(()=>page.evaluate(()=>window.__TAURI_INTERNALS__.invoke('plugin:window|is_fullscreen',{label:'main'}))).toBe(true);
   await expect.poll(()=>focusLayout(page)).toEqual({fillsViewport:true,caretVisible:true,cursorAligned:true});
+  await editor().press('Control+End');
   await page.keyboard.insertText(' Visible in Focus.');
   await expect(editor()).toContainText('Visible in Focus.');
   await expect.poll(()=>focusLayout(page)).toEqual({fillsViewport:true,caretVisible:true,cursorAligned:true});

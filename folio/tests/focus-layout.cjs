@@ -4,7 +4,14 @@ async function focusLayout(page) {
   return page.evaluate(()=>{
     const pane=document.querySelector('.editor-pane').getBoundingClientRect();
     const selection=window.getSelection();
-    const caret=selection?.rangeCount?selection.getRangeAt(0).getBoundingClientRect():null;
+    // A selection's bounding box starts at its left edge, while the caret is
+    // drawn at the active endpoint (also after Undo restores selected text).
+    const range=selection?.focusNode?document.createRange():null;
+    if(range) {
+      range.setStart(selection.focusNode,selection.focusOffset);
+      range.collapse(true);
+    }
+    const caret=range?.getBoundingClientRect();
     const x=caret?Math.max(caret.left,caret.right-1):0;
     const y=caret?(caret.top+caret.bottom)/2:0;
     const hit=caret&&document.elementFromPoint(x,y);
