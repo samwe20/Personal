@@ -32,19 +32,8 @@ export interface FolioEditor {
 }
 
 function centerCursor(view: EditorView) {
-  const head = view.state.selection.main.head;
-  const coords = view.coordsAtPos(head);
-  if (!coords) return;
-
-  const scroller = view.scrollDOM;
-  const scrollerRect = scroller.getBoundingClientRect();
-  if (scrollerRect.height <= 0) return;
-
-  const lineMid = (coords.top + coords.bottom) / 2;
-  const viewMid = scrollerRect.top + scrollerRect.height / 2;
-  const delta = lineMid - viewMid;
-  if (Math.abs(delta) < 1) return;
-  scroller.scrollTop += delta;
+  // CodeMirror measures and scrolls after layout, keeping its cursor layer aligned.
+  view.dispatch({ effects: EditorView.scrollIntoView(view.state.selection.main.head, { y: "center" }) });
 }
 
 export function createEditor(
@@ -77,7 +66,7 @@ export function createEditor(
     EditorView.updateListener.of((update) => {
       if (update.docChanged) hooks.onChange(update.state.doc.toString());
       if (!typewriterOn || centering) return;
-      if (!update.selectionSet && !update.docChanged) return;
+      if (!update.selectionSet && !update.docChanged && !update.geometryChanged) return;
 
       centering = true;
       requestAnimationFrame(() => {

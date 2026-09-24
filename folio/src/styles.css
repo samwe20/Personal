@@ -560,7 +560,7 @@ input {
 }
 
 /* Extra vertical room so the caret can sit in the vertical center. */
-.app.typewriter-on .cm-scroller {
+.app.typewriter-on .cm-content {
   padding-top: 42vh !important;
   padding-bottom: 42vh !important;
 }

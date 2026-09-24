@@ -8,9 +8,11 @@ async function focusLayout(page) {
     const x=caret?Math.max(caret.left,caret.right-1):0;
     const y=caret?(caret.top+caret.bottom)/2:0;
     const hit=caret&&document.elementFromPoint(x,y);
+    const drawnCursor=document.querySelector('.cm-cursor')?.getBoundingClientRect();
     return {
       fillsViewport:pane.width>=innerWidth-2&&pane.height>=innerHeight-2,
       caretVisible:Boolean(caret&&caret.height>0&&x>=0&&x<innerWidth&&y>=0&&y<innerHeight&&hit?.closest('.cm-content')),
+      cursorAligned:Boolean(caret&&drawnCursor&&Math.abs(drawnCursor.left-caret.left)<3&&Math.abs(drawnCursor.top-caret.top)<6),
     };
   });
 }

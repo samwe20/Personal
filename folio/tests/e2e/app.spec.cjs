@@ -57,10 +57,10 @@ test('Focus keeps the writing surface and caret visible with Typewriter on or of
     if((await page.locator('#btn-typewriter').getAttribute('data-active'))!==String(typewriter))await page.locator('#btn-typewriter').click();
     await editor(page).fill(text);await editor(page).press('Control+End');
     await page.locator('#btn-focus').click();
-    await expect.poll(()=>focusLayout(page)).toEqual({fillsViewport:true,caretVisible:true});
+    await expect.poll(()=>focusLayout(page)).toEqual({fillsViewport:true,caretVisible:true,cursorAligned:true});
     await page.keyboard.insertText(' while typing.');
     await expect(editor(page)).toContainText('The active line stays visible while typing.');
-    await expect.poll(()=>focusLayout(page)).toEqual({fillsViewport:true,caretVisible:true});
+    await expect.poll(()=>focusLayout(page)).toEqual({fillsViewport:true,caretVisible:true,cursorAligned:true});
     await page.locator('#btn-exit-focus').click();
     await expect(page.locator('#app')).not.toHaveClass(/immersive-focus/);
     await expect(page.locator('#btn-typewriter')).toHaveAttribute('data-active',String(typewriter));
