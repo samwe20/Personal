@@ -1,0 +1,14 @@
+{
+  "name": "Folio",
+  "install": "cd folio && npm ci",
+  "terminals": [
+    {
+      "name": "folio-web",
+      "command": "cd folio && npm run web:dev",
+      "description": "Folio markdown writing app — Vite dev server on http://localhost:1420"
+    }
+  ],
+  "ports": [
+    { "name": "folio-web", "port": 1420 }
+  ]
+}
