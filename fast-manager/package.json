@@ -1,0 +1,18 @@
+{
+  "name": "fast-manager-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "F.A.S.T Manager — Finally Awesome and Simple Task Manager",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:sync\" \"npm run dev:web\"",
+    "dev:web": "npm --prefix app run dev",
+    "dev:sync": "npm --prefix sync-server run dev",
+    "build": "npm --prefix app run build",
+    "build:windows": "npm --prefix app run tauri:build",
+    "tauri:dev": "npm --prefix app run tauri:dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

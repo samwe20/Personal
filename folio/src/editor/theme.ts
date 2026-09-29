@@ -4,12 +4,12 @@ import { tags } from "@lezer/highlight";
 
 export function createEditorTheme(theme: "light" | "dark") {
   const isDark = theme === "dark";
-  const ink = isDark ? "#EDEDEB" : "#1C1C1A";
-  const muted = isDark ? "rgba(237,237,235,0.34)" : "rgba(28,28,26,0.32)";
-  const faint = isDark ? "rgba(237,237,235,0.18)" : "rgba(28,28,26,0.16)";
-  const accent = isDark ? "#8AB4FF" : "#2F62D6";
-  const selection = isDark ? "rgba(138,180,255,0.28)" : "rgba(47,98,214,0.16)";
-  const codeBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(28,28,26,0.04)";
+  const ink = isDark ? "#E8EAED" : "#1C1D1C";
+  const muted = isDark ? "rgba(232,234,237,0.36)" : "rgba(28,29,28,0.32)";
+  const faint = isDark ? "rgba(232,234,237,0.18)" : "rgba(28,29,28,0.16)";
+  const accent = isDark ? "#7A9EAF" : "#5C636C";
+  const selection = isDark ? "rgba(122,158,175,0.28)" : "rgba(92,99,108,0.16)";
+  const codeBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(28,29,28,0.04)";
 
   const baseTheme = EditorView.theme(
     {
@@ -24,13 +24,11 @@ export function createEditorTheme(theme: "light" | "dark") {
         lineHeight: "1.75",
         fontWeight: "400",
         letterSpacing: "0.005em",
-        padding: "2.5rem 0 8rem",
-        transition: "padding 180ms ease",
       },
       ".cm-content": {
         maxWidth: "42rem",
         margin: "0 auto",
-        padding: "0 1.5rem",
+        padding: "2.5rem 1.5rem 8rem",
         caretColor: accent,
       },
       ".cm-line": {
@@ -75,12 +73,12 @@ export function createEditorTheme(theme: "light" | "dark") {
       ".cm-wiki-link": {
         color: accent,
         textDecoration: "underline",
-        textDecorationColor: isDark ? "rgba(138,180,255,0.45)" : "rgba(47,98,214,0.35)",
+        textDecorationColor: isDark ? "rgba(122,158,175,0.5)" : "rgba(92,99,108,0.4)",
         textUnderlineOffset: "0.18em",
         cursor: "pointer",
       },
       ".cm-wiki-link.missing": {
-        color: isDark ? "#F0B27A" : "#B86B2B",
+        color: isDark ? "#C9A07A" : "#B86B2B",
         textDecorationStyle: "dotted",
       },
       ".cm-wiki-link.editing": {

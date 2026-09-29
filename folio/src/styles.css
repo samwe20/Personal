@@ -19,6 +19,9 @@
 .app[data-font="mono"] {
   --font-body: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
 }
+.app[data-font="courier"] {
+  --font-body: "Courier New", Courier, monospace;
+}
 
 * {
   box-sizing: border-box;
@@ -31,7 +34,7 @@ body {
   height: 100%;
   overflow: hidden;
   font-family: var(--font-ui);
-  background: #0f1115;
+  background: #16181c;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
 }
@@ -46,20 +49,21 @@ input {
 }
 
 .app {
-  --bg: #f7f7f5;
-  --bg-elevated: #fffcf8;
-  --panel: #efefec;
-  --panel-strong: #e7e7e2;
-  --ink: #1c1c1a;
-  --muted: #6f6f68;
-  --faint: #9a9a92;
-  --border: rgba(28, 28, 26, 0.1);
-  --accent: #2f62d6;
-  --accent-soft: rgba(47, 98, 214, 0.12);
+  /* Soft Graphite light — calm gray paper (Sage Day without green) */
+  --bg: #f3f4f3;
+  --bg-elevated: #fafafa;
+  --panel: #e8e9e8;
+  --panel-strong: #e0e1e0;
+  --ink: #1c1d1c;
+  --muted: #6a6b6a;
+  --faint: #969796;
+  --border: rgba(28, 29, 28, 0.1);
+  --accent: #5c636c;
+  --accent-soft: rgba(92, 99, 108, 0.12);
   --warn: #b86b2b;
-  --shadow: 0 18px 50px rgba(28, 28, 26, 0.1);
-  --stage-glow: radial-gradient(1200px 500px at 50% -10%, rgba(47, 98, 214, 0.08), transparent 60%),
-    linear-gradient(180deg, #fbfaf7 0%, #f3f3f0 100%);
+  --shadow: 0 18px 50px rgba(28, 29, 28, 0.1);
+  --stage-glow: radial-gradient(1200px 500px at 50% -10%, rgba(92, 99, 108, 0.06), transparent 60%),
+    linear-gradient(180deg, #f7f7f7 0%, #efefef 100%);
   --sidebar-width: 272px;
   --backlinks-width: 280px;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -89,20 +93,21 @@ input {
 }
 
 .app[data-theme="dark"] {
-  --bg: #121417;
-  --bg-elevated: #181b20;
-  --panel: #1b1f26;
-  --panel-strong: #232833;
-  --ink: #ededeb;
-  --muted: #a0a29b;
-  --faint: #6f736c;
-  --border: rgba(237, 237, 235, 0.1);
-  --accent: #8ab4ff;
-  --accent-soft: rgba(138, 180, 255, 0.14);
-  --warn: #f0b27a;
-  --shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
-  --stage-glow: radial-gradient(1000px 420px at 50% -8%, rgba(138, 180, 255, 0.1), transparent 55%),
-    linear-gradient(180deg, #15181d 0%, #101215 100%);
+  /* Slate Graphite — cool neutral, near-monochrome */
+  --bg: #16181c;
+  --bg-elevated: #232830;
+  --panel: #1e2228;
+  --panel-strong: #2a3038;
+  --ink: #e8eaed;
+  --muted: #8b919a;
+  --faint: #5c636c;
+  --border: rgba(232, 234, 237, 0.1);
+  --accent: #7a9eaf;
+  --accent-soft: rgba(122, 158, 175, 0.16);
+  --warn: #c9a07a;
+  --shadow: 0 22px 60px rgba(0, 0, 0, 0.4);
+  --stage-glow: radial-gradient(1000px 420px at 50% -8%, rgba(200, 208, 220, 0.05), transparent 55%),
+    linear-gradient(180deg, #1a1d22 0%, #14161a 100%);
 }
 
 .app.sidebar-collapsed {
@@ -161,8 +166,8 @@ input {
   border-radius: 11px;
   background:
     radial-gradient(circle at 30% 25%, #fff7 0 18%, transparent 19%),
-    linear-gradient(145deg, #3b78f0, #1f4fb8 55%, #163a86);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 18px rgba(47, 98, 214, 0.28);
+    linear-gradient(145deg, #7a828c, #5c636c 55%, #3f454d);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 18px rgba(92, 99, 108, 0.28);
   position: relative;
 }
 
@@ -303,12 +308,14 @@ input {
 
 .note-list::-webkit-scrollbar,
 .backlinks-pane::-webkit-scrollbar,
+.preview-pane::-webkit-scrollbar,
 .cm-scroller::-webkit-scrollbar {
   width: 10px;
 }
 
 .note-list::-webkit-scrollbar-thumb,
 .backlinks-pane::-webkit-scrollbar-thumb,
+.preview-pane::-webkit-scrollbar-thumb,
 .cm-scroller::-webkit-scrollbar-thumb {
   background: rgba(127, 127, 127, 0.28);
   border-radius: 999px;
@@ -329,12 +336,12 @@ input {
 }
 
 .note-item:hover {
-  background: rgba(47, 98, 214, 0.08);
+  background: var(--accent-soft);
 }
 
 .note-item.active {
   background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px rgba(47, 98, 214, 0.18);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .note-item-title {
@@ -359,13 +366,16 @@ input {
 /* Workspace */
 .workspace {
   min-width: 0;
+  min-height: 0;
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
   background: var(--stage-glow);
 }
 
 .toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
@@ -523,10 +533,11 @@ input {
 .chip-btn[data-active="true"] {
   color: var(--accent);
   background: var(--accent-soft);
-  border-color: rgba(47, 98, 214, 0.18);
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .stage {
+  min-width: 0;
   min-height: 0;
   display: grid;
   grid-template-columns: 1fr var(--backlinks-width);
@@ -544,10 +555,15 @@ input {
 }
 
 .editor-root,
-.preview-root {
+.preview-pane {
   position: absolute;
   inset: 0;
   overflow: auto;
+}
+
+.preview-pane:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
 .editor-root .cm-editor {
@@ -555,9 +571,68 @@ input {
 }
 
 /* Extra vertical room so the caret can sit in the vertical center. */
-.app.typewriter-on .cm-scroller {
+.app.typewriter-on .cm-content {
   padding-top: 42vh !important;
   padding-bottom: 42vh !important;
+}
+
+/* Immersive Focus — hide chrome, keep only the writing surface + exit control */
+.app.immersive-focus {
+  /* Hidden panels leave the grid: the workspace is the only remaining item. */
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app.immersive-focus .sidebar,
+.app.immersive-focus .toolbar,
+.app.immersive-focus .status-bar,
+.app.immersive-focus .backlinks-pane,
+.app.immersive-focus .scrim {
+  display: none !important;
+}
+
+.app.immersive-focus .workspace {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.app.immersive-focus .stage {
+  grid-template-columns: 1fr;
+}
+
+.app.immersive-focus .focus-exit-btn {
+  display: inline-flex;
+}
+
+.focus-exit-btn {
+  display: none;
+  position: fixed;
+  top: calc(1rem + var(--safe-top));
+  right: calc(1rem + var(--safe-right));
+  z-index: 40;
+  align-items: center;
+  gap: 0.45rem;
+  height: 36px;
+  padding: 0 0.9rem 0 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: color 140ms ease, background 140ms ease, transform 140ms ease;
+}
+
+.focus-exit-btn:hover {
+  color: var(--ink);
+  background: var(--bg-elevated);
+  transform: translateY(-1px);
+}
+
+.focus-exit-btn.hidden {
+  display: none !important;
 }
 
 .preview-root {
@@ -567,6 +642,12 @@ input {
   font-family: var(--font-body);
   font-size: 19px;
   line-height: 1.75;
+  overflow-wrap: anywhere;
+}
+
+.preview-root img {
+  max-width: 100%;
+  height: auto;
 }
 
 .preview-root h1,
@@ -718,15 +799,15 @@ input {
   display: grid;
   place-items: center;
   background:
-    radial-gradient(900px 420px at 50% 20%, rgba(47, 98, 214, 0.16), transparent 60%),
-    linear-gradient(180deg, #f7f7f5, #ecece8);
+    radial-gradient(900px 420px at 50% 20%, rgba(92, 99, 108, 0.1), transparent 60%),
+    linear-gradient(180deg, #f3f4f3, #e8e9e8);
   z-index: 20;
 }
 
 .app[data-theme="dark"] .welcome {
   background:
-    radial-gradient(900px 420px at 50% 18%, rgba(138, 180, 255, 0.14), transparent 60%),
-    linear-gradient(180deg, #14171c, #0f1216);
+    radial-gradient(900px 420px at 50% 18%, rgba(122, 158, 175, 0.1), transparent 60%),
+    linear-gradient(180deg, #1a1d22, #14161a);
 }
 
 .welcome-card {
@@ -762,10 +843,10 @@ input {
 .primary-btn {
   padding: 0.85rem 1.1rem;
   border-radius: 12px;
-  background: linear-gradient(180deg, #3b78f0, #2f62d6);
+  background: linear-gradient(180deg, #6a727c, #5c636c);
   color: white;
   font-weight: 650;
-  box-shadow: 0 10px 24px rgba(47, 98, 214, 0.28);
+  box-shadow: 0 10px 24px rgba(92, 99, 108, 0.28);
   transition: transform 140ms ease, filter 140ms ease;
 }
 
