@@ -133,7 +133,13 @@ async function main() {
   assert.equal(await fs.readFile(path.join(library,'Desktop Preview Source.md'),'utf8'),previewDocument('First preview'));
   checks.push('Preview renders Markdown, supports wheel in margins and PageDown, resets scroll for another note, returns to editing');
 
-  await editor().fill('[[Desktop QA B|Open B]]');await page.locator('#btn-preview').click();
+  // CodeMirror virtualizes long documents. Fill can mutate a spacer instead of
+  // the document, so replace through the editor's normal keyboard input path.
+  await editor().press('Control+a');
+  await page.keyboard.insertText('[[Desktop QA B|Open B]]');
+  await expect(page.locator('#status-save')).toHaveText('Automaticky uloženo');
+  assert.equal(await fs.readFile(path.join(library,'Desktop Preview Source.md'),'utf8'),'[[Desktop QA B|Open B]]');
+  await page.locator('#btn-preview').click();
   await page.locator('#preview-root [data-wiki-title]').click();
   await expect(page.locator('#note-title')).toHaveValue('Desktop QA B');
   await page.locator('#btn-preview').click();
