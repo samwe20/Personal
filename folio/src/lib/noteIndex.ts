@@ -1,12 +1,18 @@
 import type { NoteMeta, WikiTarget } from "../types";
+import { markdownLanguage } from "@codemirror/lang-markdown";
 
 const WIKI_RE = /\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]/g;
 
 /** Strip fenced/inline code so example [[links]] inside code are ignored. */
 export function stripCodeForLinks(text: string): string {
-  return text
-    .replace(/```[\s\S]*?```/g, (block) => " ".repeat(block.length))
-    .replace(/`[^`\n]+`/g, (inline) => " ".repeat(inline.length));
+  const masked = text.split("");
+  markdownLanguage.parser.parse(text).iterate({ enter(node) {
+    if (/^(FencedCode|CodeBlock|InlineCode|HTMLBlock|HTMLTag)$/.test(node.name)) {
+      masked.fill(" ", node.from, node.to);
+      return false;
+    }
+  } });
+  return masked.join("");
 }
 
 export function parseWikiTargets(text: string): WikiTarget[] {
@@ -40,6 +46,9 @@ export class NoteIndex {
     this.notes = notes;
     this.byId.clear();
     this.byTitle.clear();
+    this.content.clear();
+    this.outgoing.clear();
+    this.incoming.clear();
     for (const note of notes) {
       this.byId.set(note.id, note);
       this.byTitle.set(normalizeTitle(note.title), note);
