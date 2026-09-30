@@ -104,3 +104,40 @@ test('Preview renders Markdown, scrolls across the surface and resets for anothe
   await page.locator('#btn-preview').click();
   await expectEditingRestored(page,expect,'First preview');
 });
+
+test('library sorting supports both fields and directions and survives reload',async({page},testInfo)=>{
+  const titles=()=>page.locator('.note-item-title').allTextContents();
+  for(const title of ['Zeta sorting','Alfa sorting']) {
+    await newNote(page);
+    await page.locator('#note-title').fill(title);await page.locator('#note-title').press('Enter');
+    await expect(page.locator('.note-item.active .note-item-title')).toHaveText(title);
+  }
+  await expect(page.locator('#app')).not.toHaveAttribute('aria-busy','true');
+  if((await page.locator('#app').getAttribute('class')).includes('sidebar-collapsed'))await page.locator('#btn-toggle-sidebar').click();
+  for(const [by,direction,first,second] of [
+    ['title','asc','Alfa sorting','Zeta sorting'],
+    ['title','desc','Zeta sorting','Alfa sorting'],
+    ['createdAt','asc','Zeta sorting','Alfa sorting'],
+    ['createdAt','desc','Alfa sorting','Zeta sorting'],
+  ]) {
+    await page.locator('#sort-by').selectOption(by);
+    await page.locator('#sort-direction').selectOption(direction);
+    await expect.poll(async()=>{const list=await titles();return list.indexOf(first)<list.indexOf(second);}).toBe(true);
+    await expect(page.locator('#note-title')).toHaveValue('Alfa sorting');
+  }
+  await page.reload();
+  if((await page.locator('#app').getAttribute('class')).includes('sidebar-collapsed'))await page.locator('#btn-toggle-sidebar').click();
+  await expect(page.locator('#sort-by')).toHaveValue('createdAt');
+  await expect(page.locator('#sort-direction')).toHaveValue('desc');
+  await expect.poll(async()=>(await titles()).slice(0,2)).toEqual(['Alfa sorting','Zeta sorting']);
+  for(const theme of ['light','dark']) {
+    if((await page.locator('#app').getAttribute('data-theme'))!==theme) {
+      if(testInfo.project.name==='mobile')await page.locator('#btn-close-sidebar').click();
+      await page.locator('#btn-theme').click();
+      if(testInfo.project.name==='mobile')await page.locator('#btn-toggle-sidebar').click();
+    }
+    await expect(page.locator('#sort-by')).toBeVisible();
+    await expect(page.locator('#sort-direction')).toBeVisible();
+    await page.screenshot({path:testInfo.outputPath(`sorting-${theme}.png`)});
+  }
+});

@@ -6,6 +6,7 @@ export interface NoteMeta {
   path: string;
   relativePath: string;
   mtime: number;
+  createdAt: number | null;
 }
 
 export interface AppSettings {
@@ -16,6 +17,8 @@ export interface AppSettings {
   showBacklinks: boolean;
   lastOpenPath: string | null;
   editorFont: EditorFontId;
+  sortBy: "title" | "createdAt";
+  sortDirection: "asc" | "desc";
 }
 
 export interface WikiTarget {
@@ -32,4 +35,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showBacklinks: true,
   lastOpenPath: null,
   editorFont: "literata",
+  sortBy: "title",
+  sortDirection: "asc",
 };

@@ -6,7 +6,7 @@ import { WEB_LIBRARY_PATH } from "./runtime";
 const DB_NAME = "folio-notes";
 const STORE = "notes";
 let connection: Promise<IDBDatabase> | undefined;
-export interface WebNoteRecord { path: string; title: string; content: string; mtime: number; }
+export interface WebNoteRecord { path: string; title: string; content: string; mtime: number; createdAt?: number | null; }
 
 function openDb(): Promise<IDBDatabase> {
   if (!connection) {
@@ -40,8 +40,8 @@ async function transaction<T>(mode: IDBTransactionMode, operation: (store: IDBOb
 function relativeOf(path: string) {
   return path.startsWith(WEB_LIBRARY_PATH + "/") ? path.slice(WEB_LIBRARY_PATH.length + 1) : path.replace(/^\/+/, "");
 }
-function record(path: string, content: string): WebNoteRecord {
-  return { path, title: titleFromPath(path), content, mtime: Date.now() };
+function record(path: string, content: string, previous?: WebNoteRecord): WebNoteRecord {
+  return { path, title: titleFromPath(path), content, mtime: Date.now(), createdAt: previous ? previous.createdAt ?? null : Date.now() };
 }
 function freeName(store: IDBObjectStore, safe: string, use: (name: string) => void, oldPath?: string) {
   const req = store.getAllKeys();
@@ -58,7 +58,7 @@ export async function listNotes(_libraryPath: string): Promise<NoteMeta[]> {
   const records = await transaction<WebNoteRecord[]>("readonly", (store, done) => {
     const req = store.getAll(); req.onsuccess = () => done(req.result);
   });
-  return records.map(r => ({ id: noteIdFromRelative(r.path), title: r.title, path: WEB_LIBRARY_PATH + "/" + r.path, relativePath: r.path, mtime: r.mtime }))
+  return records.map(r => ({ id: noteIdFromRelative(r.path), title: r.title, path: WEB_LIBRARY_PATH + "/" + r.path, relativePath: r.path, mtime: r.mtime, createdAt: r.createdAt ?? null }))
     .sort((a,b) => a.title.localeCompare(b.title, "cs", { sensitivity: "base" }));
 }
 export async function readNote(path: string): Promise<string> {
@@ -69,7 +69,11 @@ export async function readNote(path: string): Promise<string> {
   return found.content;
 }
 export async function writeNote(path: string, content: string): Promise<void> {
-  await transaction<void>("readwrite", store => { store.put(record(relativeOf(path), content)); });
+  await transaction<void>("readwrite", store => {
+    const relative = relativeOf(path);
+    const req = store.get(relative);
+    req.onsuccess = () => store.put(record(relative, content, req.result));
+  });
 }
 export async function createNote(_libraryPath: string, title: string, content = ""): Promise<string> {
   return transaction<string>("readwrite", (store, done) => {
@@ -85,7 +89,7 @@ export async function renameNote(oldPath: string, newTitle: string): Promise<str
       const parent = oldRel.includes("/") ? oldRel.slice(0, oldRel.lastIndexOf("/") + 1) : "";
       freeName(store, parent + safeNoteTitle(newTitle), name => {
         if (name !== oldRel) {
-          store.add(record(name, req.result.content));
+          store.add(record(name, req.result.content, req.result));
           store.delete(oldRel);
         }
         done(WEB_LIBRARY_PATH + "/" + name);

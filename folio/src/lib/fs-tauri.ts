@@ -10,10 +10,26 @@ import {
   writeTextFile,
 } from "@tauri-apps/plugin-fs";
 import { appDataDir, dirname, documentDir, join } from "@tauri-apps/api/path";
+import { LazyStore } from "@tauri-apps/plugin-store";
 import type { NoteMeta } from "../types";
 import { noteIdFromRelative, titleFromPath } from "./paths";
 
 const MD_EXT = /\.md$/i;
+// Atomic saves replace the file, which can change its filesystem birth time.
+// Preserve the original creation date outside the user's Markdown files.
+const creationDates = new LazyStore("folio-creation-dates.json");
+
+async function creationDate(path: string, birthtime: Date | null): Promise<number | null> {
+  const saved = await creationDates.get<{ createdAt: number | null }>(path);
+  return saved ? saved.createdAt : birthtime ? Number(birthtime) : null;
+}
+
+async function rememberCreationDate(path: string, createdAt: number | null) {
+  const saved = await creationDates.get<{ createdAt: number | null }>(path);
+  if (saved && saved.createdAt === createdAt) return;
+  await creationDates.set(path, { createdAt });
+  await creationDates.save();
+}
 
 export async function ensureDir(path: string): Promise<void> {
   if (!(await exists(path))) {
@@ -57,6 +73,7 @@ async function walkMarkdown(
       path: full,
       relativePath,
       mtime: info.mtime ? Number(info.mtime) : Date.now(),
+      createdAt: await creationDate(full, info.birthtime),
     });
   }
 }
@@ -76,6 +93,11 @@ export async function readNote(path: string): Promise<string> {
 export async function writeNote(path: string, content: string): Promise<void> {
   const parent = await dirname(path);
   await ensureDir(parent);
+  const createdAt = await exists(path)
+    ? await creationDate(path, (await stat(path)).birthtime)
+    : Date.now();
+  // Persist before replacing the original so an interrupted save cannot lose it.
+  await rememberCreationDate(path, createdAt);
   const temporary = await join(parent, ".folio-" + crypto.randomUUID() + ".tmp");
   try {
     await writeTextFile(temporary, content);
@@ -115,12 +137,18 @@ export async function renameNote(oldPath: string, newTitle: string): Promise<str
     next = await join(dir, `${safe} ${i}.md`);
     i += 1;
   }
+  const createdAt = await creationDate(oldPath, (await stat(oldPath)).birthtime);
+  await rememberCreationDate(next, createdAt);
   await rename(oldPath, next);
+  await creationDates.delete(oldPath);
+  await creationDates.save();
   return next;
 }
 
 export async function deleteNote(path: string): Promise<void> {
   await remove(path);
+  await creationDates.delete(path);
+  await creationDates.save();
 }
 
 export async function createDemoLibrary(libraryPath: string): Promise<string> {
