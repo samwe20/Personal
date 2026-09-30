@@ -18,6 +18,7 @@ Built with [Tauri 2](https://tauri.app/) as a **native Windows** app, plus:
   - iPhone: long-press to open
 - Backlinks + outgoing links
 - Autosave, quick open (`Ctrl+P` / `Cmd+P`), light/dark theme
+- Library sorting by name or creation date, ascending or descending; the choice survives restart.
 - Mobile UI: library drawer + links bottom sheet + safe areas
 
 ## Windows
@@ -103,6 +104,8 @@ folio/
 ```
 
 ## Reliability and verification
+
+The library's **Řadit podle** controls sort by name (Czech alphabet, natural number order) or creation date. Ascending creation order shows oldest notes first; descending shows newest first. Saving or renaming a note preserves its recorded creation date. Native files initially use the filesystem creation date; Folio preserves it in its application data when atomically replacing a file. Old browser notes without a recorded creation date, or files on filesystems without one, stay at the end in either direction.
 
 - Undo history is isolated per loaded note. Theme changes and index refreshes preserve the active history.
 - Saves are serialized and only mark the exact saved revision as clean. Navigation waits for edits to commit.

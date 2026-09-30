@@ -24,6 +24,7 @@ import { NoteIndex } from "./lib/noteIndex";
 import { isAppleMobile, isMobileUi } from "./lib/platform";
 import { isTauri } from "./lib/runtime";
 import { loadSettings, saveSettings } from "./lib/settings";
+import { sortNotes } from "./lib/sortNotes";
 import type { AppSettings, NoteMeta } from "./types";
 
 export class FolioApp {
@@ -59,6 +60,8 @@ export class FolioApp {
     sidebar: document.getElementById("sidebar")!,
     scrim: document.getElementById("scrim")!,
     noteList: document.getElementById("note-list")!,
+    sortBy: document.getElementById("sort-by") as HTMLSelectElement,
+    sortDirection: document.getElementById("sort-direction") as HTMLSelectElement,
     libraryPath: document.getElementById("library-path")!,
     titleInput: document.getElementById("note-title") as HTMLInputElement,
     editorRoot: document.getElementById("editor-root")!,
@@ -90,6 +93,8 @@ export class FolioApp {
 
   async init() {
     this.settings = await loadSettings();
+    this.els.sortBy.value = this.settings.sortBy;
+    this.els.sortDirection.value = this.settings.sortDirection;
     this.applyTheme(this.settings.theme);
 
     this.editor = createEditor(
@@ -264,6 +269,15 @@ export class FolioApp {
       input.value = "";
     });
     document.getElementById("btn-save-folder")?.addEventListener("click", () => void this.runAction(() => this.saveToFolder()));
+
+    const changeSort = () => {
+      this.settings.sortBy = this.els.sortBy.value === "createdAt" ? "createdAt" : "title";
+      this.settings.sortDirection = this.els.sortDirection.value === "desc" ? "desc" : "asc";
+      this.renderNoteList();
+      void saveSettings(this.settings).catch(error => this.reportError(error));
+    };
+    this.els.sortBy.addEventListener("change", changeSort);
+    this.els.sortDirection.addEventListener("change", changeSort);
 
     this.els.btnFocus.addEventListener("click", () => {
       void this.setImmersiveFocus(!this.settings.focusMode);
@@ -659,6 +673,7 @@ export class FolioApp {
   }
 
   private renderNoteList() {
+    this.notes = sortNotes(this.notes, this.settings);
     this.els.noteList.innerHTML = "";
     if (!this.notes.length) {
       const empty = document.createElement("div");
@@ -802,7 +817,6 @@ export class FolioApp {
       this.current = note ?? { ...previous, path: newPath, title: renamedTitle };
       this.settings.lastOpenPath = newPath;
       this.els.titleInput.value = this.current.title;
-      this.notes.sort((a, b) => a.title.localeCompare(b.title, "cs", { sensitivity: "base" }));
       this.index.setNotes(this.notes);
       this.renderNoteList();
       this.editor.reconfigureWiki();

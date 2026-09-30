@@ -162,9 +162,11 @@ test('wiki index ignores tilde fences, unclosed fences and inline code',()=>{
 test('native file replacement preserves the original if rename fails',async()=>{
   const Module=require('node:module'); const load=Module._load;
   const files=new Map([['/library/A.md','original']]); let fail=true;
-  const mock={exists:async p=>files.has(p)||p==='/library',mkdir:async()=>{},writeTextFile:async(p,t)=>files.set(p,t),remove:async p=>files.delete(p),rename:async(a,b)=>{if(fail)throw new Error('rename failed');files.set(b,files.get(a));files.delete(a);}};
+  const dates=new Map();
+  const mock={stat:async()=>({birthtime:new Date(1000)}),exists:async p=>files.has(p)||p==='/library',mkdir:async()=>{},writeTextFile:async(p,t)=>files.set(p,t),remove:async p=>files.delete(p),rename:async(a,b)=>{if(fail)throw new Error('rename failed');files.set(b,files.get(a));files.delete(a);}};
   Module._load=function(request,parent,isMain){
     if(request==='@tauri-apps/plugin-fs')return mock;
+    if(request==='@tauri-apps/plugin-store')return {LazyStore:class {async get(p){return dates.get(p);}async set(p,v){dates.set(p,v);}async save(){}async delete(p){dates.delete(p);}}};
     if(request==='@tauri-apps/api/path')return {dirname:async p=>p.slice(0,p.lastIndexOf('/')),join:async(...parts)=>parts.join('/')};
     return load.call(this,request,parent,isMain);
   };
@@ -175,5 +177,50 @@ test('native file replacement preserves the original if rename fails',async()=>{
     assert.deepEqual([...files],[['/library/A.md','original']]);
     fail=false;await native.writeNote('/library/A.md','changed');
     assert.deepEqual([...files],[['/library/A.md','changed']]);
+    assert.equal(dates.get('/library/A.md').createdAt,1000);
+    mock.stat=async()=>({birthtime:new Date(9000)});
+    await native.writeNote('/library/A.md','second save');
+    assert.equal(dates.get('/library/A.md').createdAt,1000,'atomic saves retain original creation date');
+    const renamed=await native.renameNote('/library/A.md','Renamed');
+    assert.equal(dates.get(renamed).createdAt,1000);
+    assert.equal(dates.has('/library/A.md'),false);
+    await native.deleteNote(renamed);
+    assert.equal(dates.has(renamed),false);
   }finally{Module._load=load;delete require.cache[require.resolve('../src/lib/fs-tauri.ts')];}
+});
+
+test('sorting handles Czech titles, dates, ties and unknown dates in both directions',()=>{
+  const {sortNotes}=require('../src/lib/sortNotes.ts');
+  const items=[
+    {title:'Žába',relativePath:'a/Zaba.md',createdAt:100},
+    {title:'Čaj',relativePath:'Caj.md',createdAt:300},
+    {title:'Ábel',relativePath:'Abel.md',createdAt:200},
+    {title:'Bez data',relativePath:'Legacy.md',createdAt:null},
+  ];
+  const titles=(sortBy,sortDirection)=>sortNotes(items,{sortBy,sortDirection}).map(n=>n.title);
+  assert.deepEqual(titles('title','asc'),['Ábel','Bez data','Čaj','Žába']);
+  assert.deepEqual(titles('title','desc'),['Žába','Čaj','Bez data','Ábel']);
+  assert.deepEqual(titles('createdAt','asc'),['Žába','Ábel','Čaj','Bez data']);
+  assert.deepEqual(titles('createdAt','desc'),['Čaj','Ábel','Žába','Bez data']);
+  assert.equal(items[0].title,'Žába');
+  const tied=[{title:'Note',relativePath:'b/Note.md',createdAt:100},{title:'Note',relativePath:'a/Note.md',createdAt:100}];
+  assert.equal(sortNotes(tied,{sortBy:'createdAt',sortDirection:'asc'})[0].relativePath,'a/Note.md');
+});
+
+test('web creation dates survive save and rename',async()=>{
+  const path=await web.createNote('','Created','first');
+  const created=(await web.listNotes('')).find(n=>n.path===path).createdAt;
+  assert.equal(typeof created,'number');
+  await web.writeNote(path,'changed');
+  const renamed=await web.renameNote(path,'Renamed');
+  assert.equal((await web.listNotes('')).find(n=>n.path===renamed).createdAt,created);
+});
+
+test('sorting changes only the list and saves both preferences',async()=>{
+  const {a}=await pair();await app.openNote(note(a));edit('unsaved draft');
+  app.els.sortBy.value='createdAt';app.els.sortBy.dispatchEvent(new window.Event('change'));
+  app.els.sortDirection.value='desc';app.els.sortDirection.dispatchEvent(new window.Event('change'));
+  assert.equal(app.current.path,a);assert.equal(app.editor.getText(),'unsaved draft');
+  const {loadSettings}=require('../src/lib/settings.ts');
+  const saved=await loadSettings();assert.equal(saved.sortBy,'createdAt');assert.equal(saved.sortDirection,'desc');
 });

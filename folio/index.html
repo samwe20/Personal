@@ -55,6 +55,18 @@
         </div>
 
         <div class="library-path" id="library-path" title="">Žádná knihovna</div>
+        <div class="library-sort" role="group" aria-label="Řazení souborů">
+          <label for="sort-by">Řadit podle</label>
+          <select id="sort-by">
+            <option value="title">Názvu</option>
+            <option value="createdAt">Data vytvoření</option>
+          </select>
+          <label class="sr-only" for="sort-direction">Směr řazení</label>
+          <select id="sort-direction">
+            <option value="asc">Vzestupně ↑</option>
+            <option value="desc">Sestupně ↓</option>
+          </select>
+        </div>
         <div class="note-list" id="note-list" role="list"></div>
       </aside>
 

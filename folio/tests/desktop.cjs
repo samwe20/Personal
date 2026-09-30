@@ -77,6 +77,20 @@ async function main() {
   await create('Desktop QA A','Original desktop A');
   await create('Desktop QA B','Original desktop B');
   checks.push('Create, rename and autosave actual .md files');
+  const noteTitles=()=>page.locator('.note-item-title').allTextContents();
+  for(const [by,direction,first,second] of [
+    ['title','asc','Desktop QA A','Desktop QA B'],
+    ['title','desc','Desktop QA B','Desktop QA A'],
+    ['createdAt','asc','Desktop QA A','Desktop QA B'],
+    ['createdAt','desc','Desktop QA B','Desktop QA A'],
+  ]) {
+    await page.locator('#sort-by').selectOption(by);
+    await page.locator('#sort-direction').selectOption(direction);
+    await expect.poll(async()=>{const titles=await noteTitles();return titles.indexOf(first)<titles.indexOf(second);}).toBe(true);
+    await expect(page.locator('#note-title')).toHaveValue('Desktop QA B');
+  }
+  await page.screenshot({path:path.join(output,'folio-sorting.png')});
+  checks.push('Sidebar sorts native files by name and creation date in both directions');
   await page.locator('.note-item').filter({has:page.locator('.note-item-title',{hasText:/^Desktop QA A$/})}).click();
   await expect(editor()).toHaveText('Original desktop A');
   await editor().press('Control+z');await expect(editor()).toHaveText('Original desktop A');
@@ -103,6 +117,14 @@ async function main() {
   await expect.poll(async()=>(await focusLayout(page)).caretVisible).toBe(true);
   await page.locator('#btn-typewriter').click();
   checks.push('Theme keeps Undo; native Focus keeps text and caret visible with Typewriter on/off');
+  await page.locator('#btn-refresh').click();
+  await expect.poll(async()=>(await noteTitles()).slice(0,2)).toEqual(['Desktop QA B','Desktop QA A']);
+  await page.locator('#note-title').fill('Desktop QA A Renamed');
+  await page.locator('#note-title').press('Enter');
+  await expect.poll(async()=>(await noteTitles()).slice(0,2)).toEqual(['Desktop QA B','Desktop QA A Renamed']);
+  await page.locator('#note-title').fill('Desktop QA A');await page.locator('#note-title').press('Enter');
+  await expect(page.locator('.note-item.active .note-item-title')).toHaveText('Desktop QA A');
+  checks.push('Native creation-date order survives edits, refresh and rename');
 
   await editor().fill(Array.from({length:40},(_,i)=>`Line ${i+1}: writing without distractions.`).join('\n'));
   for(const typewriter of [false,true,false]) {
@@ -150,6 +172,8 @@ async function main() {
   checks.push('Native close flushes pending edits');
 
   await launch();await expect(page.locator('#note-title')).toHaveValue('Desktop QA B');
+  await expect(page.locator('#sort-by')).toHaveValue('createdAt');
+  await expect(page.locator('#sort-direction')).toHaveValue('desc');
   await expect(editor()).toHaveText('Saved by closing the native window');
   checks.push('Restart restores saved note and settings');
   await page.screenshot({path:path.join(output,'folio-windows.png')});
