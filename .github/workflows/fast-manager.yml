@@ -52,3 +52,15 @@ jobs:
             fast-manager/app/src-tauri/target/release/FAST-Manager-*.exe
             fast-manager/app/src-tauri/target/release/bundle/nsis/*.exe
             fast-manager/app/src-tauri/target/release/bundle/msi/*.msi
+      - name: Publish rolling "latest" build
+        if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build
+          prerelease: true
+          generate_release_notes: false
+          files: |
+            fast-manager/app/src-tauri/target/release/FAST-Manager-*.exe
+            fast-manager/app/src-tauri/target/release/bundle/nsis/*.exe
+            fast-manager/app/src-tauri/target/release/bundle/msi/*.msi
