@@ -4,38 +4,22 @@
 
 ### What this repo is
 
-This is **Galactic Empire**, a Stellaris-inspired 4X space strategy game written in **pure vanilla JavaScript** (no framework). It runs entirely client-side in the browser. The UI is in Czech.
+This is a personal monorepo with three independent parts and no root package manager.
 
-- Entry point: `index.html`
-- Game engine: `game.js` (defines `class Game`)
-- UI/rendering (canvas): `ui.js` (defines `class UI`)
-- Styling: `styles.css`
-- The top-level `*.md` files (e.g. `README.md`, `AI-*.md`, `Jak-Vyuzit-Claude-Code.md`) are documentation only.
-
-There is **no package manager, build step, test suite, or lint config** — no `package.json`, no lockfile, nothing to compile. Do not look for `npm`/`pnpm` scripts; there are none.
+- **Folio** (`folio/`): distraction-free markdown editor. Web dev server is Vite on port **1420** (`npm run web:dev`). Requires Node.js **22.13+**. Checks: `npm run check`, `npm test`, `npm run build`, `npm run test:offline`, and `npm run test:e2e` (Playwright Chromium, installed by `.cursor/install.sh`). Windows and iOS Tauri shells are outside the Cloud Agent loop.
+- **F.A.S.T Manager** (`fast-manager/`): React outliner. Web app on port **5173**. Sync server on port **3847** (`GET /api/health`). The Vite dev server proxies `/api` and `/ws` to that server. `better-sqlite3` is native and is built by `npm ci` in `sync-server`. There is no test script; typecheck and bundle with `npm --prefix app run build`, and lint with `npx oxlint` from `fast-manager/app`.
+- **Prázdné domy scrapers** (root `scrape_*.py` and `requirements.txt`): one-off Python scripts that download from databaze.prazdnedomy.cz. They are not a service. `.cursor/install.sh` installs their dependencies with `python3 -m pip install --user -r requirements.txt`.
 
 ### Running the app (dev)
 
-Serve the static files from the repo root and open the page in a browser:
+`.cursor/install.sh` installs dependencies. `.cursor/start.sh` runs on every boot, is safe to rerun, and opens tmux sessions `folio`, `fast-web`, and `fast-sync` only when those sessions are absent. It waits until all three ports respond.
 
-```
-python3 -m http.server 8000
-```
+- Folio: http://127.0.0.1:1420
+- FAST Manager: http://127.0.0.1:5173
+- Sync health: http://127.0.0.1:3847/api/health
 
-Then open `http://localhost:8000/index.html`. `python3` is preinstalled and needs no dependencies. (Opening `index.html` via `file://` also works, but a local HTTP server is the cleaner dev workflow.)
+### Non-obvious gotchas
 
-### Non-obvious gotcha: the game does not auto-boot on page load
-
-The committed code has an initialization wiring bug: `game.js` assigns a lexically-scoped `let game` (never `window.game`) and never calls `game.startGameLoop()`, while `ui.js` waits for `window.game` on `DOMContentLoaded`. As a result, on a clean load the canvas stays black, resources show `0`, and the year counter is frozen at `2200` (console logs `Game initialized with 50 systems` then `Game not initialized!`).
-
-To actually run/test gameplay in the browser, run this once in the DevTools console after the page loads:
-
-```js
-window.game = game; game.startGameLoop(); ui = new UI(window.game);
-```
-
-After that the galaxy renders, resources tick, the year advances, and ship construction / system selection all work. Treat this only as a runtime/testing workaround — do **not** commit a source fix for it unless the task explicitly asks you to change application code.
-
-### Lint / test / build
-
-None exist. There is nothing to lint, no automated tests to run, and no build to produce. "Building" the app just means serving the static files as above.
+- Folio's Vite config sets `strictPort: true` on 1420. FAST Manager's Vite config sets `host: false` and `strictPort: true` on 5173, so it listens on localhost only. `start.sh` passes `--host 127.0.0.1` so the app is reachable on this machine.
+- FAST Manager sync stays off until it is enabled in Settings. The sync server can still be health-checked on its own.
+- Do not run the Windows Tauri installer jobs in this environment. GitHub Actions builds those on `windows-latest`.
