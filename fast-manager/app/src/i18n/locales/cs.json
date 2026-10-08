@@ -116,6 +116,11 @@
     "results": "Výsledky",
     "noResults": "Žádné výsledky"
   },
+  "dates": {
+    "today": "dnes",
+    "tomorrow": "zítra",
+    "yesterday": "včera"
+  },
   "settings": {
     "title": "Nastavení",
     "theme": "Vzhled",

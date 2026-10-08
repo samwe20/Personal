@@ -1,4 +1,5 @@
 import { nextDueDate } from '../utils/contentUtils';
+import { localToday } from '../utils/dateUtils';
 import { v4 as uuidv4 } from 'uuid';
 import { BUILTIN_SUPERTAGS, getDefaultFieldValues } from '../data/supertags';
 import { db, loadSettings, saveSettings } from '../db/database';
@@ -433,7 +434,7 @@ export async function getQueries(): Promise<SavedQueryRecord[]> {
 }
 
 export function evaluateQuery(nodes: NodeRecord[], expression: QueryExpression): NodeRecord[] {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   let result = nodes.filter((n) => {
     if (expression.supertagId && !n.supertagIds.includes(expression.supertagId)) return false;
     const fields = expression.supertagId ? n.fieldValues[expression.supertagId] ?? {} : {};

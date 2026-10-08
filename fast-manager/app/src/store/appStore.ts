@@ -41,6 +41,7 @@ import type {
   Theme,
   WorkspaceRecord,
 } from '../types';
+import { localToday } from '../utils/dateUtils';
 import { getFolderNodes, resolveFolderTitle } from '../utils/folderUtils';
 import { getBacklinks, resolveNodeTitle, searchNodes } from '../utils/nodeUtils';
 
@@ -435,7 +436,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   getVisibleNodes: () => {
     const { nodes, activeView, activeFolderId } = get();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localToday();
     if (activeView === 'today') {
       return nodes.filter(
         (n) =>
