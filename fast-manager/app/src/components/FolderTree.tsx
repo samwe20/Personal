@@ -58,16 +58,18 @@ export function FolderActions() {
       <button
         type="button"
         onClick={() => void addFolder(inFolder ? activeFolderId : null)}
-        className="flex-1 rounded-md border border-[var(--border)] px-1.5 py-1 text-[10px] text-[var(--muted)] hover:bg-[var(--surface-2)]"
+        className="flex min-w-0 flex-1 items-center justify-center gap-0.5 whitespace-nowrap rounded-md border border-[var(--border)] px-1 py-1 text-[10px] text-[var(--muted)] hover:bg-[var(--surface-2)]"
       >
-        + {t('folders.newFolder')}
+        <span aria-hidden>+</span>
+        <span className="truncate">{t('folders.newFolder')}</span>
       </button>
       <button
         type="button"
         onClick={() => void addDocument(inFolder ? activeFolderId : null)}
-        className="flex-1 rounded-md border border-[var(--border)] px-1.5 py-1 text-[10px] text-[var(--muted)] hover:bg-[var(--surface-2)]"
+        className="flex min-w-0 flex-1 items-center justify-center gap-0.5 whitespace-nowrap rounded-md border border-[var(--border)] px-1 py-1 text-[10px] text-[var(--muted)] hover:bg-[var(--surface-2)]"
       >
-        + {t('folders.newDocument')}
+        <span aria-hidden>+</span>
+        <span className="truncate">{t('folders.newDocument')}</span>
       </button>
     </div>
   );
