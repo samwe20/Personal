@@ -13,6 +13,8 @@ export function Sidebar() {
   const addRootNode = useAppStore((s) => s.addRootNode);
   const syncStatus = useAppStore((s) => s.syncStatus);
   const syncNow = useAppStore((s) => s.syncNow);
+  const language = useAppStore((s) => s.settings?.language ?? 'cs');
+  const updateSettings = useAppStore((s) => s.updateSettings);
 
   const navItem = (view: 'inbox' | 'today' | 'settings', label: string, icon: string) => (
     <button
@@ -121,7 +123,26 @@ export function Sidebar() {
               ? t('settings.connected')
               : t('settings.disconnected')}
         </button>
-        {navItem('settings', t('nav.settings'), 'settings')}
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">{navItem('settings', t('nav.settings'), 'settings')}</div>
+          <div className="flex shrink-0 overflow-hidden rounded-md border border-[var(--border)]">
+            {(['cs', 'en'] as const).map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                title={t('settings.language')}
+                onClick={() => void updateSettings({ language: lang })}
+                className={`px-1.5 py-1 text-[10px] font-semibold uppercase transition ${
+                  language === lang
+                    ? 'bg-[var(--accent-soft)] text-[var(--accent)]'
+                    : 'text-[var(--muted)] hover:bg-[var(--surface-2)]'
+                }`}
+              >
+                {lang}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </aside>
   );

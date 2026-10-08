@@ -51,8 +51,8 @@ export function NodeContent({ value, selected, onChange, onTagTrigger }: NodeCon
       onBlur={(e) => {
         const text = e.currentTarget.textContent ?? '';
         if (text !== value) onChange(text);
-        const match = text.match(/#(\w+)\s*$/);
-        if (match) onTagTrigger(match[1]);
+        const match = text.match(/#([\p{L}\p{N}_][\p{L}\p{N}_ ]*?)\s*$/u);
+        if (match) onTagTrigger(match[1].trim());
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
