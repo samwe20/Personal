@@ -98,11 +98,31 @@ export function Outliner() {
               value={node.content}
               selected={isSelected}
               onChange={(v) => editNodeContent(node.id, v)}
-              onTagTrigger={(tagName) => {
+              onTagTrigger={(tagName, newText) => {
+                const norm = (s: string) =>
+                  s
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/\s+/g, '');
+                const needle = norm(tagName);
                 const tag = BUILTIN_SUPERTAGS.find(
-                  (tg) => tg.name.toLowerCase() === tagName.toLowerCase() || tg.id.toLowerCase() === tagName.toLowerCase(),
+                  (tg) =>
+                    tg.id.toLowerCase() === tagName.toLowerCase() ||
+                    norm(tg.name) === needle ||
+                    norm(t(`supertags.${tg.id}`, tg.name)) === needle,
                 );
-                if (tag) void attachTag(node.id, tag.id);
+                if (!tag) {
+                  if (newText !== node.content) void editNodeContent(node.id, newText);
+                  return;
+                }
+                void (async () => {
+                  await attachTag(node.id, tag.id);
+                  const stripped = newText
+                    .replace(/#[\p{L}\p{N}_][\p{L}\p{N}_ ]*?\s*$/u, '')
+                    .trimEnd();
+                  if (stripped !== newText) await editNodeContent(node.id, stripped);
+                })();
               }}
             />
             {(node.embeds?.length ?? 0) > 0 && (

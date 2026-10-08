@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../store/appStore';
 import { getIcon } from '../utils/icons';
 import { isFolderNode } from '../utils/folderUtils';
@@ -10,7 +11,7 @@ interface FolderTreeProps {
 
 export function FolderTree({ parentId, depth = 0 }: FolderTreeProps) {
   const { t } = useTranslation();
-  const folders = useAppStore((s) => s.getFolderNodes(parentId));
+  const folders = useAppStore(useShallow((s) => s.getFolderNodes(parentId)));
   const activeFolderId = useAppStore((s) => s.activeFolderId);
   const activeView = useAppStore((s) => s.activeView);
   const openFolder = useAppStore((s) => s.openFolder);
