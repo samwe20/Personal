@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { SUPERTAG_MAP } from '../data/supertags';
 import { BUILTIN_SUPERTAGS, useAppStore } from '../store/appStore';
 import { isFolderNode } from '../utils/folderUtils';
+import { dueTone, formatDueDate, localToday } from '../utils/dateUtils';
 import { FieldEditor } from './FieldEditor';
 import { NodeContent } from './NodeContent';
 import { NodeEmbeds } from './NodeEmbeds';
@@ -144,6 +145,9 @@ export function Outliner() {
             {(node.embeds?.length ?? 0) > 0 && (
               <NodeEmbeds node={node} compact />
             )}
+            {isTask && typeof node.fieldValues.task?.dueDate === 'string' && node.fieldValues.task.dueDate !== '' && (
+              <DueChip iso={node.fieldValues.task.dueDate as string} dimmed={isDone} />
+            )}
           </div>
           {isSelected && (
             <div className="flex shrink-0 gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
@@ -202,7 +206,7 @@ export function Outliner() {
 }
 
 function QueryResults() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const results = useAppStore(useShallow((s) => s.getQueryResults()));
   const selectNode = useAppStore((s) => s.selectNode);
   const selectedNodeId = useAppStore((s) => s.selectedNodeId);
@@ -246,7 +250,11 @@ function QueryResults() {
                   </div>
                 </td>
                 <td className="px-2 py-1.5">{t(`status.${fields.status}`, String(fields.status ?? ''))}</td>
-                <td className="px-2 py-1.5">{String(fields.dueDate ?? fields.date ?? '')}</td>
+                <td className="px-2 py-1.5">
+                  {typeof (fields.dueDate ?? fields.date) === 'string' && (fields.dueDate ?? fields.date)
+                    ? formatDueDate(String(fields.dueDate ?? fields.date), i18n.language, t)
+                    : ''}
+                </td>
                 <td className="px-2 py-1.5">{t(`status.${fields.priority}`, String(fields.priority ?? ''))}</td>
                 <td className="px-2 py-1.5">
                   {node.supertagIds.includes('task') && fields.status !== 'done' && (
@@ -268,8 +276,25 @@ function QueryResults() {
   );
 }
 
-export function FieldPanel() {
-  const { t } = useTranslation();
+function DueChip({ iso, dimmed }: { iso: string; dimmed?: boolean }) {
+  const { t, i18n } = useTranslation();
+  const tone = dueTone(iso, localToday());
+  const label = formatDueDate(iso, i18n.language, t);
+  const toneClass =
+    dimmed || tone === 'future'
+      ? 'border border-[var(--border)] text-[var(--muted)]'
+      : tone === 'overdue'
+        ? 'bg-red-500/15 text-red-400'
+        : 'bg-[var(--accent-soft)] text-[var(--accent)]';
+  return (
+    <span className={`mt-0.5 inline-flex w-fit items-center gap-0.5 rounded px-1 py-px text-[10px] ${toneClass}`}>
+      <span aria-hidden>📅</span>
+      {tone === 'overdue' && !dimmed ? `${label} · ${t('queries.overdue')}` : label}
+    </span>
+  );
+}
+
+export function FieldPanel() {  const { t } = useTranslation();
   const nodes = useAppStore((s) => s.nodes);
   const selectedNodeId = useAppStore((s) => s.selectedNodeId);
   const setField = useAppStore((s) => s.setField);

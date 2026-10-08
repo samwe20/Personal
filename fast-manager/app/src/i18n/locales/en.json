@@ -116,6 +116,11 @@
     "results": "Results",
     "noResults": "No results"
   },
+  "dates": {
+    "today": "today",
+    "tomorrow": "tomorrow",
+    "yesterday": "yesterday"
+  },
   "settings": {
     "title": "Settings",
     "theme": "Theme",
