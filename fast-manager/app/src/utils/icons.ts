@@ -1,6 +1,7 @@
 import {
   AlertCircle,
   Calendar,
+  CalendarDays,
   CheckSquare,
   Command,
   FileText,
@@ -31,6 +32,7 @@ const iconMap: Record<string, LucideIcon> = {
   user: User,
   folder: Folder,
   calendar: Calendar,
+  'calendar-days': CalendarDays,
   users: Users,
   gavel: Gavel,
   lightbulb: Lightbulb,

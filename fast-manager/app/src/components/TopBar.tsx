@@ -25,7 +25,9 @@ export function TopBar() {
       ? resolveFolderTitle(activeFolderId)
       : activeView === 'today'
         ? t('nav.today')
-        : activeView === 'search'
+        : activeView === 'planned'
+          ? t('nav.planned')
+          : activeView === 'search'
           ? t('search.title')
           : activeView === 'query'
             ? t('nav.queries')

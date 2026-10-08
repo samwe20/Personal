@@ -45,7 +45,7 @@ import { localToday } from '../utils/dateUtils';
 import { getFolderNodes, resolveFolderTitle } from '../utils/folderUtils';
 import { getBacklinks, resolveNodeTitle, searchNodes } from '../utils/nodeUtils';
 
-export type ViewMode = 'inbox' | 'today' | 'query' | 'settings' | 'search' | 'folder';
+export type ViewMode = 'inbox' | 'today' | 'planned' | 'query' | 'settings' | 'search' | 'folder';
 
 interface AppState {
   ready: boolean;
@@ -447,6 +447,19 @@ export const useAppStore = create<AppState>((set, get) => ({
       );
     }
     if (activeView === 'search') return get().getSearchResults();
+    if (activeView === 'planned') {
+      return nodes
+        .filter(
+          (n) =>
+            n.supertagIds.includes('task') &&
+            typeof n.fieldValues.task?.dueDate === 'string' &&
+            (n.fieldValues.task.dueDate as string) > today &&
+            n.fieldValues.task?.status !== 'done',
+        )
+        .sort((a, b) =>
+          String(a.fieldValues.task?.dueDate ?? '').localeCompare(String(b.fieldValues.task?.dueDate ?? '')),
+        );
+    }
     if (activeView === 'folder' && activeFolderId) {
       return nodes.filter((n) => n.parentId === activeFolderId).sort((a, b) => a.order - b.order);
     }

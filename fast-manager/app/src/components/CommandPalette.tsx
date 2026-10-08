@@ -34,6 +34,7 @@ export function CommandPalette() {
       { id: 'newDoc', label: t('folders.newDocument'), action: () => { close(); void useAppStore.getState().addDocument(); } },
       { id: 'tasks', label: t('queries.myTasks'), action: () => { close(); setView('query', 'q-tasks'); } },
       { id: 'today', label: t('nav.today'), action: () => { close(); setView('today'); } },
+      { id: 'planned', label: t('nav.planned'), action: () => { close(); setView('planned'); } },
       { id: 'inbox', label: t('nav.inbox'), action: () => { close(); setView('inbox'); } },
       { id: 'sync', label: t('actions.sync'), action: () => { close(); void syncNow(); } },
       { id: 'undo', label: t('commands.undo'), shortcut: 'Ctrl+Z', action: () => { close(); void undo(); } },

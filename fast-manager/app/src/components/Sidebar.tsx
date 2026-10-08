@@ -16,7 +16,7 @@ export function Sidebar() {
   const language = useAppStore((s) => s.settings?.language ?? 'cs');
   const updateSettings = useAppStore((s) => s.updateSettings);
 
-  const navItem = (view: 'inbox' | 'today' | 'settings', label: string, icon: string) => (
+  const navItem = (view: 'inbox' | 'today' | 'planned' | 'settings', label: string, icon: string) => (
     <button
       type="button"
       onClick={() => setView(view)}
@@ -43,6 +43,7 @@ export function Sidebar() {
         <div className="space-y-0.5">
           {navItem('inbox', t('nav.inbox'), 'inbox')}
           {navItem('today', t('nav.today'), 'calendar')}
+          {navItem('planned', t('nav.planned'), 'calendar-days')}
         </div>
 
         <div>
