@@ -99,7 +99,8 @@
     "newDocument": "Document",
     "empty": "No folders yet",
     "unnamed": "Untitled",
-    "viewing": "Folder: {{name}}"
+    "viewing": "Folder: {{name}}",
+    "renameHint": "Double-click to rename"
   },
   "embeds": {
     "title": "Embedded lists",

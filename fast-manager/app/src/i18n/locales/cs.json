@@ -99,7 +99,8 @@
     "newDocument": "Dokument",
     "empty": "Zatím žádné složky",
     "unnamed": "Bez názvu",
-    "viewing": "Složka: {{name}}"
+    "viewing": "Složka: {{name}}",
+    "renameHint": "Dvojklikem přejmenujete"
   },
   "embeds": {
     "title": "Vložené výpisy",

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../store/appStore';
@@ -15,6 +16,15 @@ export function FolderTree({ parentId, depth = 0 }: FolderTreeProps) {
   const activeFolderId = useAppStore((s) => s.activeFolderId);
   const activeView = useAppStore((s) => s.activeView);
   const openFolder = useAppStore((s) => s.openFolder);
+  const editNodeContent = useAppStore((s) => s.editNodeContent);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+
+  const saveRename = (folderId: string, current: string) => {
+    const name = draft.trim();
+    setEditingId(null);
+    if (name && name !== current.trim()) void editNodeContent(folderId, name);
+  };
 
   if (folders.length === 0 && depth === 0) {
     return <p className="px-2 py-1 text-[10px] text-[var(--muted)]">{t('folders.empty')}</p>;
@@ -25,17 +35,39 @@ export function FolderTree({ parentId, depth = 0 }: FolderTreeProps) {
       {folders.map((folder) => {
         const Icon = getIcon('folder-open');
         const active = activeView === 'folder' && activeFolderId === folder.id;
+        const editing = editingId === folder.id;
         return (
           <div key={folder.id}>
-            <button
-              type="button"
-              onClick={() => openFolder(folder.id)}
-              className={`ui-nav ${active ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-[var(--muted)] hover:bg-[var(--surface-2)]'}`}
-              style={{ paddingLeft: `${8 + depth * 10}px` }}
-            >
-              <Icon size={13} strokeWidth={2} />
-              <span className="truncate">{folder.content.trim() || t('folders.unnamed')}</span>
-            </button>
+            {editing ? (
+              <input
+                autoFocus
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={() => saveRename(folder.id, folder.content)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveRename(folder.id, folder.content);
+                  if (e.key === 'Escape') setEditingId(null);
+                }}
+                onClick={(e) => e.stopPropagation()}
+                style={{ marginLeft: `${8 + depth * 10}px` }}
+                className="ui-input"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => openFolder(folder.id)}
+                onDoubleClick={() => {
+                  setEditingId(folder.id);
+                  setDraft(folder.content.trim());
+                }}
+                title={t('folders.renameHint')}
+                className={`ui-nav ${active ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-[var(--muted)] hover:bg-[var(--surface-2)]'}`}
+                style={{ paddingLeft: `${8 + depth * 10}px` }}
+              >
+                <Icon size={13} strokeWidth={2} />
+                <span className="truncate">{folder.content.trim() || t('folders.unnamed')}</span>
+              </button>
+            )}
             <FolderTree parentId={folder.id} depth={depth + 1} />
           </div>
         );
