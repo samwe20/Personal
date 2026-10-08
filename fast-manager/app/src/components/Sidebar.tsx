@@ -11,6 +11,7 @@ export function Sidebar() {
   const queries = useAppStore((s) => s.queries);
   const setView = useAppStore((s) => s.setView);
   const addRootNode = useAppStore((s) => s.addRootNode);
+  const addFolder = useAppStore((s) => s.addFolder);
   const syncStatus = useAppStore((s) => s.syncStatus);
   const syncNow = useAppStore((s) => s.syncNow);
   const language = useAppStore((s) => s.settings?.language ?? 'cs');
@@ -47,7 +48,17 @@ export function Sidebar() {
         </div>
 
         <div>
-          <div className="ui-section-title">{t('nav.folders')}</div>
+          <div className="flex items-center justify-between gap-1">
+            <div className="ui-section-title mb-0 flex-1">{t('nav.folders')}</div>
+            <button
+              type="button"
+              title={t('folders.newFolder')}
+              onClick={() => void addFolder(null)}
+              className="shrink-0 rounded px-1 text-xs leading-none text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            >
+              +
+            </button>
+          </div>
           <FolderTree parentId={null} />
           <div className="mt-1.5 px-1">
             <FolderActions />
