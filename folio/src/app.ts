@@ -1,4 +1,5 @@
-import { marked } from "marked";
+import { renderMarkdown } from "./lib/preview";
+import { forgetDraft, readDraft, rememberDraft } from "./lib/drafts";
 import { createEditor, FolioEditor } from "./editor/setup";
 import {
   createDemoLibrary,
@@ -23,9 +24,8 @@ import { NoteIndex } from "./lib/noteIndex";
 import { isAppleMobile, isMobileUi } from "./lib/platform";
 import { isTauri } from "./lib/runtime";
 import { loadSettings, saveSettings } from "./lib/settings";
+import { sortNotes } from "./lib/sortNotes";
 import type { AppSettings, NoteMeta } from "./types";
-
-marked.setOptions({ gfm: true, breaks: true });
 
 export class FolioApp {
   private settings!: AppSettings;
@@ -35,6 +35,10 @@ export class FolioApp {
   private index = new NoteIndex();
   private saveTimer: number | null = null;
   private dirty = false;
+  private revision = 0;
+  private saveQueue: Promise<void> = Promise.resolve();
+  private actionQueue: Promise<void> = Promise.resolve();
+  private busy = false;
   private suppressChange = false;
   private renaming = false;
   private previewOn = false;
@@ -46,7 +50,6 @@ export class FolioApp {
   private webOnly = !isTauri();
   /** Snapshot restored when leaving immersive Focus. */
   private focusSnapshot: {
-    typewriter: boolean;
     showBacklinks: boolean;
     sidebarCollapsed: boolean;
     previewOn: boolean;
@@ -57,10 +60,13 @@ export class FolioApp {
     sidebar: document.getElementById("sidebar")!,
     scrim: document.getElementById("scrim")!,
     noteList: document.getElementById("note-list")!,
+    sortBy: document.getElementById("sort-by") as HTMLSelectElement,
+    sortDirection: document.getElementById("sort-direction") as HTMLSelectElement,
     libraryPath: document.getElementById("library-path")!,
     titleInput: document.getElementById("note-title") as HTMLInputElement,
     editorRoot: document.getElementById("editor-root")!,
     previewRoot: document.getElementById("preview-root")!,
+    previewPane: document.getElementById("preview-pane")!,
     backlinksPane: document.getElementById("backlinks-pane")!,
     backlinksList: document.getElementById("backlinks-list")!,
     outgoingList: document.getElementById("outgoing-list")!,
@@ -87,6 +93,8 @@ export class FolioApp {
 
   async init() {
     this.settings = await loadSettings();
+    this.els.sortBy.value = this.settings.sortBy;
+    this.els.sortDirection.value = this.settings.sortDirection;
     this.applyTheme(this.settings.theme);
 
     this.editor = createEditor(
@@ -94,16 +102,18 @@ export class FolioApp {
       this.index,
       {
         onChange: (text) => this.handleEditorChange(text),
-        onOpenWiki: (title, createIfMissing) => void this.openWiki(title, createIfMissing),
+        onOpenWiki: (title, createIfMissing) => void this.runAction(() => this.openWiki(title, createIfMissing)),
       },
       this.settings.theme,
     );
 
+    this.editor.setReadOnly(true);
     this.setupMobileShell();
     this.applyFont(this.settings.editorFont);
     this.applyChrome();
     this.bindUi();
     this.bindShortcuts();
+    this.bindLifecycle();
 
     if (this.settings.libraryPath) {
       await this.openLibrary(this.settings.libraryPath, this.settings.lastOpenPath);
@@ -113,6 +123,61 @@ export class FolioApp {
     } else {
       this.showWelcome(true);
     }
+  }
+
+  private reportError(error: unknown) {
+    console.error(error);
+    this.els.statusSave.textContent = this.dirty
+      ? "Uložení selhalo — text zůstává v editoru. Zkuste Ctrl/Cmd+S."
+      : "Operace selhala. Zkuste ji znovu.";
+  }
+
+  // Serialize navigation, rename, deletion and import. Autosave has its own queue.
+  private runAction(action: () => Promise<unknown>) {
+    this.actionQueue = this.actionQueue.then(async () => {
+      this.busy = true;
+      this.editor.setReadOnly(true);
+      this.els.titleInput.disabled = true;
+      this.els.app.setAttribute("aria-busy", "true");
+      try { await action(); } catch (error) { this.reportError(error); }
+      finally {
+        this.busy = false;
+        this.editor.setReadOnly(!this.current);
+        this.els.titleInput.disabled = false;
+        this.els.app.removeAttribute("aria-busy");
+      }
+    });
+    return this.actionQueue;
+  }
+
+  private bindLifecycle() {
+    window.addEventListener("beforeunload", (event) => {
+      if (!this.dirty && !this.busy) return;
+      event.preventDefault();
+      event.returnValue = "";
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden" && this.dirty) {
+        void this.saveCurrent(false).catch((error) => this.reportError(error));
+      }
+    });
+    if (this.native) {
+      void import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
+        const appWindow = getCurrentWindow();
+        return appWindow.onCloseRequested((event) => {
+          event.preventDefault();
+          void this.runAction(async () => {
+            await this.flushCurrent();
+            await appWindow.destroy();
+          });
+        });
+      }).catch((error) => this.reportError(error));
+    }
+  }
+
+  private async flushCurrent() {
+    await this.saveQueue.catch(() => undefined);
+    while (this.current && this.dirty) await this.saveCurrent(true);
   }
 
   private setupMobileShell() {
@@ -174,9 +239,9 @@ export class FolioApp {
   }
 
   private bindUi() {
-    document.getElementById("btn-new-note")!.addEventListener("click", () => void this.newNote());
-    document.getElementById("btn-open-library")!.addEventListener("click", () => void this.pickLibrary());
-    document.getElementById("btn-refresh")!.addEventListener("click", () => void this.refreshLibrary());
+    document.getElementById("btn-new-note")!.addEventListener("click", () => void this.runAction(() => this.newNote()));
+    document.getElementById("btn-open-library")!.addEventListener("click", () => void this.runAction(() => this.pickLibrary()));
+    document.getElementById("btn-refresh")!.addEventListener("click", () => void this.runAction(() => this.refreshLibrary()));
     document.getElementById("btn-toggle-sidebar")!.addEventListener("click", () => {
       if (this.mobile) {
         const open = this.els.app.classList.contains("sidebar-collapsed");
@@ -189,20 +254,30 @@ export class FolioApp {
     document.getElementById("btn-close-sidebar")?.addEventListener("click", () => this.setLibraryOpen(false));
     document.getElementById("btn-close-backlinks")?.addEventListener("click", () => this.setLinksOpen(false));
     this.els.scrim.addEventListener("click", () => this.closeMobileOverlays());
-    document.getElementById("welcome-open")!.addEventListener("click", () => void this.pickLibrary());
-    document.getElementById("welcome-demo")!.addEventListener("click", () => void this.createDemo());
+    document.getElementById("welcome-open")!.addEventListener("click", () => void this.runAction(() => this.pickLibrary()));
+    document.getElementById("welcome-demo")!.addEventListener("click", () => void this.runAction(() => this.createDemo()));
 
-    document.getElementById("btn-export-library")?.addEventListener("click", () => void this.exportLibrary());
-    document.getElementById("btn-export-note")?.addEventListener("click", () => void this.exportCurrentNote());
+    document.getElementById("btn-export-library")?.addEventListener("click", () => void this.runAction(() => this.exportLibrary()));
+    document.getElementById("btn-export-note")?.addEventListener("click", () => void this.runAction(() => this.exportCurrentNote()));
     document.getElementById("btn-import-files")?.addEventListener("click", () => {
       document.getElementById("import-files")?.dispatchEvent(new MouseEvent("click"));
     });
     document.getElementById("import-files")?.addEventListener("change", (e) => {
       const input = e.target as HTMLInputElement;
-      if (input.files?.length) void this.importFiles(input.files);
+      const files = Array.from(input.files ?? []);
+      if (files.length) void this.runAction(() => this.importFiles(files));
       input.value = "";
     });
-    document.getElementById("btn-save-folder")?.addEventListener("click", () => void this.saveToFolder());
+    document.getElementById("btn-save-folder")?.addEventListener("click", () => void this.runAction(() => this.saveToFolder()));
+
+    const changeSort = () => {
+      this.settings.sortBy = this.els.sortBy.value === "createdAt" ? "createdAt" : "title";
+      this.settings.sortDirection = this.els.sortDirection.value === "desc" ? "desc" : "asc";
+      this.renderNoteList();
+      void saveSettings(this.settings).catch(error => this.reportError(error));
+    };
+    this.els.sortBy.addEventListener("change", changeSort);
+    this.els.sortDirection.addEventListener("change", changeSort);
 
     this.els.btnFocus.addEventListener("click", () => {
       void this.setImmersiveFocus(!this.settings.focusMode);
@@ -269,7 +344,7 @@ export class FolioApp {
     document.addEventListener("click", () => this.closeFontMenu());
 
     this.els.titleInput.addEventListener("input", () => this.previewSidebarTitle());
-    this.els.titleInput.addEventListener("blur", () => void this.renameCurrent());
+    this.els.titleInput.addEventListener("blur", () => void this.runAction(() => this.renameCurrent()));
     this.els.titleInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
@@ -278,7 +353,7 @@ export class FolioApp {
       }
     });
 
-    this.els.commandInput.addEventListener("input", () => this.renderCommandResults());
+    this.els.commandInput.addEventListener("input", () => { this.commandIndex = 0; this.renderCommandResults(); });
     this.els.commandInput.addEventListener("keydown", (e) => this.onCommandKey(e));
     this.els.commandPalette.addEventListener("click", (e) => {
       if (e.target === this.els.commandPalette) this.closeCommandPalette();
@@ -290,10 +365,10 @@ export class FolioApp {
       const mod = e.ctrlKey || e.metaKey;
       if (mod && e.key.toLowerCase() === "n") {
         e.preventDefault();
-        void this.newNote();
+        void this.runAction(() => this.newNote());
       } else if (mod && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        void this.saveCurrent(true);
+        void this.saveCurrent(true).catch((error) => this.reportError(error));
       } else if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
         void this.setImmersiveFocus(!this.settings.focusMode);
@@ -327,7 +402,7 @@ export class FolioApp {
     });
   }
 
-  /** Immersive Focus: typewriter + fullscreen + hide chrome + exit control. */
+  /** Immersive Focus hides chrome; Typewriter remains an independent preference. */
   private async setImmersiveFocus(enabled: boolean) {
     if (enabled === this.settings.focusMode && this.els.app.classList.contains("immersive-focus") === enabled) {
       return;
@@ -335,7 +410,6 @@ export class FolioApp {
 
     if (enabled) {
       this.focusSnapshot = {
-        typewriter: this.settings.typewriter,
         showBacklinks: this.settings.showBacklinks,
         sidebarCollapsed: this.els.app.classList.contains("sidebar-collapsed"),
         previewOn: this.previewOn,
@@ -352,9 +426,9 @@ export class FolioApp {
       this.els.btnExitFocus.classList.remove("hidden");
 
       this.editor.setFocusMode(true);
-      this.editor.setTypewriter(true);
+      this.editor.setTypewriter(this.settings.typewriter);
       this.syncChip(this.els.btnFocus, true);
-      this.syncChip(this.els.btnTypewriter, true);
+      this.syncChip(this.els.btnTypewriter, this.settings.typewriter);
       this.syncChip(this.els.btnBacklinks, false);
 
       await enterFullscreen();
@@ -364,9 +438,7 @@ export class FolioApp {
       this.focusSnapshot = null;
       this.settings.focusMode = false;
 
-      const typewriter = snap?.typewriter ?? this.settings.typewriter;
       const showBacklinks = snap?.showBacklinks ?? this.settings.showBacklinks;
-      this.settings.typewriter = typewriter;
       this.settings.showBacklinks = showBacklinks;
 
       this.els.app.classList.remove("immersive-focus");
@@ -377,9 +449,9 @@ export class FolioApp {
       this.els.app.classList.toggle("backlinks-hidden", !showBacklinks);
 
       this.editor.setFocusMode(false);
-      this.editor.setTypewriter(typewriter);
+      this.editor.setTypewriter(this.settings.typewriter);
       this.syncChip(this.els.btnFocus, false);
-      this.syncChip(this.els.btnTypewriter, typewriter);
+      this.syncChip(this.els.btnTypewriter, this.settings.typewriter);
       this.syncChip(this.els.btnBacklinks, showBacklinks);
 
       await exitFullscreen();
@@ -433,7 +505,6 @@ export class FolioApp {
     if (this.settings.focusMode) {
       // Rehydrate immersive chrome after reload (fullscreen needs a fresh user gesture).
       this.focusSnapshot = this.focusSnapshot ?? {
-        typewriter: this.settings.typewriter,
         showBacklinks: this.settings.showBacklinks,
         sidebarCollapsed: this.els.app.classList.contains("sidebar-collapsed"),
         previewOn: this.previewOn,
@@ -441,8 +512,7 @@ export class FolioApp {
       this.els.app.classList.add("immersive-focus", "sidebar-collapsed", "backlinks-hidden");
       this.els.btnExitFocus.classList.remove("hidden");
       this.editor?.setFocusMode(true);
-      this.editor?.setTypewriter(true);
-      this.syncChip(this.els.btnTypewriter, true);
+      this.editor?.setTypewriter(this.settings.typewriter);
       this.syncChip(this.els.btnBacklinks, false);
     } else {
       this.els.app.classList.remove("immersive-focus");
@@ -471,6 +541,7 @@ export class FolioApp {
     const { open } = await import("@tauri-apps/plugin-dialog");
     const selected = await open({
       directory: true,
+      recursive: true,
       multiple: false,
       title: "Vyberte složku knihovny Folio",
     });
@@ -486,7 +557,7 @@ export class FolioApp {
 
   private async exportLibrary() {
     if (!this.settings.libraryPath) return;
-    if (this.dirty) await this.saveCurrent(true);
+    await this.flushCurrent();
     try {
       this.els.statusSave.textContent = "Exportuji…";
       const mode = await exportLibraryToDisk(this.settings.libraryPath);
@@ -502,7 +573,8 @@ export class FolioApp {
     }
   }
 
-  private async importFiles(files: FileList) {
+  private async importFiles(files: File[]) {
+    await this.flushCurrent();
     if (!this.settings.libraryPath) {
       await this.createDemo();
     }
@@ -519,7 +591,7 @@ export class FolioApp {
 
   private async saveToFolder() {
     if (!this.settings.libraryPath) return;
-    if (this.dirty) await this.saveCurrent(true);
+    await this.flushCurrent();
     try {
       const count = await saveLibraryToDirectory(this.settings.libraryPath);
       this.els.statusSave.textContent = `Uloženo ${count} souborů do složky`;
@@ -535,7 +607,7 @@ export class FolioApp {
 
   async exportCurrentNote() {
     if (!this.current) return;
-    if (this.dirty) await this.saveCurrent(true);
+    await this.flushCurrent();
     try {
       const mode = await exportNoteToDisk(this.current.path, this.current.title);
       this.els.statusSave.textContent =
@@ -547,6 +619,7 @@ export class FolioApp {
   }
 
   private async openLibrary(path: string, openPath?: string | null) {
+    await this.flushCurrent();
     this.settings.libraryPath = path;
     const label = this.webOnly ? "Prohlížeč · Folio Library" : path;
     this.els.libraryPath.textContent = label;
@@ -558,6 +631,8 @@ export class FolioApp {
 
   private async refreshLibrary(preferredPath?: string | null) {
     if (!this.settings.libraryPath) return;
+    await this.flushCurrent();
+    const keepPath = preferredPath ?? this.current?.path;
     this.notes = await listNotes(this.settings.libraryPath);
     this.index.setNotes(this.notes);
 
@@ -577,7 +652,7 @@ export class FolioApp {
     this.editor.reconfigureWiki();
 
     const target =
-      this.notes.find((n) => n.path === preferredPath) ??
+      this.notes.find((n) => n.path === keepPath) ??
       this.notes[0] ??
       null;
 
@@ -585,16 +660,20 @@ export class FolioApp {
       await this.openNote(target);
     } else {
       this.current = null;
+      this.dirty = false;
+      this.clearSaveTimer();
       this.els.titleInput.value = "";
       this.suppressChange = true;
       this.editor.setText("");
       this.suppressChange = false;
       this.renderLinks();
       this.updateStats("");
+      this.els.previewRoot.replaceChildren();
     }
   }
 
   private renderNoteList() {
+    this.notes = sortNotes(this.notes, this.settings);
     this.els.noteList.innerHTML = "";
     if (!this.notes.length) {
       const empty = document.createElement("div");
@@ -621,35 +700,46 @@ export class FolioApp {
         : "root";
 
       item.append(title, meta);
-      item.addEventListener("click", () => void this.openNote(note));
+      item.addEventListener("click", () => void this.runAction(() => this.openNote(note)));
       item.addEventListener("contextmenu", (e) => {
         e.preventDefault();
-        if (confirm(`Smazat „${note.title}“?`)) void this.removeNote(note);
+        if (confirm(`Smazat „${note.title}“?`)) void this.runAction(() => this.removeNote(note));
       });
       this.els.noteList.appendChild(item);
     }
   }
 
   private async openNote(note: NoteMeta) {
-    if (this.dirty) await this.saveCurrent(true);
-    const text = await readNote(note.path);
+    await this.flushCurrent();
+    const stored = await readNote(note.path);
+    const draft = readDraft(note.path);
+    const text = draft ?? stored;
+    const sameDocument = this.current?.path === note.path && this.editor.getText() === text;
     this.current = note;
     this.settings.lastOpenPath = note.path;
     void saveSettings(this.settings);
 
     this.els.titleInput.value = note.title;
     this.suppressChange = true;
-    this.editor.setText(text);
+    if (!sameDocument) {
+      this.editor.setText(text);
+      this.els.previewPane.scrollTop = 0;
+    }
     this.suppressChange = false;
     this.index.setContent(note.path, text);
-    this.dirty = false;
-    this.els.statusSave.textContent = "Připraveno";
+    this.dirty = text !== stored;
+    this.revision += 1;
+    this.els.statusSave.textContent = this.dirty ? "Obnoven rozepsaný text — ukládám…" : "Připraveno";
+    if (this.dirty) this.scheduleSave();
+    else forgetDraft(note.path, stored);
     this.renderNoteList();
     this.renderLinks();
     this.updateStats(text);
     if (this.previewOn) this.renderPreview(text);
     this.closeMobileOverlays();
-    this.editor.focus();
+    if (!this.busy) this.editor.setReadOnly(false);
+    if (this.previewOn) this.els.previewPane.focus({ preventScroll: true });
+    else this.editor.focus();
   }
 
   private async openWiki(title: string, createIfMissing: boolean) {
@@ -669,16 +759,20 @@ export class FolioApp {
       await this.pickLibrary();
       if (!this.settings.libraryPath) return;
     }
-    if (this.dirty) await this.saveCurrent(true);
+    await this.flushCurrent();
     const path = await createNote(this.settings.libraryPath, "Bez názvu", "# Bez názvu\n\n");
     await this.refreshLibrary(path);
   }
 
   private async removeNote(note: NoteMeta) {
+    await this.flushCurrent();
+    this.clearSaveTimer();
     await deleteNote(note.path);
+    forgetDraft(note.path);
     this.index.removeNote(note.path);
     if (this.current?.path === note.path) {
       this.current = null;
+      this.dirty = false;
       this.settings.lastOpenPath = null;
     }
     await this.refreshLibrary();
@@ -704,8 +798,10 @@ export class FolioApp {
     const previous = this.current;
     this.renaming = true;
     try {
-      if (this.dirty) await this.saveCurrent(true);
+      await this.flushCurrent();
+      this.clearSaveTimer();
       const newPath = await renameNote(previous.path, nextTitle);
+      forgetDraft(previous.path);
       const renamedTitle = newPath.split(/[/\\]/).pop()?.replace(/\.md$/i, "") || nextTitle;
 
       // Update in-memory list immediately so the sidebar never lags.
@@ -721,7 +817,6 @@ export class FolioApp {
       this.current = note ?? { ...previous, path: newPath, title: renamedTitle };
       this.settings.lastOpenPath = newPath;
       this.els.titleInput.value = this.current.title;
-      this.notes.sort((a, b) => a.title.localeCompare(b.title, "cs", { sensitivity: "base" }));
       this.index.setNotes(this.notes);
       this.renderNoteList();
       this.editor.reconfigureWiki();
@@ -740,26 +835,49 @@ export class FolioApp {
   private handleEditorChange(text: string) {
     if (this.suppressChange || !this.current) return;
     this.dirty = true;
-    this.els.statusSave.textContent = "Neuloženo…";
+    this.revision += 1;
+    const journaled = rememberDraft(this.current.path, text);
+    this.els.statusSave.textContent = journaled ? "Neuloženo…" : "Neuloženo — obnova konceptu není dostupná";
     this.index.setContent(this.current.path, text);
     this.renderLinks();
     this.updateStats(text);
     if (this.previewOn) this.renderPreview(text);
 
-    if (this.saveTimer) window.clearTimeout(this.saveTimer);
-    this.saveTimer = window.setTimeout(() => void this.saveCurrent(false), 450);
+    this.scheduleSave();
   }
 
-  private async saveCurrent(manual: boolean) {
-    if (!this.current) return;
+  private clearSaveTimer() {
+    if (this.saveTimer !== null) window.clearTimeout(this.saveTimer);
+    this.saveTimer = null;
+  }
+
+  private scheduleSave() {
+    this.clearSaveTimer();
+    this.saveTimer = window.setTimeout(() => {
+      this.saveTimer = null;
+      void this.saveCurrent(false).catch((error) => this.reportError(error));
+    }, 450);
+  }
+
+  private saveCurrent(manual: boolean): Promise<void> {
+    if (!this.current || !this.dirty) return this.saveQueue;
+    this.clearSaveTimer();
+    const path = this.current.path;
     const text = this.editor.getText();
-    await writeNote(this.current.path, text);
-    this.index.setContent(this.current.path, text);
-    this.dirty = false;
-    this.els.statusSave.textContent = manual ? "Uloženo" : "Automaticky uloženo";
-    // Refresh mtime/title list lightly
-    const note = this.notes.find((n) => n.path === this.current?.path);
-    if (note) note.mtime = Date.now();
+    const revision = this.revision;
+    const save = this.saveQueue.catch(() => undefined).then(async () => {
+      await writeNote(path, text);
+      forgetDraft(path, text);
+      if (this.current?.path === path && this.revision === revision) {
+        this.index.setContent(path, text);
+        this.dirty = false;
+        this.els.statusSave.textContent = manual ? "Uloženo" : "Automaticky uloženo";
+      }
+      const note = this.notes.find((n) => n.path === path);
+      if (note) note.mtime = Date.now();
+    });
+    this.saveQueue = save;
+    return save;
   }
 
   private renderLinks() {
@@ -780,7 +898,7 @@ export class FolioApp {
       this.els.backlinksList.appendChild(empty);
     } else {
       for (const note of backlinks) {
-        this.els.backlinksList.appendChild(this.linkButton(note.title, () => void this.openNote(note)));
+        this.els.backlinksList.appendChild(this.linkButton(note.title, () => void this.runAction(() => this.openNote(note))));
       }
     }
 
@@ -795,7 +913,7 @@ export class FolioApp {
       for (const item of outgoing) {
         const label = item.note ? item.title : `${item.title} (chybí)`;
         this.els.outgoingList.appendChild(
-          this.linkButton(label, () => void this.openWiki(item.title, true), !item.note),
+          this.linkButton(label, () => void this.runAction(() => this.openWiki(item.title, true)), !item.note),
         );
       }
     }
@@ -820,34 +938,27 @@ export class FolioApp {
     this.previewOn = !this.previewOn;
     this.syncChip(this.els.btnPreview, this.previewOn);
     this.els.editorRoot.classList.toggle("hidden", this.previewOn);
-    this.els.previewRoot.classList.toggle("hidden", !this.previewOn);
-    if (this.previewOn) this.renderPreview(this.editor.getText());
+    this.els.previewPane.classList.toggle("hidden", !this.previewOn);
+    if (this.previewOn) {
+      this.renderPreview(this.editor.getText());
+      this.els.previewPane.focus({ preventScroll: true });
+    }
     else this.editor.focus();
   }
 
   private renderPreview(text: string) {
-    const withWiki = text.replace(
-      /\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]/g,
-      (_full, title: string, alias?: string) => {
-        const clean = title.trim();
-        const label = (alias ?? title).trim();
-        const missing = !this.index.resolve(clean);
-        const cls = missing ? "wiki-link missing" : "wiki-link";
-        return `<a class="${cls}" href="wiki://${encodeURIComponent(clean)}">${escapeHtml(label)}</a>`;
-      },
-    );
-    const html = marked.parse(withWiki) as string;
-    this.els.previewRoot.innerHTML = html;
+    this.els.previewRoot.innerHTML = renderMarkdown(text, this.index);
     this.els.previewRoot.querySelectorAll("a").forEach((a) => {
       const href = a.getAttribute("href") ?? "";
-      if (href.startsWith("wiki://")) {
+      if (a.dataset.wikiTitle) {
         a.addEventListener("click", (e) => {
           e.preventDefault();
-          const title = decodeURIComponent(href.slice("wiki://".length));
-          void this.openWiki(title, true);
+          const title = a.dataset.wikiTitle!;
+          void this.runAction(() => this.openWiki(title, true));
         });
         return;
       }
+      if (!/^(https?:|mailto:|#)/i.test(href)) a.removeAttribute("href");
       a.setAttribute("target", "_blank");
       a.setAttribute("rel", "noreferrer");
     });
@@ -875,7 +986,7 @@ export class FolioApp {
       row.innerHTML = `<span>${escapeHtml(note.title)}</span><small>${escapeHtml(note.relativePath)}</small>`;
       row.addEventListener("click", () => {
         this.closeCommandPalette();
-        void this.openNote(note);
+        void this.runAction(() => this.openNote(note));
       });
       this.els.commandResults.appendChild(row);
     });
@@ -895,10 +1006,10 @@ export class FolioApp {
       const note = this.commandItems[this.commandIndex];
       if (note) {
         this.closeCommandPalette();
-        void this.openNote(note);
+        void this.runAction(() => this.openNote(note));
       } else if (this.els.commandInput.value.trim()) {
         this.closeCommandPalette();
-        void this.openWiki(this.els.commandInput.value.trim(), true);
+        void this.runAction(() => this.openWiki(this.els.commandInput.value.trim(), true));
       }
     }
   }

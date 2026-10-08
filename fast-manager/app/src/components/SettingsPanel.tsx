@@ -129,6 +129,18 @@ export function SettingsPanel() {
           {t('reminders.enable')}
         </button>
       </section>
+
+      <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5">
+        <h2 className="mb-2 text-sm font-semibold">{t('reminders.title')}</h2>
+        <p className="mb-3 text-xs text-[var(--muted)]">{t('reminders.hint')}</p>
+        <button
+          type="button"
+          onClick={() => void requestNotificationPermission()}
+          className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm hover:bg-[var(--surface-2)]"
+        >
+          {t('reminders.enable')}
+        </button>
+      </section>
     </div>
   );
 }

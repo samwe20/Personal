@@ -6,9 +6,13 @@ import { FolioApp } from "./app";
 import { isTauri } from "./lib/runtime";
 
 const app = new FolioApp();
-void app.init();
+void app.init().catch((error) => {
+  console.error("Folio startup failed", error);
+  const status = document.getElementById("status-save");
+  if (status) status.textContent = "Knihovnu se nepodařilo otevřít. Zkuste obnovit stránku nebo vybrat složku znovu.";
+});
 
-if (!isTauri() && "serviceWorker" in navigator) {
+if (import.meta.env.PROD && !isTauri() && "serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     void navigator.serviceWorker.register("./sw.js").catch((err) => {
       console.warn("SW registration failed", err);
