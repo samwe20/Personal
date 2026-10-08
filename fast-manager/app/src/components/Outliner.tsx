@@ -98,30 +98,46 @@ export function Outliner() {
               value={node.content}
               selected={isSelected}
               onChange={(v) => editNodeContent(node.id, v)}
-              onTagTrigger={(tagName, newText) => {
+              onTagTrigger={(tagNames, newText) => {
                 const norm = (s: string) =>
                   s
                     .toLowerCase()
                     .normalize('NFD')
                     .replace(/[\u0300-\u036f]/g, '')
                     .replace(/\s+/g, '');
-                const needle = norm(tagName);
-                const tag = BUILTIN_SUPERTAGS.find(
-                  (tg) =>
-                    tg.id.toLowerCase() === tagName.toLowerCase() ||
-                    norm(tg.name) === needle ||
-                    norm(t(`supertags.${tg.id}`, tg.name)) === needle,
-                );
-                if (!tag) {
-                  if (newText !== node.content) void editNodeContent(node.id, newText);
-                  return;
-                }
+                const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const resolveTag = (tagName: string) => {
+                  const parts = tagName.split(/\s+/);
+                  for (let len = parts.length; len >= 1; len--) {
+                    const sub = parts.slice(0, len).join(' ');
+                    const needle = norm(sub);
+                    const tag = BUILTIN_SUPERTAGS.find(
+                      (tg) =>
+                        tg.id.toLowerCase() === sub.toLowerCase() ||
+                        norm(tg.name) === needle ||
+                        norm(t(`supertags.${tg.id}`, tg.name)) === needle,
+                    );
+                    if (tag) return { tag, matchedText: sub };
+                  }
+                  return undefined;
+                };
                 void (async () => {
-                  await attachTag(node.id, tag.id);
-                  const stripped = newText
-                    .replace(/#[\p{L}\p{N}_][\p{L}\p{N}_ ]*?\s*$/u, '')
-                    .trimEnd();
-                  if (stripped !== newText) await editNodeContent(node.id, stripped);
+                  let stripped = newText;
+                  let attached = false;
+                  for (const tagName of tagNames) {
+                    const resolved = resolveTag(tagName);
+                    if (!resolved) continue;
+                    await attachTag(node.id, resolved.tag.id);
+                    attached = true;
+                    stripped = stripped.replace(
+                      new RegExp(`#${escapeRegExp(resolved.matchedText)}(?=[\\s.,;:!?]|$)`, 'gu'),
+                      '',
+                    );
+                  }
+                  stripped = stripped.replace(/\s{2,}/g, ' ').trim();
+                  if (attached || stripped !== node.content || newText !== node.content) {
+                    await editNodeContent(node.id, stripped);
+                  }
                 })();
               }}
             />

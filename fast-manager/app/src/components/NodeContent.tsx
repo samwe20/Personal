@@ -5,8 +5,11 @@ interface NodeContentProps {
   value: string;
   selected: boolean;
   onChange: (v: string) => void;
-  onTagTrigger: (tag: string, text: string) => void;
+  onTagTrigger: (tags: string[], text: string) => void;
 }
+
+/** Najde všechny výskyty #tag kdekoli v textu (max. dvouslovné tagy jako „denní poznámka"). */
+const TAG_PATTERN = /#([\p{L}\p{N}_]+(?: [\p{L}\p{N}_]+)?)(?=[\s.,;:!?]|$)/gu;
 
 export function NodeContent({ value, selected, onChange, onTagTrigger }: NodeContentProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -50,9 +53,9 @@ export function NodeContent({ value, selected, onChange, onTagTrigger }: NodeCon
       className="min-h-[1.25rem] whitespace-pre-wrap text-xs leading-snug outline-none"
       onBlur={(e) => {
         const text = e.currentTarget.textContent ?? '';
-        const match = text.match(/#([\p{L}\p{N}_][\p{L}\p{N}_ ]*?)\s*$/u);
-        if (match) {
-          onTagTrigger(match[1].trim(), text);
+        const tags = [...new Set([...text.matchAll(TAG_PATTERN)].map((m) => m[1].trim()).filter(Boolean))];
+        if (tags.length > 0) {
+          onTagTrigger(tags, text);
         } else if (text !== value) {
           onChange(text);
         }
