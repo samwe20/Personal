@@ -129,6 +129,14 @@ export const BUILTIN_SUPERTAGS: SupertagDef[] = [
     description: 'Plain note without extra fields',
     fields: [],
   },
+  {
+    id: 'folder',
+    name: 'Folder',
+    color: '#78716c',
+    icon: 'folder-open',
+    description: 'Container for documents and nested folders',
+    fields: [{ key: 'description', type: 'text' }],
+  },
 ];
 
 export const SUPERTAG_MAP = Object.fromEntries(BUILTIN_SUPERTAGS.map((s) => [s.id, s]));

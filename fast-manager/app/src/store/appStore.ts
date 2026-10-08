@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { BUILTIN_SUPERTAGS, getDefaultFieldValues } from '../data/supertags';
+import i18n from '../i18n';
 import {
+  addNodeEmbed,
   addSupertagToNode,
   completeTask as completeTaskNode,
   createNode,
@@ -11,6 +13,7 @@ import {
   getWorkspaces,
   loadSettings,
   moveNode,
+  removeNodeEmbed,
   removeSupertagFromNode,
   restoreNodesSnapshot,
   saveSettings,
@@ -30,18 +33,22 @@ import { requestNotificationPermission, startReminderChecker } from '../services
 import { SyncClient, type SyncStatus } from '../sync/syncClient';
 import type {
   AppSettings,
+  NodeEmbed,
   NodeRecord,
+  QueryExpression,
   QuickCaptureInput,
   SavedQueryRecord,
   Theme,
   WorkspaceRecord,
 } from '../types';
+import { getFolderNodes, resolveFolderTitle } from '../utils/folderUtils';
 import { getBacklinks, resolveNodeTitle, searchNodes } from '../utils/nodeUtils';
 
-export type ViewMode = 'inbox' | 'today' | 'query' | 'settings' | 'search';
+export type ViewMode = 'inbox' | 'today' | 'query' | 'settings' | 'search' | 'folder';
 
 interface AppState {
   ready: boolean;
+  initError: string | null;
   settings: AppSettings | null;
   workspaces: WorkspaceRecord[];
   nodes: NodeRecord[];
@@ -49,6 +56,7 @@ interface AppState {
   selectedNodeId: string | null;
   activeView: ViewMode;
   activeQueryId: string | null;
+  activeFolderId: string | null;
   searchQuery: string;
   commandPaletteOpen: boolean;
   quickCaptureOpen: boolean;
@@ -60,7 +68,8 @@ interface AppState {
   refresh: () => Promise<void>;
   withHistory: <T>(fn: () => Promise<T>) => Promise<T>;
   selectNode: (id: string | null) => void;
-  setView: (view: ViewMode, queryId?: string | null) => void;
+  setView: (view: ViewMode, queryId?: string | null, folderId?: string | null) => void;
+  openFolder: (folderId: string) => void;
   setSearchQuery: (q: string) => void;
   openQuickCapture: () => void;
   closeQuickCapture: () => void;
@@ -68,6 +77,8 @@ interface AppState {
   closeCommandPalette: () => void;
   toggleMobilePanel: () => void;
   addRootNode: (content?: string) => Promise<void>;
+  addFolder: (parentId?: string | null) => Promise<void>;
+  addDocument: (parentId?: string | null) => Promise<void>;
   addChildNode: (parentId: string) => Promise<void>;
   quickCapture: (input: QuickCaptureInput) => Promise<void>;
   editNodeContent: (id: string, content: string) => Promise<void>;
@@ -77,6 +88,11 @@ interface AppState {
   setField: (nodeId: string, tagId: string, key: string, value: string | number | boolean) => Promise<void>;
   completeTask: (nodeId: string) => Promise<void>;
   moveNodeTo: (nodeId: string, parentId: string | null, order: number) => Promise<void>;
+  addEmbed: (nodeId: string, expression: QueryExpression, title?: string) => Promise<void>;
+  removeEmbed: (nodeId: string, embedId: string) => Promise<void>;
+  getEmbedResults: (embed: NodeEmbed) => NodeRecord[];
+  getFolderNodes: (parentId?: string | null) => NodeRecord[];
+  resolveFolderTitle: (folderId: string) => string;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   updateSettings: (patch: Partial<AppSettings>) => Promise<void>;
@@ -101,6 +117,7 @@ function resolveTheme(theme: Theme): 'light' | 'dark' {
 
 export const useAppStore = create<AppState>((set, get) => ({
   ready: false,
+  initError: null,
   settings: null,
   workspaces: [],
   nodes: [],
@@ -108,11 +125,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedNodeId: null,
   activeView: 'inbox',
   activeQueryId: 'q-tasks',
+  activeFolderId: null,
   searchQuery: '',
   commandPaletteOpen: false,
   quickCaptureOpen: false,
   showMobilePanel: false,
   syncStatus: {
+    enabled: false,
     connected: false,
     syncing: false,
     lastSyncAt: null,
@@ -123,39 +142,45 @@ export const useAppStore = create<AppState>((set, get) => ({
   historyTick: 0,
 
   init: async () => {
-    await seedIfEmpty();
-    const settings = await loadSettings();
-    const [workspaces, queries] = await Promise.all([getWorkspaces(), getQueries()]);
-    const wsId = settings.workspaceId || workspaces[0]?.id || 'default';
-    const nodes = await getAllNodes(wsId);
+    try {
+      await seedIfEmpty();
+      const settings = await loadSettings();
+      const [workspaces, queries] = await Promise.all([getWorkspaces(), getQueries()]);
+      const wsId = settings.workspaceId || workspaces[0]?.id || 'default';
+      const nodes = await getAllNodes(wsId);
 
-    document.documentElement.lang = settings.language;
-    if (settings.language) {
-      const { default: i18n } = await import('../i18n');
-      await i18n.changeLanguage(settings.language);
+      document.documentElement.lang = settings.language;
+      if (settings.language) {
+        await i18n.changeLanguage(settings.language);
+      }
+      get().applyTheme(settings.theme);
+      void requestNotificationPermission();
+
+      const syncClient = new SyncClient(settings);
+      syncClient.subscribe((status) => set({ syncStatus: status }));
+      if (settings.syncEnabled) void syncClient.connect();
+
+      startReminderChecker(
+        () => get().nodes,
+        () => get().settings?.language ?? 'cs',
+      );
+
+      clearHistory();
+      set({
+        ready: true,
+        initError: null,
+        settings: { ...settings, workspaceId: wsId, onboardingDone: settings.onboardingDone ?? false, syncEnabled: settings.syncEnabled ?? false },
+        workspaces,
+        nodes,
+        queries,
+        selectedNodeId: nodes[0]?.id ?? null,
+        syncClient,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error('FAST init failed:', err);
+      set({ ready: false, initError: message });
     }
-    get().applyTheme(settings.theme);
-    void requestNotificationPermission();
-
-    const syncClient = new SyncClient(settings);
-    syncClient.subscribe((status) => set({ syncStatus: status }));
-    void syncClient.connect();
-
-    startReminderChecker(
-      () => get().nodes,
-      () => get().settings?.language ?? 'cs',
-    );
-
-    clearHistory();
-    set({
-      ready: true,
-      settings: { ...settings, workspaceId: wsId, onboardingDone: settings.onboardingDone ?? false },
-      workspaces,
-      nodes,
-      queries,
-      selectedNodeId: nodes[0]?.id ?? null,
-      syncClient,
-    });
   },
 
   refresh: async () => {
@@ -179,10 +204,21 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   selectNode: (id) => set({ selectedNodeId: id, showMobilePanel: !!id }),
 
-  setView: (view, queryId = null) =>
-    set({ activeView: view, activeQueryId: queryId ?? get().activeQueryId, searchQuery: view === 'search' ? get().searchQuery : '' }),
+  setView: (view, queryId = null, folderId = undefined) =>
+    set({
+      activeView: view,
+      activeQueryId: queryId ?? get().activeQueryId,
+      activeFolderId: view === 'folder' ? (folderId ?? get().activeFolderId) : null,
+      searchQuery: view === 'search' ? get().searchQuery : '',
+    }),
 
-  setSearchQuery: (q) => set({ searchQuery: q, activeView: q ? 'search' : get().activeView === 'search' ? 'inbox' : get().activeView }),
+  openFolder: (folderId) => set({ activeView: 'folder', activeFolderId: folderId, selectedNodeId: null }),
+
+  setSearchQuery: (q) =>
+    set({
+      searchQuery: q,
+      activeView: q ? 'search' : get().activeView === 'search' ? 'inbox' : get().activeView,
+    }),
 
   openQuickCapture: () => set({ quickCaptureOpen: true }),
   closeQuickCapture: () => set({ quickCaptureOpen: false }),
@@ -192,9 +228,44 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   addRootNode: async (content = '') => {
     await get().withHistory(async () => {
-      const { settings } = get();
+      const { settings, activeFolderId, activeView } = get();
       if (!settings) return;
-      const node = await createNode({ workspaceId: settings.workspaceId, parentId: null, content: content || ' ' });
+      const parentId = activeView === 'folder' && activeFolderId ? activeFolderId : null;
+      const node = await createNode({ workspaceId: settings.workspaceId, parentId, content: content || ' ' });
+      await get().refresh();
+      set({ selectedNodeId: node.id });
+    });
+  },
+
+  addFolder: async (parentId) => {
+    await get().withHistory(async () => {
+      const { settings, activeFolderId, activeView } = get();
+      if (!settings) return;
+      const folderParent =
+        parentId !== undefined ? parentId : activeView === 'folder' && activeFolderId ? activeFolderId : null;
+      const node = await createNode({
+        workspaceId: settings.workspaceId,
+        parentId: folderParent,
+        content: i18n.t('folders.newFolder'),
+        supertagIds: ['folder'],
+      });
+      await get().refresh();
+      set({ selectedNodeId: node.id, activeView: 'folder', activeFolderId: node.id });
+    });
+  },
+
+  addDocument: async (parentId) => {
+    await get().withHistory(async () => {
+      const { settings, activeFolderId, activeView } = get();
+      if (!settings) return;
+      const docParent =
+        parentId !== undefined ? parentId : activeView === 'folder' && activeFolderId ? activeFolderId : null;
+      const node = await createNode({
+        workspaceId: settings.workspaceId,
+        parentId: docParent,
+        content: i18n.t('folders.newDocument'),
+        supertagIds: ['note'],
+      });
       await get().refresh();
       set({ selectedNodeId: node.id });
     });
@@ -288,6 +359,26 @@ export const useAppStore = create<AppState>((set, get) => ({
     });
   },
 
+  addEmbed: async (nodeId, expression, title) => {
+    await get().withHistory(async () => {
+      await addNodeEmbed(nodeId, expression, title);
+      await get().refresh();
+    });
+  },
+
+  removeEmbed: async (nodeId, embedId) => {
+    await get().withHistory(async () => {
+      await removeNodeEmbed(nodeId, embedId);
+      await get().refresh();
+    });
+  },
+
+  getEmbedResults: (embed) => evaluateQuery(get().nodes, embed.expression),
+
+  getFolderNodes: (parentId = null) => getFolderNodes(get().nodes, parentId),
+
+  resolveFolderTitle: (folderId) => resolveFolderTitle(get().nodes, folderId),
+
   undo: async () => {
     const snapshot = popUndo(get().nodes);
     if (!snapshot) return;
@@ -314,10 +405,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (patch.theme) get().applyTheme(patch.theme);
     if (patch.language) {
       document.documentElement.lang = patch.language;
-      const { default: i18n } = await import('../i18n');
       await i18n.changeLanguage(patch.language);
     }
-    if (patch.theme || patch.language || patch.syncUrl) {
+    if (patch.theme || patch.language || patch.syncUrl || patch.syncEnabled) {
       get().syncClient?.updateSettings(next);
     }
     set({ settings: next });
@@ -344,7 +434,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   getVisibleNodes: () => {
-    const { nodes, activeView } = get();
+    const { nodes, activeView, activeFolderId } = get();
     const today = new Date().toISOString().slice(0, 10);
     if (activeView === 'today') {
       return nodes.filter(
@@ -356,7 +446,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       );
     }
     if (activeView === 'search') return get().getSearchResults();
-    return nodes.filter((n) => n.parentId === null).sort((a, b) => a.order - b.order);
+    if (activeView === 'folder' && activeFolderId) {
+      return nodes.filter((n) => n.parentId === activeFolderId).sort((a, b) => a.order - b.order);
+    }
+    return nodes
+      .filter((n) => n.parentId === null && !n.supertagIds.includes('folder'))
+      .sort((a, b) => a.order - b.order);
   },
 
   getQueryResults: () => {

@@ -5,6 +5,7 @@ import type { AppSettings, SyncChange } from '../types';
 type SyncListener = (status: SyncStatus) => void;
 
 export interface SyncStatus {
+  enabled: boolean;
   connected: boolean;
   syncing: boolean;
   lastSyncAt: string | null;
@@ -18,6 +19,7 @@ export class SyncClient {
   private listeners = new Set<SyncListener>();
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private status: SyncStatus = {
+    enabled: false,
     connected: false,
     syncing: false,
     lastSyncAt: null,
@@ -27,12 +29,15 @@ export class SyncClient {
 
   constructor(settings: AppSettings) {
     this.settings = settings;
+    this.status.enabled = settings.syncEnabled;
   }
 
   updateSettings(settings: AppSettings) {
     this.settings = settings;
+    this.status.enabled = settings.syncEnabled;
     this.disconnect();
-    this.connect();
+    if (settings.syncEnabled) void this.connect();
+    else this.emit({ connected: false, syncing: false, error: null, pendingCount: 0 });
   }
 
   subscribe(listener: SyncListener) {
@@ -46,7 +51,12 @@ export class SyncClient {
     this.listeners.forEach((l) => l(this.status));
   }
 
+  isEnabled(): boolean {
+    return this.settings.syncEnabled;
+  }
+
   getSyncBaseUrl(): string {
+    if (!this.settings.syncEnabled) return '';
     if (this.settings.syncUrl) return this.settings.syncUrl.replace(/\/$/, '');
     return '';
   }
@@ -57,6 +67,12 @@ export class SyncClient {
   }
 
   async connect(): Promise<void> {
+    if (!this.settings.syncEnabled) {
+      this.emit({ enabled: false, connected: false, syncing: false, error: null, pendingCount: 0 });
+      return;
+    }
+
+    this.emit({ enabled: true });
     await this.pushPending();
     await this.pullRemote();
 
@@ -81,14 +97,14 @@ export class SyncClient {
       };
       this.ws.onclose = () => {
         this.emit({ connected: false });
-        this.scheduleReconnect();
+        if (this.settings.syncEnabled) this.scheduleReconnect();
       };
       this.ws.onerror = () => {
         this.emit({ connected: false, error: 'WebSocket error' });
       };
     } catch {
       this.emit({ connected: false, error: 'Connection failed' });
-      this.scheduleReconnect();
+      if (this.settings.syncEnabled) this.scheduleReconnect();
     }
   }
 
@@ -99,23 +115,28 @@ export class SyncClient {
   }
 
   private scheduleReconnect() {
+    if (!this.settings.syncEnabled) return;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
-    this.reconnectTimer = setTimeout(() => this.connect(), 5000);
+    this.reconnectTimer = setTimeout(() => void this.connect(), 5000);
   }
 
   private buildWsUrl(): string | null {
-    if (typeof window === 'undefined') return null;
-    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    if (!this.settings.syncEnabled || typeof window === 'undefined') return null;
+
     if (this.settings.syncUrl) {
       const u = new URL(this.settings.syncUrl);
       u.protocol = u.protocol === 'https:' ? 'wss:' : 'ws:';
       u.pathname = '/ws';
       return u.toString();
     }
+
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${proto}//${window.location.host}/ws`;
   }
 
   async pushPending(): Promise<void> {
+    if (!this.settings.syncEnabled) return;
+
     const pending = await db.syncQueue.toArray();
     this.emit({ pendingCount: pending.length, syncing: true });
     if (pending.length === 0) {
@@ -150,6 +171,8 @@ export class SyncClient {
   }
 
   async pullRemote(): Promise<void> {
+    if (!this.settings.syncEnabled) return;
+
     try {
       const since = this.settings.lastSyncAt ?? '1970-01-01T00:00:00.000Z';
       const res = await fetch(this.apiUrl(`/api/sync/pull?since=${encodeURIComponent(since)}`));
@@ -165,6 +188,7 @@ export class SyncClient {
   }
 
   async syncNow(): Promise<void> {
+    if (!this.settings.syncEnabled) return;
     await this.pushPending();
     await this.pullRemote();
   }

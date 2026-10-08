@@ -35,6 +35,7 @@ const iconMap: Record<string, LucideIcon> = {
   gavel: Gavel,
   lightbulb: Lightbulb,
   'file-text': FileText,
+  'folder-open': Folder,
   inbox: Inbox,
   'alert-circle': AlertCircle,
   refresh: RefreshCw,

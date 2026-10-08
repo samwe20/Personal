@@ -1,5 +1,13 @@
 import Dexie, { type Table } from 'dexie';
+import { v4 as uuidv4 } from 'uuid';
 import type { AppSettings, NodeRecord, SavedQueryRecord, SyncChange, WorkspaceRecord } from '../types';
+
+function newId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return uuidv4();
+}
 
 export class FastDatabase extends Dexie {
   nodes!: Table<NodeRecord, string>;
@@ -26,17 +34,18 @@ export async function loadSettings(): Promise<AppSettings> {
   const existing = await db.settings.get('main');
   if (existing) {
     const { id: _id, ...settings } = existing;
-    return settings;
+    return { ...settings, syncEnabled: settings.syncEnabled ?? false };
   }
 
   const defaults: AppSettings & { id: string } = {
     id: 'main',
     theme: 'system',
     language: 'cs',
+    syncEnabled: false,
     syncUrl: '',
     workspaceId: 'default',
     lastSyncAt: null,
-    clientId: crypto.randomUUID(),
+    clientId: newId(),
     onboardingDone: false,
   };
   await db.settings.put(defaults);
