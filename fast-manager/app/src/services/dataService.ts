@@ -1,14 +1,17 @@
 import { nextDueDate } from '../utils/contentUtils';
 import { localToday } from '../utils/dateUtils';
+import { mirrorContent, splitContent } from '../utils/blocks';
 import { v4 as uuidv4 } from 'uuid';
 import { BUILTIN_SUPERTAGS, getDefaultFieldValues } from '../data/supertags';
 import { db, loadSettings, saveSettings } from '../db/database';
 import type {
   AppSettings,
+  Block,
   NodeEmbed,
   NodeRecord,
   QueryExpression,
   SavedQueryRecord,
+  SupertagDef,
   SyncChange,
   WorkspaceRecord,
 } from '../types';
@@ -22,8 +25,9 @@ async function enqueueSync(change: Omit<SyncChange, 'id'>): Promise<void> {
 }
 
 export async function seedIfEmpty(): Promise<void> {
+  const seeded = await db.transaction('rw', db.workspaces, db.nodes, db.queries, async () => {
   const count = await db.workspaces.count();
-  if (count > 0) return;
+  if (count > 0) return null;
 
   const wsId = 'default';
   const today = new Date().toISOString().slice(0, 10);
@@ -144,11 +148,14 @@ export async function seedIfEmpty(): Promise<void> {
     },
   ];
 
-  await db.transaction('rw', db.workspaces, db.nodes, db.queries, async () => {
     await db.workspaces.put(workspace);
     await db.nodes.bulkPut(nodes);
     await db.queries.bulkPut(queries);
+    return { workspace, nodes, queries };
   });
+
+  if (!seeded) return;
+  const { workspace, nodes, queries } = seeded;
 
   for (const node of nodes) {
     await enqueueSync({
@@ -185,6 +192,12 @@ export async function getAllNodes(workspaceId: string): Promise<NodeRecord[]> {
     .sortBy('order');
 }
 
+async function findTypeDef(typeId: string): Promise<SupertagDef | undefined> {
+  const stored = await db.objectTypes.get(typeId);
+  if (stored && !stored.deleted) return stored;
+  return BUILTIN_SUPERTAGS.find((tag) => tag.id === typeId);
+}
+
 export async function createNode(input: {
   workspaceId: string;
   parentId: string | null;
@@ -192,15 +205,27 @@ export async function createNode(input: {
   supertagIds?: string[];
   fieldValues?: NodeRecord['fieldValues'];
   order?: number;
+  typeId?: string;
+  title?: string;
+  blocks?: Block[];
+  tagIds?: string[];
+  aliases?: string[];
 }): Promise<NodeRecord> {
   const ts = now();
+  const typeId = input.typeId ?? input.supertagIds?.[0];
+  const supertagIds = input.supertagIds ?? (typeId ? [typeId] : []);
   const fieldValues: NodeRecord['fieldValues'] = input.fieldValues ? { ...input.fieldValues } : {};
-  for (const tagId of input.supertagIds ?? []) {
+  for (const tagId of supertagIds) {
     if (!fieldValues[tagId]) {
-      const tag = BUILTIN_SUPERTAGS.find((t) => t.id === tagId);
+      const tag = await findTypeDef(tagId);
       if (tag) fieldValues[tagId] = getDefaultFieldValues(tag);
     }
   }
+
+  const split = input.title === undefined && input.blocks === undefined ? splitContent(input.content) : null;
+  const title = input.title ?? split?.title ?? input.content.trim();
+  const blocks = input.blocks ?? split?.blocks ?? [];
+  const content = input.blocks || input.title !== undefined ? mirrorContent(title, blocks) : input.content;
 
   const siblings = (await getAllNodes(input.workspaceId)).filter(
     (n) => n.parentId === input.parentId,
@@ -210,9 +235,14 @@ export async function createNode(input: {
     id: uuidv4(),
     workspaceId: input.workspaceId,
     parentId: input.parentId,
-    content: input.content,
+    content: content || title,
+    title,
+    blocks,
+    aliases: input.aliases ?? [],
+    tagIds: input.tagIds ?? [],
+    typeId,
     order: input.order ?? siblings.length,
-    supertagIds: input.supertagIds ?? [],
+    supertagIds,
     fieldValues,
     embeds: [],
     createdAt: ts,
@@ -233,7 +263,24 @@ export async function createNode(input: {
 
 export async function updateNode(
   id: string,
-  patch: Partial<Pick<NodeRecord, 'content' | 'parentId' | 'order' | 'supertagIds' | 'fieldValues' | 'embeds'>>,
+  patch: Partial<
+    Pick<
+      NodeRecord,
+      | 'content'
+      | 'parentId'
+      | 'order'
+      | 'supertagIds'
+      | 'fieldValues'
+      | 'embeds'
+      | 'typeId'
+      | 'title'
+      | 'aliases'
+      | 'tagIds'
+      | 'blocks'
+      | 'reviewed'
+      | 'legacySupertagIds'
+    >
+  >,
 ): Promise<NodeRecord | undefined> {
   const node = await db.nodes.get(id);
   if (!node || node.deleted) return undefined;
@@ -245,12 +292,11 @@ export async function updateNode(
     updatedAt: now(),
   };
 
-  if (patch.supertagIds) {
-    for (const tagId of patch.supertagIds) {
-      if (!updated.fieldValues[tagId]) {
-        const tag = BUILTIN_SUPERTAGS.find((t) => t.id === tagId);
-        if (tag) updated.fieldValues[tagId] = getDefaultFieldValues(tag);
-      }
+  const typeIds = [...(patch.supertagIds ?? []), ...(patch.typeId ? [patch.typeId] : [])];
+  for (const tagId of typeIds) {
+    if (!updated.fieldValues[tagId]) {
+      const tag = await findTypeDef(tagId);
+      if (tag) updated.fieldValues[tagId] = getDefaultFieldValues(tag);
     }
   }
 
@@ -282,7 +328,7 @@ export async function deleteNode(id: string): Promise<void> {
 export async function addSupertagToNode(nodeId: string, tagId: string): Promise<NodeRecord | undefined> {
   const node = await db.nodes.get(nodeId);
   if (!node || node.supertagIds.includes(tagId)) return node;
-  const tag = BUILTIN_SUPERTAGS.find((t) => t.id === tagId);
+  const tag = await findTypeDef(tagId);
   if (!tag) return node;
   return updateNode(nodeId, {
     supertagIds: [...node.supertagIds, tagId],
@@ -335,8 +381,11 @@ async function spawnRecurringTask(node: NodeRecord): Promise<NodeRecord> {
   await createNode({
     workspaceId: node.workspaceId,
     parentId: node.parentId,
-    content: node.content,
+    content: node.title || node.content,
+    title: node.title,
+    blocks: node.blocks,
     supertagIds: ['task'],
+    typeId: 'task',
     fieldValues: {
       task: {
         ...taskFields,
@@ -436,8 +485,16 @@ export async function getQueries(): Promise<SavedQueryRecord[]> {
 export function evaluateQuery(nodes: NodeRecord[], expression: QueryExpression): NodeRecord[] {
   const today = localToday();
   let result = nodes.filter((n) => {
-    if (expression.supertagId && !n.supertagIds.includes(expression.supertagId)) return false;
-    const fields = expression.supertagId ? n.fieldValues[expression.supertagId] ?? {} : {};
+    const typeId = n.typeId ?? n.supertagIds[0];
+    if (
+      expression.supertagId &&
+      typeId !== expression.supertagId &&
+      !n.supertagIds.includes(expression.supertagId)
+    ) {
+      return false;
+    }
+    const fieldBagId = expression.supertagId && n.fieldValues[expression.supertagId] ? expression.supertagId : typeId;
+    const fields = fieldBagId ? n.fieldValues[fieldBagId] ?? {} : {};
     return expression.filters.every((f) => {
       const val = fields[f.field];
       switch (f.op) {
@@ -493,7 +550,46 @@ export async function applyRemoteChange(change: SyncChange): Promise<void> {
     case 'query':
       await db.queries.put(payload);
       break;
+    case 'supertag':
+      await db.objectTypes.put(payload);
+      break;
+    case 'collection':
+      await db.collections.put(payload);
+      break;
+    case 'template':
+      await db.templates.put(payload);
+      break;
   }
+}
+
+export async function saveQuery(input: {
+  id?: string;
+  name: string;
+  expression: QueryExpression;
+  icon?: string;
+}): Promise<SavedQueryRecord> {
+  const existing = input.id ? await db.queries.get(input.id) : undefined;
+  const ts = now();
+  const queries = await getQueries();
+  const record: SavedQueryRecord = {
+    id: input.id ?? uuidv4(),
+    name: input.name.trim() || 'Query',
+    icon: input.icon ?? existing?.icon ?? 'search',
+    expression: input.expression,
+    order: existing?.order ?? queries.length,
+    createdAt: existing?.createdAt ?? ts,
+    updatedAt: ts,
+    deleted: false,
+  };
+  await db.queries.put(record);
+  await enqueueSync({
+    entityType: 'query',
+    entityId: record.id,
+    payload: JSON.stringify(record),
+    updatedAt: record.updatedAt,
+    deleted: false,
+  });
+  return record;
 }
 
 export { loadSettings, saveSettings };

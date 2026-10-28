@@ -11,6 +11,10 @@
     "folders": "Folders",
     "queries": "Queries",
     "supertags": "Supertags",
+    "calendar": "Calendar",
+    "types": "Types",
+    "tags": "Tags",
+    "collections": "Collections",
     "settings": "Settings"
   },
   "actions": {
@@ -194,5 +198,73 @@
     "skip": "Skip",
     "next": "Next",
     "start": "Get started"
+  },
+  "object": {
+    "back": "Back",
+    "untitled": "Untitled",
+    "title": "Title",
+    "type": "Type",
+    "tag": "Tag",
+    "tags": "Tags",
+    "addTag": "Add tag",
+    "newTag": "New tag",
+    "aliases": "Aliases",
+    "aliasesHint": "Another name, then Enter",
+    "backlinks": "Linked from",
+    "mentions": "Unlinked mentions",
+    "reviewed": "Reviewed",
+    "download": "Download",
+    "exportMd": "Export Markdown",
+    "exportJson": "Export JSON"
+  },
+  "views": {
+    "list": "List",
+    "table": "Table",
+    "cards": "Cards",
+    "kanban": "Board",
+    "new": "New object",
+    "empty": "Nothing here yet.",
+    "count": "{{count}} objects",
+    "kanbanNeedsLabel": "Board view needs a select property."
+  },
+  "studio": {
+    "title": "Object types",
+    "newType": "New type",
+    "name": "Name",
+    "color": "Color",
+    "properties": "Properties",
+    "addProperty": "Add property",
+    "property": "Property",
+    "options": "Comma-separated options",
+    "multiple": "Multiple",
+    "reverseKey": "Reverse property key",
+    "deleteType": "Delete type",
+    "template": "Template",
+    "templateBody": "Lines for the body of a new object",
+    "saveTemplate": "Save template",
+    "templateReady": "This template is used for new objects of this type."
+  },
+  "calendar": {
+    "today": "Today",
+    "openNote": "Open daily note",
+    "dated": "Dated this day",
+    "created": "Created this day"
+  },
+  "queryBuilder": {
+    "new": "New query",
+    "name": "Name",
+    "type": "Type"
+  },
+  "blocks": {
+    "paragraph": "Paragraph",
+    "heading1": "Heading 1",
+    "heading2": "Heading 2",
+    "bullet": "Bullet",
+    "todo": "To-do",
+    "quote": "Quote",
+    "placeholder": "Write, / for a block, @ for a link"
+  },
+  "collection": {
+    "new": "New collection"
   }
 }

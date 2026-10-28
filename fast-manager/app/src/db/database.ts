@@ -1,6 +1,15 @@
 import Dexie, { type Table } from 'dexie';
 import { v4 as uuidv4 } from 'uuid';
-import type { AppSettings, NodeRecord, SavedQueryRecord, SyncChange, WorkspaceRecord } from '../types';
+import type {
+  AppSettings,
+  CollectionRecord,
+  NodeRecord,
+  ObjectTypeRecord,
+  SavedQueryRecord,
+  SyncChange,
+  TemplateRecord,
+  WorkspaceRecord,
+} from '../types';
 
 function newId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -15,6 +24,9 @@ export class FastDatabase extends Dexie {
   queries!: Table<SavedQueryRecord, string>;
   syncQueue!: Table<SyncChange, string>;
   settings!: Table<AppSettings & { id: string }, string>;
+  objectTypes!: Table<ObjectTypeRecord, string>;
+  collections!: Table<CollectionRecord, string>;
+  templates!: Table<TemplateRecord, string>;
 
   constructor() {
     super('fast-manager');
@@ -24,6 +36,16 @@ export class FastDatabase extends Dexie {
       queries: 'id, order, updatedAt, deleted',
       syncQueue: 'id, updatedAt',
       settings: 'id',
+    });
+    this.version(2).stores({
+      nodes: 'id, workspaceId, parentId, updatedAt, deleted, typeId',
+      workspaces: 'id, order, updatedAt, deleted',
+      queries: 'id, order, updatedAt, deleted',
+      syncQueue: 'id, updatedAt',
+      settings: 'id',
+      objectTypes: 'id, order, deleted',
+      collections: 'id, typeId, order, deleted',
+      templates: 'id, typeId, deleted',
     });
   }
 }

@@ -22,6 +22,15 @@ import {
   Users,
   User,
   Zap,
+  Tag,
+  Hash,
+  List,
+  LayoutGrid,
+  Table,
+  Columns3,
+  ArrowLeft,
+  Image,
+  Plus,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -50,6 +59,15 @@ const iconMap: Record<string, LucideIcon> = {
   redo: Redo2,
   zap: Zap,
   command: Command,
+  tag: Tag,
+  hash: Hash,
+  list: List,
+  grid: LayoutGrid,
+  table: Table,
+  kanban: Columns3,
+  'arrow-left': ArrowLeft,
+  image: Image,
+  plus: Plus,
 };
 
 export function getIcon(name: string): LucideIcon {

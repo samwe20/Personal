@@ -1,0 +1,372 @@
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useAppStore } from '../store/appStore';
+import type { FieldDef } from '../types';
+import { objectToMarkdown } from '../services/objectModel';
+import { splitIds, joinIds } from '../utils/blocks';
+import { getIcon } from '../utils/icons';
+import { getReferenceCandidates, getUnlinkedMentions, objectTitle } from '../utils/nodeUtils';
+import { BlockEditor } from './BlockEditor';
+import { FieldEditor } from './FieldEditor';
+
+export function ObjectPage() {
+  const { t } = useTranslation();
+  const nodeId = useAppStore((s) => s.selectedNodeId);
+  const nodes = useAppStore((s) => s.nodes);
+  const objectTypes = useAppStore((s) => s.objectTypes);
+  const collections = useAppStore((s) => s.collections);
+  const back = useAppStore((s) => s.backToIndex);
+  const openObject = useAppStore((s) => s.openObject);
+  const saveObjectBody = useAppStore((s) => s.saveObjectBody);
+  const changeObjectType = useAppStore((s) => s.changeObjectType);
+  const setObjectField = useAppStore((s) => s.setObjectField);
+  const addTagToObject = useAppStore((s) => s.addTagToObject);
+  const removeTagFromObject = useAppStore((s) => s.removeTagFromObject);
+  const createAndAddTag = useAppStore((s) => s.createAndAddTag);
+  const setAliases = useAppStore((s) => s.setAliases);
+  const setReviewed = useAppStore((s) => s.setReviewed);
+  const toggleInCollection = useAppStore((s) => s.toggleInCollection);
+  const removeNode = useAppStore((s) => s.removeNode);
+  const getNodeBacklinks = useAppStore((s) => s.getNodeBacklinks);
+
+  const node = nodes.find((item) => item.id === nodeId);
+  const [typeOpen, setTypeOpen] = useState(false);
+  const [tagDraft, setTagDraft] = useState('');
+  const [aliasDraft, setAliasDraft] = useState('');
+  const [titleDraft, setTitleDraft] = useState<string | null>(null);
+
+  const type = objectTypes.find((item) => item.id === node?.typeId);
+  const tags = useMemo(
+    () => nodes.filter((item) => item.typeId === 'tag'),
+    [nodes],
+  );
+
+  if (!node) {
+    return <div className="object-page text-[var(--muted)]">{t('panel.noSelection')}</div>;
+  }
+
+  const title = node.title ?? objectTitle(node);
+  const fields = node.typeId ? node.fieldValues[node.typeId] ?? {} : {};
+  const backlinks = getNodeBacklinks(node.id);
+  const mentions = getUnlinkedMentions(nodes, node);
+  const Back = getIcon('arrow-left');
+  const Icon = getIcon(type?.icon ?? 'file-text');
+
+  const download = (filename: string, contents: string, mime: string) => {
+    const blob = new Blob([contents], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onFile = (field: FieldDef, file: File | undefined) => {
+    if (!file || !node.typeId) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      void setObjectField(node.id, node.typeId!, field.key, String(reader.result ?? ''));
+      if (node.typeId === 'file') void setObjectField(node.id, 'file', 'fileName', file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <article className="object-page">
+      <button type="button" onClick={back} className="mb-6 flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--text)]">
+        <Back size={14} />
+        {t('object.back')}
+      </button>
+
+      <div className="relative">
+        <button
+          type="button"
+          className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold"
+          style={{ color: type?.color ?? 'var(--accent)' }}
+          onClick={() => setTypeOpen((open) => !open)}
+        >
+          <Icon size={14} />
+          {type ? t(`supertags.${type.id}`, type.name) : t('object.type')}
+        </button>
+        {typeOpen && (
+          <div className="absolute z-20 mt-1 max-h-64 w-56 overflow-auto rounded-lg border border-[var(--border)] bg-[var(--paper)] shadow-lg">
+            {objectTypes
+              .filter((item) => item.id !== 'tag')
+              .map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)]"
+                  onClick={() => {
+                    setTypeOpen(false);
+                    void changeObjectType(node.id, item.id);
+                  }}
+                >
+                  {t(`supertags.${item.id}`, item.name)}
+                </button>
+              ))}
+          </div>
+        )}
+      </div>
+
+      <input
+        className="object-title"
+        value={titleDraft ?? title}
+        placeholder={t('object.untitled')}
+        aria-label={t('object.title')}
+        onChange={(event) => setTitleDraft(event.target.value)}
+        onBlur={() => {
+          if (titleDraft !== null && titleDraft !== title) {
+            void saveObjectBody(node.id, titleDraft, node.blocks ?? []);
+          }
+          setTitleDraft(null);
+        }}
+      />
+
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        {(node.tagIds ?? []).map((tagId) => {
+          const tag = nodes.find((item) => item.id === tagId);
+          return (
+            <button
+              key={tagId}
+              type="button"
+              className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs text-[var(--text)]"
+              onClick={() => openObject(tagId)}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                void removeTagFromObject(node.id, tagId);
+              }}
+            >
+              #{objectTitle(tag) || t('object.tag')}
+            </button>
+          );
+        })}
+        <form
+          className="inline"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const name = tagDraft.trim();
+            if (!name) return;
+            const existing = tags.find((tag) => objectTitle(tag).toLowerCase() === name.toLowerCase());
+            if (existing) void addTagToObject(node.id, existing.id);
+            else void createAndAddTag(node.id, name);
+            setTagDraft('');
+          }}
+        >
+          <input
+            value={tagDraft}
+            onChange={(event) => setTagDraft(event.target.value)}
+            placeholder={t('object.addTag')}
+            className="w-28 bg-transparent text-xs text-[var(--muted)] outline-none placeholder:text-[var(--muted)]"
+          />
+        </form>
+      </div>
+
+      {node.typeId === 'dailyNote' && (
+        <label className="mt-4 flex items-center gap-2 text-sm text-[var(--muted)]">
+          <input
+            type="checkbox"
+            checked={!!node.reviewed}
+            onChange={(event) => void setReviewed(node.id, event.target.checked)}
+          />
+          {t('object.reviewed')}
+        </label>
+      )}
+
+      {(node.typeId === 'image' || node.typeId === 'file') && (
+        <div className="mt-4">
+          {node.typeId === 'image' && typeof fields.src === 'string' && fields.src.startsWith('data:') && (
+            <img src={fields.src} alt={title} className="mb-3 max-h-80 rounded-lg" />
+          )}
+          <input
+            type="file"
+            accept={node.typeId === 'image' ? 'image/*' : undefined}
+            onChange={(event) => onFile({ key: 'src', type: 'text' }, event.target.files?.[0])}
+          />
+          {node.typeId === 'file' && typeof fields.src === 'string' && fields.src && (
+            <a className="mt-2 block text-sm underline" href={String(fields.src)} download={String(fields.fileName || 'file')}>
+              {String(fields.fileName || t('object.download'))}
+            </a>
+          )}
+        </div>
+      )}
+
+      {type && type.fields.filter((field) => field.key !== 'src').length > 0 && (
+        <div className="mt-6">
+          {type.fields
+            .filter((field) => field.key !== 'src')
+            .map((field) => (
+              <div key={field.key} className="prop-row">
+                <div className="pt-1 text-sm text-[var(--muted)]">{field.label || t(`fields.${field.key}`, field.key)}</div>
+                <div>
+                  {field.type === 'reference' && field.multiple ? (
+                    <MultiReference
+                      field={field}
+                      value={fields[field.key]}
+                      onChange={(value) => void setObjectField(node.id, node.typeId!, field.key, value)}
+                    />
+                  ) : (
+                    <FieldEditor
+                      field={field}
+                      hideLabel
+                      value={fields[field.key]}
+                      onChange={(value) => void setObjectField(node.id, node.typeId!, field.key, value)}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+        </div>
+      )}
+
+      <BlockEditor
+        blocks={node.blocks?.length ? node.blocks : [{ id: `${node.id}-empty`, type: 'paragraph', text: '' }]}
+        nodes={nodes}
+        onOpen={openObject}
+        onChange={(blocks) => void saveObjectBody(node.id, title, blocks)}
+      />
+
+      <section className="mt-10">
+        <div className="text-xs uppercase tracking-wide text-[var(--muted)]">{t('object.aliases')}</div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {(node.aliases ?? []).map((alias) => (
+            <button
+              key={alias}
+              type="button"
+              className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs"
+              onClick={() => void setAliases(node.id, (node.aliases ?? []).filter((item) => item !== alias))}
+            >
+              {alias} ×
+            </button>
+          ))}
+        </div>
+        <form
+          className="mt-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const alias = aliasDraft.trim();
+            if (!alias) return;
+            void setAliases(node.id, [...(node.aliases ?? []), alias]);
+            setAliasDraft('');
+          }}
+        >
+          <input
+            value={aliasDraft}
+            onChange={(event) => setAliasDraft(event.target.value)}
+            placeholder={t('object.aliasesHint')}
+            className="ui-input max-w-xs"
+          />
+        </form>
+      </section>
+
+      {collections.filter((collection) => collection.typeId === node.typeId).length > 0 && (
+        <section className="mt-8">
+          <div className="text-xs uppercase tracking-wide text-[var(--muted)]">{t('nav.collections')}</div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {collections
+              .filter((collection) => collection.typeId === node.typeId)
+              .map((collection) => {
+                const on = collection.objectIds.includes(node.id);
+                return (
+                  <button
+                    key={collection.id}
+                    type="button"
+                    onClick={() => void toggleInCollection(collection.id, node.id)}
+                    className={`rounded-full px-2 py-0.5 text-xs ${on ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-2)]'}`}
+                  >
+                    {collection.name}
+                  </button>
+                );
+              })}
+          </div>
+        </section>
+      )}
+
+      <LinkSection title={t('object.backlinks')} rows={backlinks} onOpen={openObject} />
+      <LinkSection title={t('object.mentions')} rows={mentions} onOpen={openObject} />
+
+      <div className="mt-8 flex gap-2">
+        <button
+          type="button"
+          className="text-xs text-[var(--muted)] underline"
+          onClick={() =>
+            download(
+              `${objectTitle(node) || 'object'}.md`,
+              objectToMarkdown(
+                node,
+                type?.name ?? node.typeId ?? 'object',
+                (node.tagIds ?? []).map((id) => objectTitle(nodes.find((item) => item.id === id)) || id),
+              ),
+              'text/markdown',
+            )
+          }
+        >
+          {t('object.exportMd')}
+        </button>
+        <button type="button" className="text-xs text-red-700" onClick={() => void removeNode(node.id).then(back)}>
+          {t('actions.delete')}
+        </button>
+      </div>
+    </article>
+  );
+}
+
+function LinkSection({
+  title,
+  rows,
+  onOpen,
+}: {
+  title: string;
+  rows: { id: string }[];
+  onOpen: (id: string) => void;
+}) {
+  const nodes = useAppStore((s) => s.nodes);
+  if (!rows.length) return null;
+  return (
+    <section className="mt-8">
+      <div className="text-xs uppercase tracking-wide text-[var(--muted)]">{title}</div>
+      <div className="mt-2 space-y-1">
+        {rows.map((row) => {
+          const node = nodes.find((item) => item.id === row.id);
+          return (
+            <button key={row.id} type="button" className="block text-sm hover:underline" onClick={() => onOpen(row.id)}>
+              {objectTitle(node) || row.id.slice(0, 8)}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function MultiReference({
+  field,
+  value,
+  onChange,
+}: {
+  field: FieldDef;
+  value: string | number | boolean | undefined;
+  onChange: (value: string) => void;
+}) {
+  const nodes = useAppStore((s) => s.nodes);
+  const selected = splitIds(value);
+  const candidates = getReferenceCandidates(nodes, field.referenceSupertag);
+  return (
+    <div className="flex flex-wrap gap-1">
+      {candidates.map((node) => {
+        const on = selected.includes(node.id);
+        return (
+          <button
+            key={node.id}
+            type="button"
+            onClick={() => onChange(joinIds(on ? selected.filter((id) => id !== node.id) : [...selected, node.id]))}
+            className={`rounded-full px-2 py-0.5 text-xs ${on ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-2)]'}`}
+          >
+            {objectTitle(node)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
