@@ -31,6 +31,15 @@ export interface Block {
   text: string;
   level?: 1 | 2 | 3;
   checked?: boolean;
+  tagIds?: string[];
+}
+
+export interface MediaRecord {
+  id: string;
+  name: string;
+  mimeType: string;
+  bytes: ArrayBuffer;
+  createdAt: string;
 }
 
 export interface ObjectTypeRecord extends SupertagDef {

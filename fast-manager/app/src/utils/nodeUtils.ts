@@ -1,6 +1,12 @@
 import type { NodeRecord } from '../types';
 import { linkIdsInNode, objectTitle, splitIds } from './blocks';
 
+export interface TaggedBlockHit {
+  nodeId: string;
+  blockId: string;
+  text: string;
+}
+
 export { objectTitle };
 
 export function searchNodes(nodes: NodeRecord[], query: string): NodeRecord[] {
@@ -33,6 +39,7 @@ export function getBacklinks(nodes: NodeRecord[], targetId: string): NodeRecord[
   return nodes.filter((node) => {
     if (node.id === targetId) return false;
     if ((node.tagIds ?? []).includes(targetId)) return true;
+    if ((node.blocks ?? []).some((block) => (block.tagIds ?? []).includes(targetId))) return true;
     for (const fields of Object.values(node.fieldValues)) {
       for (const val of Object.values(fields)) {
         if (fieldPointsAt(val, targetId)) return true;
@@ -40,6 +47,19 @@ export function getBacklinks(nodes: NodeRecord[], targetId: string): NodeRecord[
     }
     return linkIdsInNode(node).includes(targetId);
   });
+}
+
+export function blocksWithTag(nodes: NodeRecord[], tagId: string): TaggedBlockHit[] {
+  const hits: TaggedBlockHit[] = [];
+  for (const node of nodes) {
+    if (node.deleted) continue;
+    for (const block of node.blocks ?? []) {
+      if ((block.tagIds ?? []).includes(tagId)) {
+        hits.push({ nodeId: node.id, blockId: block.id, text: block.text });
+      }
+    }
+  }
+  return hits;
 }
 
 export function getUnlinkedMentions(nodes: NodeRecord[], target: NodeRecord): NodeRecord[] {
@@ -55,10 +75,23 @@ export function getUnlinkedMentions(nodes: NodeRecord[], target: NodeRecord): No
   });
 }
 
+export function resolveLinks(text: string, nodes: NodeRecord[]): string {
+  return text.replace(/\[\[([0-9a-fA-F-]{8,})\]\]/g, (_, id: string) => {
+    const target = nodes.find((item) => item.id === id);
+    const title = objectTitle(target).trim();
+    if (!title || /^\[\[[0-9a-fA-F-]{8,}\]\]$/.test(title)) return id.slice(0, 8);
+    return title;
+  });
+}
+
+export function displayTitle(nodes: NodeRecord[], node: NodeRecord | undefined): string {
+  return resolveLinks(objectTitle(node), nodes);
+}
+
 export function resolveNodeTitle(nodes: NodeRecord[], nodeId: string): string {
   if (!nodeId) return '—';
   const node = nodes.find((n) => n.id === nodeId);
-  return objectTitle(node) || nodeId.slice(0, 8);
+  return displayTitle(nodes, node) || nodeId.slice(0, 8);
 }
 
 export function getReferenceCandidates(

@@ -30,6 +30,7 @@ import {
   Columns3,
   ArrowLeft,
   Image,
+  Link,
   Plus,
   type LucideIcon,
 } from 'lucide-react';
@@ -67,6 +68,7 @@ const iconMap: Record<string, LucideIcon> = {
   kanban: Columns3,
   'arrow-left': ArrowLeft,
   image: Image,
+  link: Link,
   plus: Plus,
 };
 

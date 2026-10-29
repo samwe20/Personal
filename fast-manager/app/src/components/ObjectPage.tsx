@@ -1,13 +1,46 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
-import type { FieldDef } from '../types';
+import { mediaObjectUrl, readMedia } from '../services/mediaStore';
 import { objectToMarkdown } from '../services/objectModel';
+import type { FieldDef } from '../types';
 import { splitIds, joinIds } from '../utils/blocks';
 import { getIcon } from '../utils/icons';
-import { getReferenceCandidates, getUnlinkedMentions, objectTitle } from '../utils/nodeUtils';
+import { isDataUrl, parseBlobRef } from '../utils/media';
+import { blocksWithTag, displayTitle, getReferenceCandidates, getUnlinkedMentions, objectTitle, resolveLinks } from '../utils/nodeUtils';
 import { BlockEditor } from './BlockEditor';
 import { FieldEditor } from './FieldEditor';
+
+function useMediaSrc(src: string | undefined): string | null {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    if (!src) {
+      setUrl(null);
+      return;
+    }
+    if (isDataUrl(src)) {
+      setUrl(src);
+      return;
+    }
+    const id = parseBlobRef(src);
+    if (!id) {
+      setUrl(null);
+      return;
+    }
+    let objectUrl = '';
+    let cancelled = false;
+    void readMedia(id).then((record) => {
+      if (cancelled || !record) return;
+      objectUrl = mediaObjectUrl(record);
+      setUrl(objectUrl);
+    });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [src]);
+  return url;
+}
 
 export function ObjectPage() {
   const { t } = useTranslation();
@@ -28,6 +61,9 @@ export function ObjectPage() {
   const toggleInCollection = useAppStore((s) => s.toggleInCollection);
   const removeNode = useAppStore((s) => s.removeNode);
   const getNodeBacklinks = useAppStore((s) => s.getNodeBacklinks);
+  const ensureTag = useAppStore((s) => s.ensureTag);
+  const createWeblink = useAppStore((s) => s.createWeblink);
+  const attachMedia = useAppStore((s) => s.attachMedia);
 
   const node = nodes.find((item) => item.id === nodeId);
   const [typeOpen, setTypeOpen] = useState(false);
@@ -36,6 +72,8 @@ export function ObjectPage() {
   const [titleDraft, setTitleDraft] = useState<string | null>(null);
 
   const type = objectTypes.find((item) => item.id === node?.typeId);
+  const fields = node?.typeId ? node.fieldValues[node.typeId] ?? {} : {};
+  const mediaSrc = useMediaSrc(typeof fields.src === 'string' ? fields.src : undefined);
   const tags = useMemo(
     () => nodes.filter((item) => item.typeId === 'tag'),
     [nodes],
@@ -46,8 +84,8 @@ export function ObjectPage() {
   }
 
   const title = node.title ?? objectTitle(node);
-  const fields = node.typeId ? node.fieldValues[node.typeId] ?? {} : {};
   const backlinks = getNodeBacklinks(node.id);
+  const taggedBlocks = node.typeId === 'tag' ? blocksWithTag(nodes, node.id) : [];
   const mentions = getUnlinkedMentions(nodes, node);
   const Back = getIcon('arrow-left');
   const Icon = getIcon(type?.icon ?? 'file-text');
@@ -62,14 +100,9 @@ export function ObjectPage() {
     URL.revokeObjectURL(url);
   };
 
-  const onFile = (field: FieldDef, file: File | undefined) => {
+  const onFile = (file: File | undefined) => {
     if (!file || !node.typeId) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      void setObjectField(node.id, node.typeId!, field.key, String(reader.result ?? ''));
-      if (node.typeId === 'file') void setObjectField(node.id, 'file', 'fileName', file.name);
-    };
-    reader.readAsDataURL(file);
+    void attachMedia(node.id, node.typeId, file);
   };
 
   return (
@@ -174,18 +207,29 @@ export function ObjectPage() {
         </label>
       )}
 
+      {node.typeId === 'weblink' && typeof fields.url === 'string' && fields.url && (
+        <a
+          href={fields.url}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 block text-sm text-[var(--accent)] underline"
+        >
+          {fields.url}
+        </a>
+      )}
+
       {(node.typeId === 'image' || node.typeId === 'file') && (
         <div className="mt-4">
-          {node.typeId === 'image' && typeof fields.src === 'string' && fields.src.startsWith('data:') && (
-            <img src={fields.src} alt={title} className="mb-3 max-h-80 rounded-lg" />
+          {node.typeId === 'image' && mediaSrc && (
+            <img src={mediaSrc} alt={title} className="mb-3 max-h-80 rounded-lg" />
           )}
           <input
             type="file"
             accept={node.typeId === 'image' ? 'image/*' : undefined}
-            onChange={(event) => onFile({ key: 'src', type: 'text' }, event.target.files?.[0])}
+            onChange={(event) => onFile(event.target.files?.[0])}
           />
-          {node.typeId === 'file' && typeof fields.src === 'string' && fields.src && (
-            <a className="mt-2 block text-sm underline" href={String(fields.src)} download={String(fields.fileName || 'file')}>
+          {node.typeId === 'file' && mediaSrc && (
+            <a className="mt-2 block text-sm underline" href={mediaSrc} download={String(fields.fileName || 'file')}>
               {String(fields.fileName || t('object.download'))}
             </a>
           )}
@@ -224,8 +268,33 @@ export function ObjectPage() {
         blocks={node.blocks?.length ? node.blocks : [{ id: `${node.id}-empty`, type: 'paragraph', text: '' }]}
         nodes={nodes}
         onOpen={openObject}
+        onEnsureTag={ensureTag}
+        onCreateWeblink={createWeblink}
         onChange={(blocks) => void saveObjectBody(node.id, title, blocks)}
       />
+
+      {taggedBlocks.length > 0 && (
+        <section className="mt-8">
+          <div className="text-xs uppercase tracking-wide text-[var(--muted)]">{t('blocks.taggedIn')}</div>
+          <div className="mt-2 space-y-1">
+            {taggedBlocks.map((hit) => {
+              const parent = nodes.find((item) => item.id === hit.nodeId);
+              const parentLabel = displayTitle(nodes, parent) || t('object.untitled');
+              const preview = resolveLinks(hit.text, nodes);
+              return (
+                <button
+                  key={`${hit.nodeId}-${hit.blockId}`}
+                  type="button"
+                  className="block text-left text-sm hover:underline"
+                  onClick={() => openObject(hit.nodeId)}
+                >
+                  {preview && preview !== parentLabel ? `${parentLabel} — ${preview}` : parentLabel}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="mt-10">
         <div className="text-xs uppercase tracking-wide text-[var(--muted)]">{t('object.aliases')}</div>
@@ -331,7 +400,7 @@ function LinkSection({
           const node = nodes.find((item) => item.id === row.id);
           return (
             <button key={row.id} type="button" className="block text-sm hover:underline" onClick={() => onOpen(row.id)}>
-              {objectTitle(node) || row.id.slice(0, 8)}
+              {displayTitle(nodes, node) || row.id.slice(0, 8)}
             </button>
           );
         })}

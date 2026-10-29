@@ -27,6 +27,7 @@ import {
   createCollection,
   createObjectType,
   createThemeTag,
+  createWeblinkObject,
   ensureDailyNote,
   ensureObjectModel,
   getCollections,
@@ -49,6 +50,7 @@ import {
   popUndo,
   pushHistory,
 } from '../services/historyService';
+import { saveMediaFile } from '../services/mediaStore';
 import { requestNotificationPermission, startReminderChecker } from '../services/reminderService';
 import { SyncClient, type SyncStatus } from '../sync/syncClient';
 import type {
@@ -67,6 +69,7 @@ import type {
   WorkspaceRecord,
 } from '../types';
 import { emptyBlock } from '../utils/blocks';
+import { blobRef } from '../utils/media';
 import { localToday } from '../utils/dateUtils';
 import { getFolderNodes, resolveFolderTitle } from '../utils/folderUtils';
 import { getBacklinks, resolveNodeTitle, searchNodes } from '../utils/nodeUtils';
@@ -174,6 +177,9 @@ interface AppState {
   saveNewQuery: (input: { name: string; expression: QueryExpression }) => Promise<void>;
   openDaily: (date: string) => Promise<void>;
   createTag: (name: string) => Promise<void>;
+  ensureTag: (name: string) => Promise<string | undefined>;
+  createWeblink: (url: string) => Promise<string | undefined>;
+  attachMedia: (nodeId: string, typeId: string, file: File) => Promise<void>;
 }
 
 function resolveTheme(theme: Theme): 'light' | 'dark' {
@@ -717,6 +723,31 @@ export const useAppStore = create<AppState>((set, get) => ({
     const tag = await createThemeTag(settings.workspaceId, name.trim());
     await get().refresh();
     set({ selectedNodeId: tag.id, activeView: 'object', returnView: get().activeView });
+  },
+
+  ensureTag: async (name) => {
+    const { settings } = get();
+    if (!settings || !name.trim()) return undefined;
+    const tag = await createThemeTag(settings.workspaceId, name.trim());
+    await get().refresh();
+    return tag.id;
+  },
+
+  createWeblink: async (url) => {
+    const { settings } = get();
+    if (!settings || !url.trim()) return undefined;
+    const node = await get().withHistory(async () => createWeblinkObject(settings.workspaceId, url.trim()));
+    await get().refresh();
+    return node.id;
+  },
+
+  attachMedia: async (nodeId, typeId, file) => {
+    await get().withHistory(async () => {
+      const id = await saveMediaFile(file);
+      await setObjectProperty(nodeId, typeId, 'src', blobRef(id));
+      if (typeId === 'file') await setObjectProperty(nodeId, typeId, 'fileName', file.name);
+      await get().refresh();
+    });
   },
 
   openDaily: async (date) => {

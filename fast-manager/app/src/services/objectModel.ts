@@ -11,7 +11,9 @@ import type {
   TemplateRecord,
 } from '../types';
 import { joinIds, mirrorContent, objectTitle, splitContent, splitIds } from '../utils/blocks';
+import { weblinkTitle } from '../utils/weblink';
 import { createNode, getAllNodes, updateNode, updateNodeField } from './dataService';
+import { migrateStoredMedia } from './mediaStore';
 
 const now = () => new Date().toISOString();
 
@@ -48,7 +50,19 @@ const FILE_TYPE: SupertagDef = {
   ],
 };
 
-const EXTRA_TYPES = [TAG_TYPE, IMAGE_TYPE, FILE_TYPE];
+const WEBLINK_TYPE: SupertagDef = {
+  id: 'weblink',
+  name: 'Weblink',
+  color: '#0369a1',
+  icon: 'link',
+  description: 'A page on the web, kept as its own object',
+  fields: [
+    { key: 'url', type: 'text' },
+    { key: 'description', type: 'text' },
+  ],
+};
+
+const EXTRA_TYPES = [TAG_TYPE, IMAGE_TYPE, FILE_TYPE, WEBLINK_TYPE];
 
 async function enqueue(entityType: 'supertag' | 'collection' | 'template', entityId: string, payload: unknown, deleted = false) {
   const { loadSettings } = await import('../db/database');
@@ -90,6 +104,25 @@ export async function getTemplates(): Promise<TemplateRecord[]> {
 export async function ensureObjectModel(): Promise<void> {
   await seedObjectTypes();
   await migrateNodes();
+  await migrateStoredMedia();
+}
+
+export async function createWeblinkObject(workspaceId: string, url: string): Promise<NodeRecord> {
+  const trimmed = url.trim();
+  const existing = (await getAllNodes(workspaceId)).find(
+    (node) => node.typeId === 'weblink' && String(node.fieldValues.weblink?.url ?? '') === trimmed,
+  );
+  if (existing) return existing;
+  const title = weblinkTitle(trimmed);
+  return createNode({
+    workspaceId,
+    parentId: null,
+    content: title,
+    title,
+    typeId: 'weblink',
+    supertagIds: ['weblink'],
+    fieldValues: { weblink: { url: trimmed } },
+  });
 }
 
 async function seedObjectTypes(): Promise<void> {

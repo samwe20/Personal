@@ -52,7 +52,8 @@
     "outcome": "Outcome",
     "rationale": "Rationale",
     "potential": "Potential",
-    "description": "Description"
+    "description": "Description",
+    "url": "URL"
   },
   "status": {
     "new": "New",
@@ -96,7 +97,11 @@
     "decision": "Decision",
     "idea": "Idea",
     "note": "Note",
-    "folder": "Folder"
+    "folder": "Folder",
+    "tag": "Tag",
+    "image": "Image",
+    "file": "File",
+    "weblink": "Weblink"
   },
   "folders": {
     "newFolder": "Folder",
@@ -215,7 +220,8 @@
     "reviewed": "Reviewed",
     "download": "Download",
     "exportMd": "Export Markdown",
-    "exportJson": "Export JSON"
+    "exportJson": "Export JSON",
+    "openLink": "Open link"
   },
   "views": {
     "list": "List",
@@ -262,7 +268,9 @@
     "bullet": "Bullet",
     "todo": "To-do",
     "quote": "Quote",
-    "placeholder": "Write, / for a block, @ for a link"
+    "placeholder": "Write, / for a block, @ for a link",
+    "tag": "Tag",
+    "taggedIn": "In blocks"
   },
   "collection": {
     "new": "New collection"

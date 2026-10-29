@@ -2,13 +2,17 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Block, BlockType, NodeRecord } from '../types';
 import { emptyBlock } from '../utils/blocks';
+import { getIcon } from '../utils/icons';
 import { objectTitle } from '../utils/nodeUtils';
+import { isStandaloneUrl } from '../utils/weblink';
 
 interface BlockEditorProps {
   blocks: Block[];
   nodes: NodeRecord[];
   onChange: (blocks: Block[]) => void;
   onOpen: (id: string) => void;
+  onEnsureTag?: (name: string) => Promise<string | undefined>;
+  onCreateWeblink?: (url: string) => Promise<string | undefined>;
 }
 
 const SLASH: { id: BlockType; level?: 1 | 2 | 3; labelKey: string }[] = [
@@ -20,12 +24,15 @@ const SLASH: { id: BlockType; level?: 1 | 2 | 3; labelKey: string }[] = [
   { id: 'quote', labelKey: 'blocks.quote' },
 ];
 
-export function BlockEditor({ blocks, nodes, onChange, onOpen }: BlockEditorProps) {
+export function BlockEditor({ blocks, nodes, onChange, onOpen, onEnsureTag, onCreateWeblink }: BlockEditorProps) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(blocks);
   const [slash, setSlash] = useState<number | null>(null);
   const [linkAt, setLinkAt] = useState<{ index: number; query: string } | null>(null);
+  const [tagAt, setTagAt] = useState<number | null>(null);
+  const [tagQuery, setTagQuery] = useState('');
   const focusId = useRef<string | null>(null);
+  const Hash = getIcon('hash');
 
   useEffect(() => {
     setDraft(blocks);
@@ -37,6 +44,15 @@ export function BlockEditor({ blocks, nodes, onChange, onOpen }: BlockEditorProp
     el?.focus();
     focusId.current = null;
   }, [draft]);
+
+  const tagHits = useMemo(() => {
+    if (tagAt === null) return [];
+    const q = tagQuery.trim().toLowerCase();
+    return nodes
+      .filter((node) => node.typeId === 'tag' && !node.deleted)
+      .filter((node) => !q || objectTitle(node).toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [nodes, tagAt, tagQuery]);
 
   const linkHits = useMemo(() => {
     if (!linkAt) return [];
@@ -82,6 +98,38 @@ export function BlockEditor({ blocks, nodes, onChange, onOpen }: BlockEditorProp
     commit(next);
   };
 
+  const turnIntoWeblink = async (index: number, url: string) => {
+    if (!onCreateWeblink) return false;
+    const id = await onCreateWeblink(url.trim());
+    if (!id) return false;
+    const next = draft.map((block, i) => (i === index ? { ...block, text: `[[${id}]]` } : block));
+    setLinkAt(null);
+    commit(next);
+    return true;
+  };
+
+  const addBlockTag = async (index: number, name: string) => {
+    const trimmed = name.trim().replace(/^#/, '');
+    if (!trimmed || !onEnsureTag) return;
+    const id = await onEnsureTag(trimmed);
+    if (!id) return;
+    const current = draft[index];
+    if (!current) return;
+    const tagIds = current.tagIds ?? [];
+    setTagAt(null);
+    setTagQuery('');
+    if (tagIds.includes(id)) return;
+    commit(draft.map((block, i) => (i === index ? { ...block, tagIds: [...tagIds, id] } : block)));
+  };
+
+  const removeBlockTag = (index: number, tagId: string) => {
+    commit(
+      draft.map((block, i) =>
+        i === index ? { ...block, tagIds: (block.tagIds ?? []).filter((id) => id !== tagId) } : block,
+      ),
+    );
+  };
+
   return (
     <div className="mt-6 space-y-1">
       {draft.map((block, index) => (
@@ -110,12 +158,23 @@ export function BlockEditor({ blocks, nodes, onChange, onOpen }: BlockEditorProp
               value={block.text}
               placeholder={index === draft.length - 1 ? t('blocks.placeholder') : ''}
               onChange={(event) => updateText(index, event.target.value)}
+              onPaste={(event) => {
+                const pasted = event.clipboardData.getData('text');
+                const replacingEmpty = block.text.trim() === '' || isStandaloneUrl(block.text);
+                if (!onCreateWeblink || !isStandaloneUrl(pasted) || !replacingEmpty) return;
+                event.preventDefault();
+                void turnIntoWeblink(index, pasted);
+              }}
               onBlur={() => {
                 if (slash === null && linkAt === null) onChange(draft);
               }}
               onKeyDown={(event) => {
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault();
+                  if (slash === null && linkAt === null && isStandaloneUrl(block.text) && onCreateWeblink) {
+                    void turnIntoWeblink(index, block.text);
+                    return;
+                  }
                   const created = emptyBlock(block.type === 'todo' || block.type === 'bullet' ? block.type : 'paragraph');
                   const next = [...draft];
                   next.splice(index + 1, 0, created);
@@ -136,6 +195,73 @@ export function BlockEditor({ blocks, nodes, onChange, onOpen }: BlockEditorProp
           {block.text.includes('[[') && (
             <div className="pb-1 pl-6 text-sm text-[var(--muted)]">
               {renderLinkedText(block.text, nodes, onOpen)}
+            </div>
+          )}
+          {((block.tagIds ?? []).length > 0 || onEnsureTag) && (
+            <div className="flex flex-wrap items-center gap-1 pb-1 pl-6">
+              {(block.tagIds ?? []).map((tagId) => {
+                const tag = nodes.find((node) => node.id === tagId);
+                return (
+                  <span key={tagId} className="inline-flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-xs">
+                    <button type="button" className="hover:underline" onClick={() => onOpen(tagId)}>
+                      #{objectTitle(tag) || t('blocks.tag')}
+                    </button>
+                    <button type="button" className="text-[var(--muted)]" aria-label={t('actions.delete')} onClick={() => removeBlockTag(index, tagId)}>
+                      ×
+                    </button>
+                  </span>
+                );
+              })}
+              {onEnsureTag && tagAt !== index && (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--text)]"
+                  onClick={() => {
+                    setTagAt(index);
+                    setTagQuery('');
+                  }}
+                >
+                  <Hash size={12} />
+                  {t('blocks.tag')}
+                </button>
+              )}
+              {onEnsureTag && tagAt === index && (
+                <form
+                  className="relative"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    void addBlockTag(index, tagQuery);
+                  }}
+                >
+                  <input
+                    autoFocus
+                    value={tagQuery}
+                    onChange={(event) => setTagQuery(event.target.value)}
+                    onBlur={() => {
+                      if (!tagQuery.trim()) setTagAt(null);
+                    }}
+                    placeholder={t('blocks.tag')}
+                    className="w-28 bg-transparent text-xs outline-none"
+                  />
+                  {(tagHits.length > 0 || tagQuery.trim()) && (
+                    <div className="absolute z-20 mt-1 w-48 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--paper)] shadow-lg">
+                      {tagHits.map((node) => (
+                        <button
+                          key={node.id}
+                          type="button"
+                          className="block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)]"
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            void addBlockTag(index, objectTitle(node));
+                          }}
+                        >
+                          #{objectTitle(node)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </form>
+              )}
             </div>
           )}
           {slash === index && (

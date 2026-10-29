@@ -52,7 +52,8 @@
     "outcome": "Výsledek",
     "rationale": "Zdůvodnění",
     "potential": "Potenciál",
-    "description": "Popis"
+    "description": "Popis",
+    "url": "URL"
   },
   "status": {
     "new": "Nový",
@@ -96,7 +97,11 @@
     "decision": "Rozhodnutí",
     "idea": "Nápad",
     "note": "Poznámka",
-    "folder": "Složka"
+    "folder": "Složka",
+    "tag": "Štítek",
+    "image": "Obrázek",
+    "file": "Soubor",
+    "weblink": "Odkaz"
   },
   "folders": {
     "newFolder": "Složka",
@@ -215,7 +220,8 @@
     "reviewed": "Projito",
     "download": "Stáhnout",
     "exportMd": "Export Markdown",
-    "exportJson": "Export JSON"
+    "exportJson": "Export JSON",
+    "openLink": "Otevřít odkaz"
   },
   "views": {
     "list": "Seznam",
@@ -262,7 +268,9 @@
     "bullet": "Odrážka",
     "todo": "Úkol",
     "quote": "Citát",
-    "placeholder": "Pište, / pro typ bloku, @ pro odkaz"
+    "placeholder": "Pište, / pro typ bloku, @ pro odkaz",
+    "tag": "Štítek",
+    "taggedIn": "V blocích"
   },
   "collection": {
     "new": "Nová kolekce"

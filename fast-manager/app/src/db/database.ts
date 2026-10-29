@@ -8,6 +8,7 @@ import type {
   SavedQueryRecord,
   SyncChange,
   TemplateRecord,
+  MediaRecord,
   WorkspaceRecord,
 } from '../types';
 
@@ -27,6 +28,7 @@ export class FastDatabase extends Dexie {
   objectTypes!: Table<ObjectTypeRecord, string>;
   collections!: Table<CollectionRecord, string>;
   templates!: Table<TemplateRecord, string>;
+  media!: Table<MediaRecord, string>;
 
   constructor() {
     super('fast-manager');
@@ -46,6 +48,17 @@ export class FastDatabase extends Dexie {
       objectTypes: 'id, order, deleted',
       collections: 'id, typeId, order, deleted',
       templates: 'id, typeId, deleted',
+    });
+    this.version(3).stores({
+      nodes: 'id, workspaceId, parentId, updatedAt, deleted, typeId',
+      workspaces: 'id, order, updatedAt, deleted',
+      queries: 'id, order, updatedAt, deleted',
+      syncQueue: 'id, updatedAt',
+      settings: 'id',
+      objectTypes: 'id, order, deleted',
+      collections: 'id, typeId, order, deleted',
+      templates: 'id, typeId, deleted',
+      media: 'id, createdAt',
     });
   }
 }
