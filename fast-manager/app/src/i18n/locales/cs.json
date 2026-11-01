@@ -153,6 +153,19 @@
     "localMode": "Lokální režim — data jen v tomto počítači",
     "localModeHint": "Výchozí je lokální režim bez serveru. Sync zapněte až budete chtít sdílet data mezi zařízeními."
   },
+  "vault": {
+    "title": "Vault",
+    "hint": "Složka na disku. Každý objekt je jeden textový soubor, přílohy leží vedle něj. Záloha je kopie té složky. Po propojení se změny zapisují samy a při dalším spuštění se složka načte.",
+    "none": "Není vybraná složka",
+    "choose": "Vybrat složku",
+    "load": "Načíst z vaultu",
+    "disconnect": "Odpojit",
+    "replaceLocal": "Nahradit poznámky v aplikaci obsahem této složky?",
+    "unsupported": "Tady nejde vybrat složku. Ve Windows aplikaci to jde.",
+    "needsPermission": "Vault nejde otevřít. Vyberte složku znovu.",
+    "empty": "Ve složce ještě není vault.",
+    "saved": "Zapsáno do složky"
+  },
   "panel": {
     "fields": "Pole supertagu",
     "noSelection": "Vyberte uzel pro zobrazení polí",

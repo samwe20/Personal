@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "F.A.S.T Manager",
         "width": 1280,
         "height": 800,

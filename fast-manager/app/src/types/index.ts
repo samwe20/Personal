@@ -157,6 +157,9 @@ export interface AppSettings {
   lastSyncAt: string | null;
   clientId: string;
   onboardingDone: boolean;
+  /** Absolute folder in the desktop app. Empty in the browser, which keeps a folder handle. */
+  vaultPath?: string | null;
+  vaultLabel?: string | null;
 }
 
 export interface QuickCaptureInput {
