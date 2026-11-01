@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Block, BlockType, NodeRecord, ObjectTypeRecord } from '../types';
 import { adjustIndent, clampIndent, embedIdFromText, emptyBlock, isEmbedText, moveBlock } from '../utils/blocks';
@@ -70,6 +70,13 @@ export function BlockEditor({
     if (!focusId.current) return;
     document.getElementById(`block-${focusId.current}`)?.focus();
     focusId.current = null;
+  }, [draft]);
+
+  useLayoutEffect(() => {
+    document.querySelectorAll<HTMLTextAreaElement>('textarea.block-input').forEach((el) => {
+      el.style.height = '0px';
+      el.style.height = `${el.scrollHeight}px`;
+    });
   }, [draft]);
 
   const tagHits = useMemo(() => {
@@ -322,8 +329,9 @@ export function BlockEditor({
                       </button>
                     </div>
                   ) : (
-                    <input
+                    <textarea
                       id={`block-${block.id}`}
+                      rows={1}
                       value={block.text}
                       placeholder={index === draft.length - 1 ? t('blocks.placeholder') : ''}
                       onChange={(event) => updateText(index, event.target.value)}

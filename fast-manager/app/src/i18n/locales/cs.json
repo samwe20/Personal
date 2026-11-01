@@ -252,6 +252,10 @@
   },
   "calendar": {
     "today": "Dnes",
+    "month": "Měsíc",
+    "week": "Týden",
+    "previous": "Předchozí",
+    "next": "Další",
     "openNote": "Otevřít denní poznámku",
     "dated": "S tímto datem",
     "created": "Vzniklo ten den"
@@ -268,7 +272,7 @@
     "bullet": "Odrážka",
     "todo": "Úkol",
     "quote": "Citát",
-    "placeholder": "Pište, / pro typ bloku, @ pro odkaz",
+    "placeholder": "Pište, / pro typ bloku, @ pro odkaz, Shift+Enter pro řádek",
     "tag": "Štítek",
     "taggedIn": "V blocích",
     "unknown": "Neznámý objekt",

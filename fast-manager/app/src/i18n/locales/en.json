@@ -252,6 +252,10 @@
   },
   "calendar": {
     "today": "Today",
+    "month": "Month",
+    "week": "Week",
+    "previous": "Previous",
+    "next": "Next",
     "openNote": "Open daily note",
     "dated": "Dated this day",
     "created": "Created this day"
@@ -268,7 +272,7 @@
     "bullet": "Bullet",
     "todo": "To-do",
     "quote": "Quote",
-    "placeholder": "Write, / for a block, @ for a link",
+    "placeholder": "Write, / for a block, @ for a link, Shift+Enter for a line",
     "tag": "Tag",
     "taggedIn": "In blocks",
     "unknown": "Unknown object",

@@ -172,6 +172,8 @@ select:focus-visible,
   font-size: 16px;
   line-height: 1.55;
   color: var(--text);
+  resize: none;
+  overflow: hidden;
 }
 
 .block-input:focus {

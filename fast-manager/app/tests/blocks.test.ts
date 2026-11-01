@@ -71,6 +71,10 @@ describe('markdown mirror', () => {
     expect(task.checked).toBe(true);
   });
 
+  it('keeps a line break inside a single block', () => {
+    expect(mirrorContent('', [block({ id: 'p', text: 'první řádek\ndruhý řádek' })])).toBe('první řádek\ndruhý řádek');
+  });
+
   it('still counts the embed as one backlink', () => {
     const node = {
       id: 'note',
