@@ -116,7 +116,7 @@ function ToolbarButton({
       title={label}
       disabled={disabled}
       onClick={onClick}
-      className={`rounded-md p-1.5 transition ${accent ? 'bg-[var(--accent)] text-white hover:opacity-90' : 'text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'} disabled:opacity-30`}
+      className={`rounded-md p-1.5 transition ${accent ? 'bg-[var(--accent)] text-[var(--on-accent)] hover:opacity-90' : 'text-[var(--muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]'} disabled:opacity-30`}
     >
       <Icon size={14} strokeWidth={2} />
     </button>

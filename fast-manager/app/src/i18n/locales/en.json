@@ -153,6 +153,19 @@
     "localMode": "Local mode — data stays on this device",
     "localModeHint": "Default is local-only with no server. Enable sync when you want to share data across devices."
   },
+  "vault": {
+    "title": "Vault",
+    "hint": "A folder on disk. Each object is one text file, and attachments sit beside it. A backup is a copy of that folder. Once linked, changes are written there and the folder is loaded on the next start.",
+    "none": "No folder selected",
+    "choose": "Choose folder",
+    "load": "Load vault",
+    "disconnect": "Disconnect",
+    "replaceLocal": "Replace the notes in the app with the contents of this folder?",
+    "unsupported": "This window cannot choose a folder. The Windows app can.",
+    "needsPermission": "The vault cannot be opened. Choose the folder again.",
+    "empty": "This folder does not contain a vault yet.",
+    "saved": "Written to the folder"
+  },
   "panel": {
     "fields": "Supertag fields",
     "noSelection": "Select a node to view fields",

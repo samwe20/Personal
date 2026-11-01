@@ -206,7 +206,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => useAppStore.getState().openQuickCapture()}
-          className="w-full rounded-full bg-[var(--accent)] px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+          className="w-full rounded-full bg-[var(--accent)] px-2 py-1.5 text-xs font-medium text-[var(--on-accent)] hover:opacity-90"
         >
           {t('capture.title')}
         </button>

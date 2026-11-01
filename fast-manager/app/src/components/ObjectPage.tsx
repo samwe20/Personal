@@ -311,7 +311,7 @@ export function ObjectPage() {
                     key={collection.id}
                     type="button"
                     onClick={() => void toggleInCollection(collection.id, node.id)}
-                    className={`rounded-full px-2 py-0.5 text-xs ${on ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-2)]'}`}
+                    className={`rounded-full px-2 py-0.5 text-xs ${on ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'bg-[var(--surface-2)]'}`}
                   >
                     {collection.name}
                   </button>
@@ -399,7 +399,7 @@ function MultiReference({
             key={node.id}
             type="button"
             onClick={() => onChange(joinIds(on ? selected.filter((id) => id !== node.id) : [...selected, node.id]))}
-            className={`rounded-full px-2 py-0.5 text-xs ${on ? 'bg-[var(--accent)] text-white' : 'bg-[var(--surface-2)]'}`}
+            className={`rounded-full px-2 py-0.5 text-xs ${on ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'bg-[var(--surface-2)]'}`}
           >
             {objectTitle(node)}
           </button>

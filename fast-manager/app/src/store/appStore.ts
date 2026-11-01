@@ -42,6 +42,8 @@ import {
   templateForType,
   toggleCollectionItem,
 } from '../services/objectModel';
+import { exportDirectory, importDirectory, importLinkedVault, scheduleVaultExport } from '../services/vaultSync';
+import { clearLink, persistLink, pickDirectory, VaultUnsupportedError } from '../services/vaultLink';
 import {
   canRedo,
   canUndo,
@@ -180,6 +182,11 @@ interface AppState {
   ensureTag: (name: string) => Promise<string | undefined>;
   createWeblink: (url: string) => Promise<string | undefined>;
   attachMedia: (nodeId: string, typeId: string, file: File) => Promise<void>;
+  vaultError: string | null;
+  vaultSavedAt: string | null;
+  chooseVault: () => Promise<void>;
+  loadVault: () => Promise<void>;
+  disconnectVault: () => Promise<void>;
 }
 
 function resolveTheme(theme: Theme): 'light' | 'dark' {
@@ -221,11 +228,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   syncClient: null,
   historyTick: 0,
+  vaultError: null,
+  vaultSavedAt: null,
 
   init: async () => {
     try {
       await seedIfEmpty();
       await ensureObjectModel();
+      let vaultError: string | null = null;
+      try {
+        await importLinkedVault();
+      } catch (err) {
+        vaultError = err instanceof Error ? err.message : String(err);
+      }
       const settings = await loadSettings();
       const [workspaces, queries, objectTypes, collections, templates] = await Promise.all([
         getWorkspaces(),
@@ -266,6 +281,8 @@ export const useAppStore = create<AppState>((set, get) => ({
         templates,
         selectedNodeId: null,
         syncClient,
+        vaultError,
+        vaultSavedAt: null,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -286,6 +303,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       getTemplates(),
     ]);
     set({ nodes, queries, workspaces, objectTypes, collections, templates });
+    try {
+      const wrote = await scheduleVaultExport();
+      if (wrote) set({ vaultError: null, vaultSavedAt: new Date().toISOString() });
+    } catch (err) {
+      set({ vaultError: err instanceof Error ? err.message : String(err) });
+    }
   },
 
   withHistory: async (fn) => {
@@ -503,6 +526,45 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   markOnboardingDone: async () => {
     await get().updateSettings({ onboardingDone: true });
+  },
+
+  chooseVault: async () => {
+    try {
+      const dir = await pickDirectory(i18n.t('vault.choose'));
+      if (!dir) return;
+      const exists = await dir.exists('vault.json');
+      if (exists && !window.confirm(i18n.t('vault.replaceLocal'))) return;
+      const link = await persistLink(dir);
+      await get().updateSettings(link);
+      if (exists) await importDirectory(dir);
+      else await exportDirectory(dir);
+      await get().refresh();
+      set({ vaultError: null, vaultSavedAt: new Date().toISOString() });
+    } catch (err) {
+      const message = err instanceof VaultUnsupportedError ? i18n.t('vault.unsupported') : err instanceof Error ? err.message : String(err);
+      set({ vaultError: message });
+    }
+  },
+
+  loadVault: async () => {
+    try {
+      if (!window.confirm(i18n.t('vault.replaceLocal'))) return;
+      const imported = await importLinkedVault();
+      if (!imported) {
+        set({ vaultError: get().settings?.vaultLabel || get().settings?.vaultPath ? i18n.t('vault.needsPermission') : i18n.t('vault.empty') });
+        return;
+      }
+      await get().refresh();
+      set({ vaultError: null, vaultSavedAt: new Date().toISOString() });
+    } catch (err) {
+      set({ vaultError: err instanceof Error ? err.message : String(err) });
+    }
+  },
+
+  disconnectVault: async () => {
+    await clearLink();
+    await get().updateSettings({ vaultPath: null, vaultLabel: null });
+    set({ vaultError: null, vaultSavedAt: null });
   },
 
   applyTheme: (theme) => {

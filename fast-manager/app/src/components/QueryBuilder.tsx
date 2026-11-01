@@ -77,7 +77,7 @@ export function QueryBuilder({ onClose }: { onClose: () => void }) {
           <button type="button" className="px-3 py-1.5 text-sm" onClick={onClose}>
             {t('capture.cancel')}
           </button>
-          <button type="submit" className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-sm text-white">
+          <button type="submit" className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-sm text-[var(--on-accent)]">
             {t('actions.save')}
           </button>
         </div>

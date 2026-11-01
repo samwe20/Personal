@@ -38,7 +38,7 @@ export default function App() {
         </pre>
         <button
           type="button"
-          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white"
+          className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--on-accent)]"
           onClick={() => void init()}
         >
           Zkusit znovu
