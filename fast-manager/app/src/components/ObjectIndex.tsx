@@ -93,7 +93,7 @@ export function ObjectIndex() {
           )}
           <button
             type="button"
-            className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-sm text-white"
+            className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-sm text-[var(--on-accent)]"
             onClick={() => void createTypedObject(newType || 'note')}
           >
             + {t('views.new')}

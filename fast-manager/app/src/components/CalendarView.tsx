@@ -98,7 +98,7 @@ export function CalendarView() {
                   key={key}
                   type="button"
                   onClick={() => setSelected(key)}
-                  className={`min-h-28 rounded-lg px-2 py-2 text-left text-sm ${key === selected ? 'bg-[var(--accent)] text-white' : 'bg-[var(--paper)]'}`}
+                  className={`min-h-28 rounded-lg px-2 py-2 text-left text-sm ${key === selected ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'bg-[var(--paper)]'}`}
                 >
                   <span className="block text-xs opacity-80">
                     {new Intl.DateTimeFormat(i18n.language, { weekday: 'short' }).format(day)}
@@ -131,7 +131,7 @@ export function CalendarView() {
                 onClick={() => setSelected(key)}
                 className={[
                   'h-16 rounded-lg text-left text-sm',
-                  key === selected ? 'bg-[var(--accent)] text-white' : 'bg-[var(--paper)]',
+                  key === selected ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'bg-[var(--paper)]',
                   inMonth ? '' : 'opacity-40',
                 ].join(' ')}
               >

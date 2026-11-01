@@ -110,7 +110,7 @@ export function SettingsPanel() {
             <button
               type="button"
               onClick={() => void syncNow()}
-              className="mt-3 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs text-white"
+              className="mt-3 rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs text-[var(--on-accent)]"
             >
               {t('actions.sync')}
             </button>

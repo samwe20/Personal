@@ -10,6 +10,7 @@
   --text: #1c1917;
   --muted: #78716c;
   --accent: #44403c;
+  --on-accent: #fffcf8;
   --accent-soft: rgba(68, 64, 60, 0.1);
   --paper: #fffcf8;
   --radius: 8px;
@@ -25,6 +26,7 @@
   --text: #f5f0e8;
   --muted: #a8a29e;
   --accent: #e7e0d6;
+  --on-accent: #1c1916;
   --accent-soft: rgba(231, 224, 214, 0.12);
   --paper: #1c1916;
 }
