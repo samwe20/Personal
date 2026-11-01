@@ -3,10 +3,13 @@ export type FieldType = 'text' | 'date' | 'datetime' | 'select' | 'number' | 'ch
 export interface FieldDef {
   key: string;
   type: FieldType;
+  label?: string;
   required?: boolean;
   defaultValue?: string | number | boolean;
   options?: string[];
   referenceSupertag?: string;
+  multiple?: boolean;
+  bidirectionalKey?: string;
 }
 
 export interface SupertagDef {
@@ -16,6 +19,60 @@ export interface SupertagDef {
   icon: string;
   fields: FieldDef[];
   description?: string;
+}
+
+export type DataView = 'list' | 'table' | 'cards' | 'kanban';
+
+export type BlockType = 'paragraph' | 'heading' | 'bullet' | 'todo' | 'quote';
+
+export interface Block {
+  id: string;
+  type: BlockType;
+  text: string;
+  level?: 1 | 2 | 3;
+  /** Outline nesting. Heading size stays on `level`. */
+  indent?: number;
+  checked?: boolean;
+  tagIds?: string[];
+}
+
+export interface MediaRecord {
+  id: string;
+  name: string;
+  mimeType: string;
+  bytes: ArrayBuffer;
+  createdAt: string;
+}
+
+export interface ObjectTypeRecord extends SupertagDef {
+  builtin: boolean;
+  order: number;
+  defaultView: DataView;
+  updatedAt: string;
+  deleted: boolean;
+}
+
+export interface CollectionRecord {
+  id: string;
+  name: string;
+  typeId: string;
+  objectIds: string[];
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+  deleted: boolean;
+}
+
+export interface TemplateRecord {
+  id: string;
+  typeId: string;
+  name: string;
+  title: string;
+  fieldValues: Record<string, string | number | boolean>;
+  blocks: Block[];
+  createdAt: string;
+  updatedAt: string;
+  deleted: boolean;
 }
 
 export interface NodeEmbed {
@@ -29,8 +86,15 @@ export interface NodeRecord {
   workspaceId: string;
   parentId: string | null;
   content: string;
+  title?: string;
+  aliases?: string[];
   order: number;
   supertagIds: string[];
+  legacySupertagIds?: string[];
+  typeId?: string;
+  tagIds?: string[];
+  blocks?: Block[];
+  reviewed?: boolean;
   fieldValues: Record<string, Record<string, string | number | boolean>>;
   embeds?: NodeEmbed[];
   createdAt: string;
@@ -74,7 +138,7 @@ export interface QueryFilter {
 
 export interface SyncChange {
   id: string;
-  entityType: 'node' | 'workspace' | 'query' | 'supertag';
+  entityType: 'node' | 'workspace' | 'query' | 'supertag' | 'collection' | 'template';
   entityId: string;
   payload: string;
   updatedAt: string;

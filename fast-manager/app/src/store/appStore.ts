@@ -16,11 +16,32 @@ import {
   removeNodeEmbed,
   removeSupertagFromNode,
   restoreNodesSnapshot,
+  saveQuery,
   saveSettings,
   seedIfEmpty,
   updateNode,
   updateNodeField,
 } from '../services/dataService';
+import {
+  addThemeTag,
+  createCollection,
+  createObjectType,
+  createThemeTag,
+  createWeblinkObject,
+  ensureDailyNote,
+  ensureObjectModel,
+  getCollections,
+  getObjectTypes,
+  getTemplates,
+  removeThemeTag,
+  setObjectBody,
+  saveObjectType,
+  saveTemplate,
+  setObjectProperty,
+  setObjectType,
+  templateForType,
+  toggleCollectionItem,
+} from '../services/objectModel';
 import {
   canRedo,
   canUndo,
@@ -29,23 +50,43 @@ import {
   popUndo,
   pushHistory,
 } from '../services/historyService';
+import { saveMediaFile } from '../services/mediaStore';
 import { requestNotificationPermission, startReminderChecker } from '../services/reminderService';
 import { SyncClient, type SyncStatus } from '../sync/syncClient';
 import type {
   AppSettings,
+  Block,
+  CollectionRecord,
+  DataView,
   NodeEmbed,
   NodeRecord,
+  ObjectTypeRecord,
   QueryExpression,
   QuickCaptureInput,
   SavedQueryRecord,
+  TemplateRecord,
   Theme,
   WorkspaceRecord,
 } from '../types';
+import { emptyBlock } from '../utils/blocks';
+import { blobRef } from '../utils/media';
 import { localToday } from '../utils/dateUtils';
 import { getFolderNodes, resolveFolderTitle } from '../utils/folderUtils';
 import { getBacklinks, resolveNodeTitle, searchNodes } from '../utils/nodeUtils';
 
-export type ViewMode = 'inbox' | 'today' | 'planned' | 'query' | 'settings' | 'search' | 'folder';
+export type ViewMode =
+  | 'inbox'
+  | 'today'
+  | 'planned'
+  | 'query'
+  | 'settings'
+  | 'search'
+  | 'folder'
+  | 'object'
+  | 'type'
+  | 'calendar'
+  | 'studio'
+  | 'collection';
 
 interface AppState {
   ready: boolean;
@@ -54,10 +95,17 @@ interface AppState {
   workspaces: WorkspaceRecord[];
   nodes: NodeRecord[];
   queries: SavedQueryRecord[];
+  objectTypes: ObjectTypeRecord[];
+  collections: CollectionRecord[];
+  templates: TemplateRecord[];
   selectedNodeId: string | null;
   activeView: ViewMode;
+  returnView: ViewMode;
   activeQueryId: string | null;
   activeFolderId: string | null;
+  activeTypeId: string | null;
+  activeCollectionId: string | null;
+  dataView: DataView;
   searchQuery: string;
   commandPaletteOpen: boolean;
   quickCaptureOpen: boolean;
@@ -107,6 +155,31 @@ interface AppState {
   resolveNodeTitle: (nodeId: string) => string;
   canUndoAction: () => boolean;
   canRedoAction: () => boolean;
+  openObject: (id: string) => void;
+  backToIndex: () => void;
+  openType: (typeId: string) => void;
+  openCollection: (collectionId: string) => void;
+  setDataView: (view: DataView) => void;
+  createTypedObject: (typeId: string) => Promise<void>;
+  saveObjectBody: (id: string, title: string, blocks: Block[]) => Promise<void>;
+  changeObjectType: (id: string, typeId: string) => Promise<void>;
+  setObjectField: (id: string, typeId: string, key: string, value: string | number | boolean) => Promise<void>;
+  addTagToObject: (id: string, tagId: string) => Promise<void>;
+  removeTagFromObject: (id: string, tagId: string) => Promise<void>;
+  createAndAddTag: (id: string, name: string) => Promise<void>;
+  setAliases: (id: string, aliases: string[]) => Promise<void>;
+  setReviewed: (id: string, reviewed: boolean) => Promise<void>;
+  saveType: (type: ObjectTypeRecord) => Promise<void>;
+  addType: (name: string) => Promise<ObjectTypeRecord | undefined>;
+  addCollection: (name: string, typeId: string) => Promise<void>;
+  toggleInCollection: (collectionId: string, objectId: string) => Promise<void>;
+  saveTypeTemplate: (input: { typeId: string; name: string; title: string; fieldValues: Record<string, string | number | boolean>; blocks: Block[] }) => Promise<void>;
+  saveNewQuery: (input: { name: string; expression: QueryExpression }) => Promise<void>;
+  openDaily: (date: string) => Promise<void>;
+  createTag: (name: string) => Promise<void>;
+  ensureTag: (name: string) => Promise<string | undefined>;
+  createWeblink: (url: string) => Promise<string | undefined>;
+  attachMedia: (nodeId: string, typeId: string, file: File) => Promise<void>;
 }
 
 function resolveTheme(theme: Theme): 'light' | 'dark' {
@@ -123,10 +196,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   workspaces: [],
   nodes: [],
   queries: [],
+  objectTypes: [],
+  collections: [],
+  templates: [],
   selectedNodeId: null,
   activeView: 'inbox',
+  returnView: 'inbox',
   activeQueryId: 'q-tasks',
   activeFolderId: null,
+  activeTypeId: null,
+  activeCollectionId: null,
+  dataView: 'list',
   searchQuery: '',
   commandPaletteOpen: false,
   quickCaptureOpen: false,
@@ -145,8 +225,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   init: async () => {
     try {
       await seedIfEmpty();
+      await ensureObjectModel();
       const settings = await loadSettings();
-      const [workspaces, queries] = await Promise.all([getWorkspaces(), getQueries()]);
+      const [workspaces, queries, objectTypes, collections, templates] = await Promise.all([
+        getWorkspaces(),
+        getQueries(),
+        getObjectTypes(),
+        getCollections(),
+        getTemplates(),
+      ]);
       const wsId = settings.workspaceId || workspaces[0]?.id || 'default';
       const nodes = await getAllNodes(wsId);
 
@@ -174,7 +261,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         workspaces,
         nodes,
         queries,
-        selectedNodeId: nodes[0]?.id ?? null,
+        objectTypes,
+        collections,
+        templates,
+        selectedNodeId: null,
         syncClient,
       });
     } catch (err) {
@@ -187,12 +277,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   refresh: async () => {
     const { settings } = get();
     if (!settings) return;
-    const [nodes, queries, workspaces] = await Promise.all([
+    const [nodes, queries, workspaces, objectTypes, collections, templates] = await Promise.all([
       getAllNodes(settings.workspaceId),
       getQueries(),
       getWorkspaces(),
+      getObjectTypes(),
+      getCollections(),
+      getTemplates(),
     ]);
-    set({ nodes, queries, workspaces });
+    set({ nodes, queries, workspaces, objectTypes, collections, templates });
   },
 
   withHistory: async (fn) => {
@@ -227,15 +320,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   closeCommandPalette: () => set({ commandPaletteOpen: false }),
   toggleMobilePanel: () => set((s) => ({ showMobilePanel: !s.showMobilePanel })),
 
-  addRootNode: async (content = '') => {
-    await get().withHistory(async () => {
-      const { settings, activeFolderId, activeView } = get();
-      if (!settings) return;
-      const parentId = activeView === 'folder' && activeFolderId ? activeFolderId : null;
-      const node = await createNode({ workspaceId: settings.workspaceId, parentId, content: content || ' ' });
-      await get().refresh();
-      set({ selectedNodeId: node.id });
-    });
+  addRootNode: async () => {
+    await get().createTypedObject('note');
   },
 
   addFolder: async (parentId) => {
@@ -312,7 +398,8 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   editNodeContent: async (id, content) => {
     await get().withHistory(async () => {
-      await updateNode(id, { content });
+      const node = get().nodes.find((item) => item.id === id);
+      await updateNode(id, node?.typeId === 'folder' ? { content, title: content } : { content });
       await get().refresh();
     });
   },
@@ -440,10 +527,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (activeView === 'today') {
       return nodes.filter(
         (n) =>
-          (n.supertagIds.includes('dailyNote') && n.fieldValues.dailyNote?.date === today) ||
-          (n.supertagIds.includes('task') &&
+          (n.typeId === 'dailyNote' || n.supertagIds.includes('dailyNote')) && n.fieldValues.dailyNote?.date === today ||
+          ((n.typeId === 'task' || n.supertagIds.includes('task')) &&
             n.fieldValues.task?.dueDate === today &&
-            n.fieldValues.task?.status !== 'done'),
+            n.fieldValues.task?.status !== 'done') ||
+          (n.blocks ?? []).some((block) => block.type === 'todo' && !block.checked),
       );
     }
     if (activeView === 'search') return get().getSearchResults();
@@ -451,7 +539,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       return nodes
         .filter(
           (n) =>
-            n.supertagIds.includes('task') &&
+            (n.typeId === 'task' || n.supertagIds.includes('task')) &&
             typeof n.fieldValues.task?.dueDate === 'string' &&
             (n.fieldValues.task.dueDate as string) > today &&
             n.fieldValues.task?.status !== 'done',
@@ -464,7 +552,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       return nodes.filter((n) => n.parentId === activeFolderId).sort((a, b) => a.order - b.order);
     }
     return nodes
-      .filter((n) => n.parentId === null && !n.supertagIds.includes('folder'))
+      .filter(
+        (n) =>
+          n.parentId === null &&
+          n.typeId !== 'folder' &&
+          n.typeId !== 'tag' &&
+          !n.supertagIds.includes('folder'),
+      )
       .sort((a, b) => a.order - b.order);
   },
 
@@ -486,6 +580,183 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   canUndoAction: () => canUndo(),
   canRedoAction: () => canRedo(),
+
+  openObject: (id) =>
+    set((state) => ({
+      returnView: state.activeView === 'object' ? state.returnView : state.activeView,
+      selectedNodeId: id,
+      activeView: 'object',
+    })),
+
+  backToIndex: () =>
+    set((state) => ({
+      activeView: state.returnView === 'object' ? 'inbox' : state.returnView,
+      selectedNodeId: null,
+    })),
+
+  openType: (typeId) => {
+    const type = get().objectTypes.find((item) => item.id === typeId);
+    set({ activeView: 'type', activeTypeId: typeId, selectedNodeId: null, dataView: type?.defaultView ?? 'list' });
+  },
+
+  openCollection: (collectionId) => set({ activeView: 'collection', activeCollectionId: collectionId, selectedNodeId: null }),
+
+  setDataView: (view) => set({ dataView: view }),
+
+  createTypedObject: async (typeId) => {
+    await get().withHistory(async () => {
+      const { settings, activeFolderId, activeView } = get();
+      if (!settings) return;
+      const template = await templateForType(typeId);
+      const parentId = activeView === 'folder' && activeFolderId ? activeFolderId : null;
+      const node = await createNode({
+        workspaceId: settings.workspaceId,
+        parentId,
+        content: template?.title || i18n.t('object.untitled'),
+        title: template?.title || '',
+        blocks: template?.blocks?.length ? template.blocks : [emptyBlock()],
+        typeId,
+        supertagIds: [typeId],
+        fieldValues: template ? { [typeId]: template.fieldValues } : undefined,
+      });
+      await get().refresh();
+      set({ selectedNodeId: node.id, activeView: 'object', returnView: get().activeView === 'object' ? get().returnView : activeView });
+    });
+  },
+
+  saveObjectBody: async (id, title, blocks) => {
+    await get().withHistory(async () => {
+      await setObjectBody(id, title, blocks);
+      await get().refresh();
+    });
+  },
+
+  changeObjectType: async (id, typeId) => {
+    await get().withHistory(async () => {
+      await setObjectType(id, typeId);
+      await get().refresh();
+    });
+  },
+
+  setObjectField: async (id, typeId, key, value) => {
+    await get().withHistory(async () => {
+      await setObjectProperty(id, typeId, key, value);
+      await get().refresh();
+    });
+  },
+
+  addTagToObject: async (id, tagId) => {
+    await get().withHistory(async () => {
+      await addThemeTag(id, tagId);
+      await get().refresh();
+    });
+  },
+
+  removeTagFromObject: async (id, tagId) => {
+    await get().withHistory(async () => {
+      await removeThemeTag(id, tagId);
+      await get().refresh();
+    });
+  },
+
+  createAndAddTag: async (id, name) => {
+    await get().withHistory(async () => {
+      const { settings } = get();
+      if (!settings) return;
+      const tag = await createThemeTag(settings.workspaceId, name);
+      await addThemeTag(id, tag.id);
+      await get().refresh();
+    });
+  },
+
+  setAliases: async (id, aliases) => {
+    await get().withHistory(async () => {
+      await updateNode(id, { aliases });
+      await get().refresh();
+    });
+  },
+
+  setReviewed: async (id, reviewed) => {
+    await get().withHistory(async () => {
+      await updateNode(id, { reviewed });
+      await get().refresh();
+    });
+  },
+
+  saveType: async (type) => {
+    await saveObjectType(type);
+    await get().refresh();
+  },
+
+  addType: async (name) => {
+    const type = await createObjectType(name);
+    await get().refresh();
+    return type;
+  },
+
+  addCollection: async (name, typeId) => {
+    const collection = await createCollection(name, typeId);
+    await get().refresh();
+    set({ activeView: 'collection', activeCollectionId: collection.id });
+  },
+
+  toggleInCollection: async (collectionId, objectId) => {
+    await toggleCollectionItem(collectionId, objectId);
+    await get().refresh();
+  },
+
+  saveTypeTemplate: async (input) => {
+    const existing = get().templates.find((template) => template.typeId === input.typeId);
+    await saveTemplate({ ...input, id: existing?.id });
+    await get().refresh();
+  },
+
+  saveNewQuery: async (input) => {
+    const query = await saveQuery(input);
+    await get().refresh();
+    set({ activeView: 'query', activeQueryId: query.id });
+  },
+
+  createTag: async (name) => {
+    const { settings } = get();
+    if (!settings || !name.trim()) return;
+    const tag = await createThemeTag(settings.workspaceId, name.trim());
+    await get().refresh();
+    set({ selectedNodeId: tag.id, activeView: 'object', returnView: get().activeView });
+  },
+
+  ensureTag: async (name) => {
+    const { settings } = get();
+    if (!settings || !name.trim()) return undefined;
+    const tag = await createThemeTag(settings.workspaceId, name.trim());
+    await get().refresh();
+    return tag.id;
+  },
+
+  createWeblink: async (url) => {
+    const { settings } = get();
+    if (!settings || !url.trim()) return undefined;
+    const node = await get().withHistory(async () => createWeblinkObject(settings.workspaceId, url.trim()));
+    await get().refresh();
+    return node.id;
+  },
+
+  attachMedia: async (nodeId, typeId, file) => {
+    await get().withHistory(async () => {
+      const id = await saveMediaFile(file);
+      await setObjectProperty(nodeId, typeId, 'src', blobRef(id));
+      if (typeId === 'file') await setObjectProperty(nodeId, typeId, 'fileName', file.name);
+      await get().refresh();
+    });
+  },
+
+  openDaily: async (date) => {
+    const { settings } = get();
+    if (!settings) return;
+    const note = await ensureDailyNote(settings.workspaceId, date);
+    await get().refresh();
+    set({ selectedNodeId: note.id, activeView: 'object', returnView: 'calendar' });
+  },
 }));
 
 export { BUILTIN_SUPERTAGS };

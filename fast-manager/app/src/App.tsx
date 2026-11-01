@@ -1,12 +1,15 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CommandPalette } from './components/CommandPalette';
-import { FieldPanel, Outliner } from './components/Outliner';
+import { CalendarView } from './components/CalendarView';
+import { ObjectIndex } from './components/ObjectIndex';
+import { ObjectPage } from './components/ObjectPage';
 import { Onboarding } from './components/Onboarding';
 import { QuickCapture } from './components/QuickCapture';
 import { SettingsPanel } from './components/SettingsPanel';
 import { Sidebar } from './components/Sidebar';
 import { TopBar } from './components/TopBar';
+import { TypeStudio } from './components/TypeStudio';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useAppStore } from './store/appStore';
 
@@ -16,8 +19,6 @@ export default function App() {
   const initError = useAppStore((s) => s.initError);
   const init = useAppStore((s) => s.init);
   const activeView = useAppStore((s) => s.activeView);
-  const showMobilePanel = useAppStore((s) => s.showMobilePanel);
-  const selectedNodeId = useAppStore((s) => s.selectedNodeId);
 
   useKeyboardShortcuts();
 
@@ -64,23 +65,16 @@ export default function App() {
         ) : (
           <>
             <TopBar />
-            <div className="relative flex min-h-0 flex-1">
-              <div className="min-w-0 flex-1 overflow-auto">
-                <Outliner />
-              </div>
-              <aside
-                className={[
-                  'border-l border-[var(--border)] bg-[var(--surface)]',
-                  showMobilePanel && selectedNodeId
-                    ? 'fixed inset-y-0 right-0 z-40 w-full max-w-xs shadow-2xl lg:relative lg:block lg:w-64 lg:shrink-0 lg:shadow-none'
-                    : 'hidden lg:block lg:w-64 lg:shrink-0',
-                  !selectedNodeId && 'lg:block',
-                ]
-                  .filter(Boolean)
-                  .join(' ')}
-              >
-                <FieldPanel />
-              </aside>
+            <div className="min-h-0 flex-1 overflow-auto bg-[var(--bg)]">
+              {activeView === 'object' ? (
+                <ObjectPage />
+              ) : activeView === 'calendar' ? (
+                <CalendarView />
+              ) : activeView === 'studio' ? (
+                <TypeStudio />
+              ) : (
+                <ObjectIndex />
+              )}
             </div>
           </>
         )}

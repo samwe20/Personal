@@ -14,26 +14,42 @@ export function TopBar() {
   const redo = useAppStore((s) => s.redo);
   const canUndoAction = useAppStore((s) => s.canUndoAction);
   const canRedoAction = useAppStore((s) => s.canRedoAction);
-  const toggleMobilePanel = useAppStore((s) => s.toggleMobilePanel);
   const selectedNodeId = useAppStore((s) => s.selectedNodeId);
   const activeFolderId = useAppStore((s) => s.activeFolderId);
+  const activeTypeId = useAppStore((s) => s.activeTypeId);
+  const activeCollectionId = useAppStore((s) => s.activeCollectionId);
+  const objectTypes = useAppStore((s) => s.objectTypes);
+  const collections = useAppStore((s) => s.collections);
   const resolveFolderTitle = useAppStore((s) => s.resolveFolderTitle);
+  const resolveNodeTitle = useAppStore((s) => s.resolveNodeTitle);
   const historyTick = useAppStore((s) => s.historyTick);
+  const typeName = objectTypes.find((type) => type.id === activeTypeId);
+  const collectionName = collections.find((collection) => collection.id === activeCollectionId)?.name;
 
   const viewTitle =
-    activeView === 'folder' && activeFolderId
-      ? resolveFolderTitle(activeFolderId)
-      : activeView === 'today'
-        ? t('nav.today')
-        : activeView === 'planned'
-          ? t('nav.planned')
-          : activeView === 'search'
-          ? t('search.title')
-          : activeView === 'query'
-            ? t('nav.queries')
-            : activeView === 'settings'
-              ? t('nav.settings')
-              : t('nav.inbox');
+    activeView === 'object' && selectedNodeId
+      ? resolveNodeTitle(selectedNodeId)
+      : activeView === 'folder' && activeFolderId
+        ? resolveFolderTitle(activeFolderId)
+        : activeView === 'today'
+          ? t('nav.today')
+          : activeView === 'planned'
+            ? t('nav.planned')
+            : activeView === 'search'
+              ? t('search.title')
+              : activeView === 'query'
+                ? t('nav.queries')
+                : activeView === 'calendar'
+                  ? t('nav.calendar')
+                  : activeView === 'studio'
+                    ? t('studio.title')
+                    : activeView === 'type' && typeName
+                      ? t(`supertags.${typeName.id}`, typeName.name)
+                      : activeView === 'collection'
+                        ? collectionName ?? t('nav.collections')
+                        : activeView === 'settings'
+                          ? t('nav.settings')
+                          : t('nav.inbox');
 
   void historyTick;
 
@@ -75,15 +91,6 @@ export function TopBar() {
         />
         <ToolbarButton icon="zap" label={t('capture.title')} onClick={openQuickCapture} accent />
         <ToolbarButton icon="command" label={t('commands.title')} onClick={openCommandPalette} />
-        {selectedNodeId && (
-          <button
-            type="button"
-            onClick={toggleMobilePanel}
-            className="rounded-md border border-[var(--border)] px-2 py-1 text-[11px] lg:hidden"
-          >
-            {t('panel.fields')}
-          </button>
-        )}
       </div>
     </header>
   );
