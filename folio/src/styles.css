@@ -49,13 +49,12 @@ input {
 }
 
 .app {
-  /* Light — warm block paper. The writing stage carries the square grid. */
+  /* Light — warm block paper, plain, without a square grid. */
   --bg: #f3efe4;
   --bg-elevated: #fbf8f1;
   --panel: #e7e1d4;
   --panel-strong: #ddd6c6;
   --paper: #f7f4ea;
-  --grid: rgba(70, 108, 148, 0.18);
   --ink: #2c2a26;
   --muted: #6f6a60;
   --faint: #9a9488;
@@ -99,7 +98,6 @@ input {
   --panel: #070707;
   --panel-strong: #161616;
   --paper: #000000;
-  --grid: transparent;
   --ink: #e8e8e8;
   --muted: #8a8a8a;
   --faint: #555555;
@@ -468,10 +466,6 @@ input {
 
 .editor-pane {
   background-color: var(--paper);
-  background-image:
-    linear-gradient(to right, var(--grid) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
-  background-size: 22px 22px;
 }
 
 .toolbar,
@@ -904,11 +898,7 @@ input {
   inset: 0;
   display: grid;
   place-items: center;
-  background-color: var(--paper);
-  background-image:
-    linear-gradient(to right, var(--grid) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
-  background-size: 22px 22px;
+  background: var(--paper);
   z-index: 20;
 }
 
