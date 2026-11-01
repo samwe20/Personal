@@ -4,38 +4,47 @@
 
 ### What this repo is
 
-This is **Galactic Empire**, a Stellaris-inspired 4X space strategy game written in **pure vanilla JavaScript** (no framework). It runs entirely client-side in the browser. The UI is in Czech.
+**Personal** is one repository with four projects. A project is a directory. A branch is a task, and it is never a way to switch projects.
 
-- Entry point: `index.html`
-- Game engine: `game.js` (defines `class Game`)
-- UI/rendering (canvas): `ui.js` (defines `class UI`)
-- Styling: `styles.css`
-- The top-level `*.md` files (e.g. `README.md`, `AI-*.md`, `Jak-Vyuzit-Claude-Code.md`) are documentation only.
+| Project | Directory | Open |
+| --- | --- | --- |
+| Folio | `folio/` | `Folio.code-workspace` |
+| FAST | `fast-manager/` | `FAST.code-workspace` |
+| Deníky (Schneller diary) | `deniky/` | `Deniky.code-workspace` |
+| Other (empty-houses scrape, notes) | `ostatni/` | `Ostatni.code-workspace` |
 
-There is **no package manager, build step, test suite, or lint config** — no `package.json`, no lockfile, nothing to compile. Do not look for `npm`/`pnpm` scripts; there are none.
+The only long-lived branch is `main`. It contains all four. `feat/…` and `fix/…` are unfinished changes and are deleted after they merge. Branches named `cursor/…` or `claude/…` are old tasks. Do not treat them as Folio, FAST, or the diaries.
 
-### Running the app (dev)
+`./project` prints the branch and the four projects. `./project folio` (or `fast`, `deniky`, `ostatni`) prints the directory for that one project.
 
-Serve the static files from the repo root and open the page in a browser:
+There is no Galactic Empire game in this repository. Do not look for `game.js`, `ui.js`, or a root `index.html`.
 
-```
-python3 -m http.server 8000
-```
+### Running Folio
 
-Then open `http://localhost:8000/index.html`. `python3` is preinstalled and needs no dependencies. (Opening `index.html` via `file://` also works, but a local HTTP server is the cleaner dev workflow.)
+From the repository root:
 
-### Non-obvious gotcha: the game does not auto-boot on page load
-
-The committed code has an initialization wiring bug: `game.js` assigns a lexically-scoped `let game` (never `window.game`) and never calls `game.startGameLoop()`, while `ui.js` waits for `window.game` on `DOMContentLoaded`. As a result, on a clean load the canvas stays black, resources show `0`, and the year counter is frozen at `2200` (console logs `Game initialized with 50 systems` then `Game not initialized!`).
-
-To actually run/test gameplay in the browser, run this once in the DevTools console after the page loads:
-
-```js
-window.game = game; game.startGameLoop(); ui = new UI(window.game);
+```bash
+cd folio && npm ci && npm run web:dev
 ```
 
-After that the galaxy renders, resources tick, the year advances, and ship construction / system selection all work. Treat this only as a runtime/testing workaround — do **not** commit a source fix for it unless the task explicitly asks you to change application code.
+The Vite server listens on http://localhost:1420. The cloud environment in `.cursor/environment.json` starts this for you.
 
-### Lint / test / build
+### Running FAST
 
-None exist. There is nothing to lint, no automated tests to run, and no build to produce. "Building" the app just means serving the static files as above.
+```bash
+cd fast-manager && npm ci && npm run dev
+```
+
+The web app lives in `fast-manager/app`. Desktop builds use `npm run tauri:dev` from `fast-manager`.
+
+### Deníky
+
+Czech revision of the Schneller diary is in `deniky/schneller-tagebuch-cs/`. Scripts in `deniky/scripts/` resolve the diary relative to `deniky/`. Run them from `deniky/`.
+
+### Other
+
+Scrape scripts and their JSON live in `ostatni/`. Run them from that directory (`pip install -r requirements.txt`, then `python3 scrape_prazdnedomy.py`).
+
+### Checks
+
+Folio: `cd folio && npm test` and `npm run check`. FAST has its own Windows workflow in `.github/workflows/fast-manager.yml`. There is no root package manager.

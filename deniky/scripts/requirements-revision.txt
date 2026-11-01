@@ -1,0 +1,2 @@
+# Professional revision of Schneller diary (DE→CS via LLM)
+openai>=1.40.0
