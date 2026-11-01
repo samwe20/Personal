@@ -270,7 +270,14 @@
     "quote": "Citát",
     "placeholder": "Pište, / pro typ bloku, @ pro odkaz",
     "tag": "Štítek",
-    "taggedIn": "V blocích"
+    "taggedIn": "V blocích",
+    "unknown": "Neznámý objekt",
+    "indent": "Odsadit",
+    "outdent": "Zmenšit odsazení",
+    "up": "Nahoru",
+    "down": "Dolů",
+    "reorder": "Přesunout",
+    "removeEmbed": "Odebrat z textu"
   },
   "collection": {
     "new": "Nová kolekce"

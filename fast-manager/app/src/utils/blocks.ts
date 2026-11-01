@@ -17,25 +17,66 @@ export function emptyBlock(type: BlockType = 'paragraph'): Block {
   };
 }
 
+export const MAX_BLOCK_INDENT = 4;
+
+export function clampIndent(value: number | undefined): number {
+  if (!value || value < 0) return 0;
+  return Math.min(MAX_BLOCK_INDENT, Math.floor(value));
+}
+
+export function isEmbedText(text: string): boolean {
+  return /^\[\[[0-9a-fA-F-]{8,}\]\]$/.test(text.trim());
+}
+
+export function embedIdFromText(text: string): string | null {
+  const match = text.trim().match(/^\[\[([0-9a-fA-F-]{8,})\]\]$/);
+  return match?.[1] ?? null;
+}
+
+export function adjustIndent(block: Block, delta: number): Block {
+  return { ...block, indent: clampIndent((block.indent ?? 0) + delta) };
+}
+
+export function moveBlock(blocks: Block[], from: number, to: number): Block[] {
+  if (from === to || from < 0 || to < 0 || from >= blocks.length || to >= blocks.length) return blocks;
+  const next = [...blocks];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
+function withIndent(block: Block, indent: number): Block {
+  return indent > 0 ? { ...block, indent } : block;
+}
+
 export function lineToBlock(line: string): Block {
-  const todo = line.match(/^\s*-\s\[( |x|X)\]\s?(.*)$/);
+  const spaces = line.match(/^ */)?.[0].length ?? 0;
+  const indent = clampIndent(Math.floor(spaces / 2));
+  const rest = line.slice(indent * 2);
+  const todo = rest.match(/^-\s\[( |x|X)\]\s?(.*)$/);
   if (todo) {
-    return { id: newBlockId(), type: 'todo', text: todo[2] ?? '', checked: todo[1].toLowerCase() === 'x' };
+    return withIndent(
+      { id: newBlockId(), type: 'todo', text: todo[2] ?? '', checked: todo[1].toLowerCase() === 'x' },
+      indent,
+    );
   }
-  const bullet = line.match(/^\s*[-*]\s+(.*)$/);
-  if (bullet) return { id: newBlockId(), type: 'bullet', text: bullet[1] ?? '' };
-  const heading = line.match(/^(#{1,3})\s+(.*)$/);
+  const bullet = rest.match(/^[-*]\s+(.*)$/);
+  if (bullet) return withIndent({ id: newBlockId(), type: 'bullet', text: bullet[1] ?? '' }, indent);
+  const heading = rest.match(/^(#{1,3})\s+(.*)$/);
   if (heading) {
-    return {
-      id: newBlockId(),
-      type: 'heading',
-      level: heading[1].length as 1 | 2 | 3,
-      text: heading[2] ?? '',
-    };
+    return withIndent(
+      {
+        id: newBlockId(),
+        type: 'heading',
+        level: heading[1].length as 1 | 2 | 3,
+        text: heading[2] ?? '',
+      },
+      indent,
+    );
   }
-  const quote = line.match(/^>\s?(.*)$/);
-  if (quote) return { id: newBlockId(), type: 'quote', text: quote[1] ?? '' };
-  return { id: newBlockId(), type: 'paragraph', text: line };
+  const quote = rest.match(/^>\s?(.*)$/);
+  if (quote) return withIndent({ id: newBlockId(), type: 'quote', text: quote[1] ?? '' }, indent);
+  return withIndent({ id: newBlockId(), type: 'paragraph', text: rest }, indent);
 }
 
 export function splitContent(content: string): { title: string; blocks: Block[] } {
@@ -50,11 +91,12 @@ export function mirrorContent(title: string, blocks: Block[]): string {
   const body = blocks
     .filter((block) => block.text.trim() || block.type === 'todo')
     .map((block) => {
-      if (block.type === 'todo') return `- [${block.checked ? 'x' : ' '}] ${block.text}`;
-      if (block.type === 'bullet') return `- ${block.text}`;
-      if (block.type === 'heading') return `${'#'.repeat(block.level ?? 2)} ${block.text}`;
-      if (block.type === 'quote') return `> ${block.text}`;
-      return block.text;
+      const pad = '  '.repeat(clampIndent(block.indent));
+      if (block.type === 'todo') return `${pad}- [${block.checked ? 'x' : ' '}] ${block.text}`;
+      if (block.type === 'bullet') return `${pad}- ${block.text}`;
+      if (block.type === 'heading') return `${pad}${'#'.repeat(block.level ?? 2)} ${block.text}`;
+      if (block.type === 'quote') return `${pad}> ${block.text}`;
+      return `${pad}${block.text}`;
     })
     .join('\n');
   if (!title.trim()) return body;

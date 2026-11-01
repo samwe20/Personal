@@ -270,7 +270,14 @@
     "quote": "Quote",
     "placeholder": "Write, / for a block, @ for a link",
     "tag": "Tag",
-    "taggedIn": "In blocks"
+    "taggedIn": "In blocks",
+    "unknown": "Unknown object",
+    "indent": "Indent",
+    "outdent": "Outdent",
+    "up": "Up",
+    "down": "Down",
+    "reorder": "Move",
+    "removeEmbed": "Remove from text"
   },
   "collection": {
     "new": "New collection"

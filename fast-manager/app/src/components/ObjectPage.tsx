@@ -1,46 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
-import { mediaObjectUrl, readMedia } from '../services/mediaStore';
+import { useMediaSrc } from '../hooks/useMediaSrc';
 import { objectToMarkdown } from '../services/objectModel';
 import type { FieldDef } from '../types';
 import { splitIds, joinIds } from '../utils/blocks';
 import { getIcon } from '../utils/icons';
-import { isDataUrl, parseBlobRef } from '../utils/media';
 import { blocksWithTag, displayTitle, getReferenceCandidates, getUnlinkedMentions, objectTitle, resolveLinks } from '../utils/nodeUtils';
 import { BlockEditor } from './BlockEditor';
 import { FieldEditor } from './FieldEditor';
-
-function useMediaSrc(src: string | undefined): string | null {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!src) {
-      setUrl(null);
-      return;
-    }
-    if (isDataUrl(src)) {
-      setUrl(src);
-      return;
-    }
-    const id = parseBlobRef(src);
-    if (!id) {
-      setUrl(null);
-      return;
-    }
-    let objectUrl = '';
-    let cancelled = false;
-    void readMedia(id).then((record) => {
-      if (cancelled || !record) return;
-      objectUrl = mediaObjectUrl(record);
-      setUrl(objectUrl);
-    });
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [src]);
-  return url;
-}
 
 export function ObjectPage() {
   const { t } = useTranslation();
@@ -268,6 +236,7 @@ export function ObjectPage() {
         blocks={node.blocks?.length ? node.blocks : [{ id: `${node.id}-empty`, type: 'paragraph', text: '' }]}
         nodes={nodes}
         onOpen={openObject}
+        objectTypes={objectTypes}
         onEnsureTag={ensureTag}
         onCreateWeblink={createWeblink}
         onChange={(blocks) => void saveObjectBody(node.id, title, blocks)}

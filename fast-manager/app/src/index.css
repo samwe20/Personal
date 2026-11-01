@@ -177,3 +177,28 @@ select:focus-visible,
 .block-input:focus {
   outline: none;
 }
+
+.embed-card {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--paper);
+  padding: 0.55rem 0.7rem;
+}
+
+.embed-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.block-tool {
+  display: flex;
+  color: var(--muted);
+  opacity: 0;
+  padding: 0.1rem;
+}
+
+.group:hover .block-tool,
+.group:focus-within .block-tool {
+  opacity: 1;
+}

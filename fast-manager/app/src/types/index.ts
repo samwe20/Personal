@@ -30,6 +30,8 @@ export interface Block {
   type: BlockType;
   text: string;
   level?: 1 | 2 | 3;
+  /** Outline nesting. Heading size stays on `level`. */
+  indent?: number;
   checked?: boolean;
   tagIds?: string[];
 }

@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
 import type { DataView, NodeRecord } from '../types';
 import { localToday } from '../utils/dateUtils';
-import { objectTitle } from '../utils/nodeUtils';
+import { displayTitle, resolveLinks } from '../utils/nodeUtils';
 import { getIcon } from '../utils/icons';
 import { QueryBuilder } from './QueryBuilder';
 
@@ -119,6 +119,7 @@ export function ObjectIndex() {
 
 function ListView({ rows, onOpen, today }: { rows: NodeRecord[]; onOpen: (id: string) => void; today: string }) {
   const objectTypes = useAppStore((s) => s.objectTypes);
+  const nodes = useAppStore((s) => s.nodes);
   const { t } = useTranslation();
   return (
     <div className="divide-y divide-[var(--border)]">
@@ -132,8 +133,8 @@ function ListView({ rows, onOpen, today }: { rows: NodeRecord[]; onOpen: (id: st
               {type ? t(`supertags.${type.id}`, type.name) : ''}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-base">{objectTitle(node) || t('object.untitled')}</span>
-              {openTodo && <span className="block truncate text-xs text-[var(--muted)]">☐ {openTodo.text}</span>}
+              <span className="block truncate text-base">{displayTitle(nodes, node) || t('object.untitled')}</span>
+              {openTodo && <span className="block truncate text-xs text-[var(--muted)]">☐ {resolveLinks(openTodo.text, nodes)}</span>}
             </span>
             {typeof due === 'string' && due && (
               <span className={`text-xs ${due < today ? 'text-red-700' : 'text-[var(--muted)]'}`}>{due}</span>
@@ -146,6 +147,7 @@ function ListView({ rows, onOpen, today }: { rows: NodeRecord[]; onOpen: (id: st
 }
 
 function CardView({ rows, onOpen }: { rows: NodeRecord[]; onOpen: (id: string) => void }) {
+  const nodes = useAppStore((s) => s.nodes);
   const { t } = useTranslation();
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -156,9 +158,9 @@ function CardView({ rows, onOpen }: { rows: NodeRecord[]; onOpen: (id: string) =
           onClick={() => onOpen(node.id)}
           className="rounded-xl border border-[var(--border)] bg-[var(--paper)] p-4 text-left shadow-sm"
         >
-          <div className="font-[var(--font-title)] text-xl">{objectTitle(node) || t('object.untitled')}</div>
+          <div className="font-[var(--font-title)] text-xl">{displayTitle(nodes, node) || t('object.untitled')}</div>
           <p className="mt-2 line-clamp-3 text-sm text-[var(--muted)]">
-            {(node.blocks ?? []).map((block) => block.text).filter(Boolean).slice(0, 3).join(' · ')}
+            {(node.blocks ?? []).map((block) => resolveLinks(block.text, nodes)).filter(Boolean).slice(0, 3).join(' · ')}
           </p>
         </button>
       ))}
@@ -176,6 +178,7 @@ function TableView({
   onOpen: (id: string) => void;
 }) {
   const objectTypes = useAppStore((s) => s.objectTypes);
+  const nodes = useAppStore((s) => s.nodes);
   const { t } = useTranslation();
   const type = objectTypes.find((item) => item.id === typeId);
   const fields = type?.fields ?? [];
@@ -197,7 +200,7 @@ function TableView({
             const bag = (typeId && node.fieldValues[typeId]) || {};
             return (
               <tr key={node.id} className="cursor-pointer border-t border-[var(--border)] hover:bg-[var(--surface-2)]" onClick={() => onOpen(node.id)}>
-                <td className="px-3 py-2">{objectTitle(node)}</td>
+                <td className="px-3 py-2">{displayTitle(nodes, node)}</td>
                 {fields.map((field) => (
                   <td key={field.key} className="px-3 py-2 text-[var(--muted)]">
                     {String(bag[field.key] ?? '')}
@@ -225,6 +228,7 @@ function KanbanView({
   options: string[];
   onOpen: (id: string) => void;
 }) {
+  const nodes = useAppStore((s) => s.nodes);
   const { t } = useTranslation();
   if (!fieldKey || !typeId) return <p className="text-sm text-[var(--muted)]">{t('views.kanbanNeedsLabel')}</p>;
   const columns = options.length ? options : ['—'];
@@ -243,7 +247,7 @@ function KanbanView({
                   onClick={() => onOpen(node.id)}
                   className="block w-full rounded-lg bg-[var(--paper)] px-3 py-2 text-left text-sm shadow-sm"
                 >
-                  {objectTitle(node)}
+                  {displayTitle(nodes, node)}
                 </button>
               ))}
           </div>
