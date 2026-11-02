@@ -1,0 +1,8 @@
+{
+  "folders": [
+    { "name": "Pošta", "path": "posta" }
+  ],
+  "settings": {
+    "window.title": "Pošta · ${activeRepositoryBranchName}"
+  }
+}

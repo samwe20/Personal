@@ -1,0 +1,16 @@
+{
+  "name": "posta",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "dependencies": {
+    "imapflow": "^1.0.193",
+    "mailparser": "^3.7.4",
+    "nodemailer": "^10.3.1",
+    "sanitize-html": "^2.16.0"
+  }
+}

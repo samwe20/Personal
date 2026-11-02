@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pošta</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app" id="app" data-pane="list">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true"></span>
+        <div>
+          <p class="brand-name">Pošta</p>
+          <p class="brand-mail" id="account-label">místní schránka</p>
+        </div>
+      </div>
+      <button class="new-mail" id="new-mail" type="button">Nová zpráva</button>
+      <nav class="folders" id="folders" aria-label="Složky"></nav>
+      <form class="new-folder" id="new-folder">
+        <input id="new-folder-name" name="folder" type="text" maxlength="80" placeholder="Nová složka" aria-label="Nová složka">
+        <button type="submit">Přidat</button>
+      </form>
+      <div class="sidebar-foot">
+        <p class="keys">N nová · R odpovědět · E archiv</p>
+        <button class="text-button" id="open-settings" type="button">Nastavení a Gmail</button>
+      </div>
+    </aside>
+
+    <section class="list-pane" aria-label="Seznam zpráv">
+      <header class="list-head">
+        <button class="only-mobile icon-button" id="show-folders" type="button" aria-label="Složky">Složky</button>
+        <div>
+          <h1 id="folder-title">Doručená</h1>
+          <p id="folder-meta"></p>
+        </div>
+      </header>
+      <div class="search-row">
+        <input id="search" name="q" type="search" placeholder="Hledat odesílatele, předmět, text" autocomplete="off">
+        <label class="check"><input id="search-all" name="everywhere" type="checkbox"> všude</label>
+      </div>
+      <p class="banner" id="demo-banner" hidden></p>
+      <div class="messages" id="messages" role="list"></div>
+    </section>
+
+    <section class="reading" aria-label="Zpráva" id="reading"></section>
+  </div>
+
+  <section class="compose" id="compose" hidden>
+    <header class="compose-head">
+      <h2 id="compose-title">Nová zpráva</h2>
+      <button class="icon-button" id="compose-close" type="button" aria-label="Zavřít">×</button>
+    </header>
+    <form id="compose-form">
+      <label>Komu <input id="compose-to" name="to" type="text" autocomplete="off"></label>
+      <p class="compose-links">
+        <button type="button" id="toggle-cc">Kopie</button>
+      </p>
+      <label id="cc-field" hidden>Kopie <input id="compose-cc" name="cc" type="text" autocomplete="off"></label>
+      <label id="bcc-field" hidden>Skrytá <input id="compose-bcc" name="bcc" type="text" autocomplete="off"></label>
+      <label>Předmět <input id="compose-subject" name="subject" type="text" autocomplete="off"></label>
+      <textarea id="compose-text" name="text" rows="12"></textarea>
+      <footer class="compose-actions">
+        <button class="primary" id="compose-send" type="submit">Odeslat</button>
+        <button type="button" id="compose-draft">Uložit koncept</button>
+        <span id="compose-note"></span>
+      </footer>
+    </form>
+  </section>
+
+  <div class="overlay" id="settings" hidden>
+    <form class="sheet" id="settings-form">
+      <header class="compose-head">
+        <h2>Účet</h2>
+        <button class="icon-button" id="settings-close" type="button" aria-label="Zavřít">×</button>
+      </header>
+      <p class="help">Gmail se připojí heslem aplikace. Běžné heslo k účtu sem nepatří. Heslo zůstane v souboru schránky na tomhle počítači.</p>
+      <label>Jméno odesílatele <input id="account-name" name="name" type="text" autocomplete="name"></label>
+      <label>E-mail <input id="account-email" name="email" type="email" autocomplete="username" required></label>
+      <label>Server
+        <select id="account-provider" name="provider">
+          <option value="gmail">Gmail</option>
+          <option value="custom">Jiný IMAP / SMTP</option>
+        </select>
+      </label>
+      <div id="custom-server" hidden>
+        <label>Uživatel <input id="account-username" name="username" type="text" autocomplete="off"></label>
+        <div class="split">
+          <label>IMAP <input id="imap-host" name="imapHost" type="text" placeholder="imap.example.com"></label>
+          <label>Port <input id="imap-port" name="imapPort" type="number" value="993"></label>
+        </div>
+        <div class="split">
+          <label>SMTP <input id="smtp-host" name="smtpHost" type="text" placeholder="smtp.example.com"></label>
+          <label>Port <input id="smtp-port" name="smtpPort" type="number" value="465"></label>
+        </div>
+      </div>
+      <label>Heslo aplikace <input id="account-password" name="password" type="password" autocomplete="new-password" placeholder="Nech prázdné, když ho neměníš"></label>
+      <p class="status" id="settings-status" role="status"></p>
+      <footer class="compose-actions">
+        <button class="primary" id="settings-sync" type="submit">Uložit a stáhnout</button>
+        <button type="button" id="settings-check">Vyzkoušet</button>
+        <button type="button" id="settings-clear">Smazat ukázku</button>
+      </footer>
+    </form>
+  </div>
+
+  <p class="toast" id="toast" hidden role="status"></p>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
