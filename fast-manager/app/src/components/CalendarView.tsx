@@ -51,125 +51,121 @@ export function CalendarView() {
     setCursor((current) => shift(current, delta));
   };
 
-  const dated = nodes.filter((node) => nodeTouchesDay(node, selected));
+  const dated = nodes.filter((node) => node.typeId !== 'dailyNote' && nodeTouchesDay(node, selected));
   const created = nodes.filter((node) => node.createdAt.slice(0, 10) === selected && !dated.includes(node));
 
+  const selectedDate = new Date(`${selected}T12:00:00`);
+  const selectedLabel = Number.isNaN(selectedDate.getTime())
+    ? selected
+    : new Intl.DateTimeFormat(i18n.language, { weekday: 'long', day: 'numeric', month: 'long' }).format(selectedDate);
+
   return (
-    <div className="mx-auto grid w-full max-w-5xl gap-8 px-6 py-8 lg:grid-cols-[1.4fr_0.8fr]">
-      <section>
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="font-[var(--font-title)] text-3xl capitalize">{label}</h1>
-          <div className="flex items-center gap-2 text-sm">
-            <button type="button" onClick={() => move(-1)} aria-label={t('calendar.previous')}>←</button>
-            <button
-              type="button"
-              onClick={() => {
-                const now = new Date();
-                setCursor({ year: now.getFullYear(), month: now.getMonth() });
-                setSelected(today);
-              }}
-            >
-              {t('calendar.today')}
-            </button>
-            <button type="button" onClick={() => move(1)} aria-label={t('calendar.next')}>→</button>
-            <button
-              type="button"
-              className={mode === 'month' ? 'text-[var(--text)]' : 'text-[var(--muted)]'}
-              onClick={() => setMode('month')}
-            >
-              {t('calendar.month')}
-            </button>
-            <button
-              type="button"
-              className={mode === 'week' ? 'text-[var(--text)]' : 'text-[var(--muted)]'}
-              onClick={() => setMode('week')}
-            >
-              {t('calendar.week')}
-            </button>
-          </div>
+    <div className="calendar-sheet">
+      <div className="flex items-end justify-between gap-4">
+        <h1 className="text-4xl capitalize">{label}</h1>
+        <div className="flex items-center gap-3 text-[13px] text-[var(--muted)]">
+          <button type="button" onClick={() => move(-1)} aria-label={t('calendar.previous')}>←</button>
+          <button
+            type="button"
+            className="text-[var(--text)]"
+            onClick={() => {
+              const now = new Date();
+              setCursor({ year: now.getFullYear(), month: now.getMonth() });
+              setSelected(today);
+            }}
+          >
+            {t('calendar.today')}
+          </button>
+          <button type="button" onClick={() => move(1)} aria-label={t('calendar.next')}>→</button>
+          <button type="button" className={mode === 'week' ? 'text-[var(--text)]' : ''} onClick={() => setMode('week')}>
+            {t('calendar.week')}
+          </button>
+          <button type="button" className={mode === 'month' ? 'text-[var(--text)]' : ''} onClick={() => setMode('month')}>
+            {t('calendar.month')}
+          </button>
         </div>
-        {mode === 'week' && (
-          <div className="mt-1 grid grid-cols-7 gap-2">
-            {week.map((key) => {
-              const day = new Date(`${key}T12:00:00`);
-              const count = nodes.filter((node) => nodeTouchesDay(node, key)).length;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => void openDaily(key)}
-                  className={`min-h-28 rounded-lg px-2 py-2 text-left text-sm ${key === selected ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'bg-[var(--paper)]'}`}
-                >
-                  <span className="block text-xs opacity-80">
-                    {new Intl.DateTimeFormat(i18n.language, { weekday: 'short' }).format(day)}
-                  </span>
-                  <span className="mt-1 block text-lg">{day.getDate()}</span>
-                  {count > 0 && <span className="mt-3 block text-xs">{count}</span>}
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {mode === 'month' && (
-        <>
-        <div className="grid grid-cols-7 gap-1 text-center text-xs text-[var(--muted)]">
-          {Array.from({ length: 7 }, (_, index) =>
-            new Intl.DateTimeFormat(i18n.language, { weekday: 'short' }).format(new Date(2024, 0, 1 + index)),
-          ).map((day) => (
-            <div key={day}>{day}</div>
-          ))}
-        </div>
-        <div className="mt-1 grid grid-cols-7 gap-1">
-          {days.map((day) => {
-            const key = iso(day);
-            const note = nodes.find((node) => node.typeId === 'dailyNote' && node.fieldValues.dailyNote?.date === key);
-            const inMonth = day.getMonth() === cursor.month;
+      </div>
+      {mode === 'week' && (
+        <div className="week-row">
+          {week.map((key) => {
+            const day = new Date(`${key}T12:00:00`);
+            const count = nodes.filter((node) => nodeTouchesDay(node, key)).length;
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => void openDaily(key)}
-                className={[
-                  'h-16 rounded-lg text-left text-sm',
-                  key === selected ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'bg-[var(--paper)]',
-                  inMonth ? '' : 'opacity-40',
-                ].join(' ')}
+                className={`week-day ${key === today ? 'is-today' : ''}`}
               >
-                <span className="block px-2 pt-1">{day.getDate()}</span>
-                {note && (
-                  <span className={`mx-2 mt-2 block h-1.5 rounded-full ${note.reviewed ? 'bg-emerald-600' : 'bg-[var(--muted)]'}`} />
-                )}
+                <small>{new Intl.DateTimeFormat(i18n.language, { weekday: 'short' }).format(day)}</small>
+                <strong>{day.getDate()}</strong>
+                {count > 0 && <small>{count}</small>}
               </button>
             );
           })}
         </div>
-        </>
-        )}
-      </section>
-      <aside>
-        <h2 className="font-[var(--font-title)] text-2xl">{selected}</h2>
-        <button type="button" className="mt-3 text-sm underline" onClick={() => void openDaily(selected)}>
+      )}
+      {mode === 'month' && (
+        <div className="mt-8">
+          <div className="grid grid-cols-7 gap-1 text-[12px] text-[var(--muted)]">
+            {Array.from({ length: 7 }, (_, index) =>
+              new Intl.DateTimeFormat(i18n.language, { weekday: 'short' }).format(new Date(2024, 0, 1 + index)),
+            ).map((day) => (
+              <div key={day}>{day}</div>
+            ))}
+          </div>
+          <div className="mt-2 grid grid-cols-7 gap-1">
+            {days.map((day) => {
+              const key = iso(day);
+              const note = nodes.find((node) => node.typeId === 'dailyNote' && node.fieldValues.dailyNote?.date === key);
+              const inMonth = day.getMonth() === cursor.month;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => void openDaily(key)}
+                  className={`h-12 text-left text-sm ${key === today ? 'text-[var(--text)] underline decoration-1 underline-offset-4' : 'text-[var(--muted)]'} ${inMonth ? '' : 'opacity-40'}`}
+                >
+                  <span className="block">{day.getDate()}</span>
+                  {note && <span className="mt-1 block h-px w-3 bg-[var(--muted)]" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <section className="mt-10">
+        <h2 className="font-[var(--font-title)] text-2xl capitalize">{selectedLabel}</h2>
+        <button type="button" className="mt-3 text-[13px] text-[var(--muted)] hover:text-[var(--text)]" onClick={() => void openDaily(selected)}>
           {t('calendar.openNote')}
         </button>
-        <h3 className="mt-6 text-xs uppercase tracking-wide text-[var(--muted)]">{t('calendar.dated')}</h3>
+        {dated.length > 0 && <h3 className="quiet-label mt-8">{t('calendar.dated')}</h3>}
         <div className="mt-2 space-y-1">
           {dated.map((node) => (
-            <button key={node.id} type="button" className="block text-sm" onClick={() => openObject(node.id)}>
-              {displayTitle(nodes, node)}
+            <button key={node.id} type="button" className="block text-[15px]" onClick={() => openObject(node.id)}>
+              {presentTitle(nodes, node, i18n.language)}
             </button>
           ))}
         </div>
-        <h3 className="mt-6 text-xs uppercase tracking-wide text-[var(--muted)]">{t('calendar.created')}</h3>
+        {created.length > 0 && <h3 className="quiet-label mt-8">{t('calendar.created')}</h3>}
         <div className="mt-2 space-y-1">
           {created.map((node) => (
-            <button key={node.id} type="button" className="block text-sm" onClick={() => openObject(node.id)}>
-              {displayTitle(nodes, node)}
+            <button key={node.id} type="button" className="block text-[15px]" onClick={() => openObject(node.id)}>
+              {presentTitle(nodes, node, i18n.language)}
             </button>
           ))}
         </div>
-      </aside>
+      </section>
     </div>
   );
+}
+
+function presentTitle(nodes: Parameters<typeof displayTitle>[0], node: Parameters<typeof displayTitle>[1], language: string): string {
+  const title = displayTitle(nodes, node);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(title)) return title;
+  const date = new Date(`${title}T12:00:00`);
+  const label = new Intl.DateTimeFormat(language, { weekday: 'long', day: 'numeric', month: 'long' }).format(date);
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 function nodeTouchesDay(node: { typeId?: string; fieldValues: Record<string, Record<string, string | number | boolean>> }, day: string): boolean {

@@ -4,7 +4,6 @@ import { getIcon } from '../utils/icons';
 
 export function TopBar() {
   const { t } = useTranslation();
-  const activeView = useAppStore((s) => s.activeView);
   const searchQuery = useAppStore((s) => s.searchQuery);
   const setSearchQuery = useAppStore((s) => s.setSearchQuery);
   const setView = useAppStore((s) => s.setView);
@@ -13,54 +12,15 @@ export function TopBar() {
   const redo = useAppStore((s) => s.redo);
   const canUndoAction = useAppStore((s) => s.canUndoAction);
   const canRedoAction = useAppStore((s) => s.canRedoAction);
-  const selectedNodeId = useAppStore((s) => s.selectedNodeId);
-  const activeFolderId = useAppStore((s) => s.activeFolderId);
-  const activeTypeId = useAppStore((s) => s.activeTypeId);
-  const activeCollectionId = useAppStore((s) => s.activeCollectionId);
-  const objectTypes = useAppStore((s) => s.objectTypes);
-  const collections = useAppStore((s) => s.collections);
-  const resolveFolderTitle = useAppStore((s) => s.resolveFolderTitle);
-  const resolveNodeTitle = useAppStore((s) => s.resolveNodeTitle);
   const historyTick = useAppStore((s) => s.historyTick);
-  const typeName = objectTypes.find((type) => type.id === activeTypeId);
-  const collectionName = collections.find((collection) => collection.id === activeCollectionId)?.name;
-
-  const viewTitle =
-    activeView === 'object' && selectedNodeId
-      ? resolveNodeTitle(selectedNodeId)
-      : activeView === 'folder' && activeFolderId
-        ? resolveFolderTitle(activeFolderId)
-        : activeView === 'today'
-          ? t('nav.today')
-          : activeView === 'planned'
-            ? t('nav.planned')
-            : activeView === 'search'
-              ? t('search.title')
-              : activeView === 'query'
-                ? t('nav.queries')
-                : activeView === 'calendar'
-                  ? t('nav.calendar')
-                  : activeView === 'studio'
-                    ? t('studio.title')
-                    : activeView === 'type' && typeName
-                      ? t(`supertags.${typeName.id}`, typeName.name)
-                      : activeView === 'collection'
-                        ? collectionName ?? t('nav.collections')
-                        : activeView === 'settings'
-                          ? t('nav.settings')
-                          : t('nav.inbox');
-
   void historyTick;
 
-  return (
-    <header className="flex shrink-0 items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)] px-3 py-1.5">
-      <h1 className="hidden text-xs font-semibold text-[var(--text)] sm:block">{viewTitle}</h1>
+  const SearchIcon = getIcon('search');
 
-      <div className="relative min-w-0 flex-1">
-        {(() => {
-          const SearchIcon = getIcon('search');
-          return <SearchIcon size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />;
-        })()}
+  return (
+    <header className="topbar shrink-0 bg-[var(--bg)]">
+      <div className="topbar-search">
+        <SearchIcon size={14} className="absolute left-0 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
         <input
           value={searchQuery}
           onChange={(e) => {
@@ -71,7 +31,8 @@ export function TopBar() {
             if (searchQuery) setView('search');
           }}
           placeholder={t('actions.search')}
-          className="ui-input pl-8"
+          aria-label={t('actions.search')}
+          className="ui-input pl-6"
         />
       </div>
 

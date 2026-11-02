@@ -29,9 +29,9 @@ export function SettingsPanel() {
   if (!settings) return null;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-5">
+    <div className="settings-sheet">
       <div>
-        <h1 className="text-lg font-semibold">{t('settings.title')}</h1>
+        <h1 className="text-4xl">{t('settings.title')}</h1>
         <p className="mt-0.5 text-xs text-[var(--muted)]">{t('settings.openSource')}</p>
       </div>
 

@@ -41,11 +41,11 @@ export function ObjectCard({ blockId, node, targetId, objectTypes, nodes, onOpen
           if (node && !node.deleted) onOpen(node.id);
         }}
       >
-        <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: type?.color ?? 'var(--muted)' }}>
-          <Icon size={13} />
+        <span className="flex items-center gap-1.5 text-[12px] text-[var(--muted)]">
+          <Icon size={13} strokeWidth={1.5} />
           {node ? t(`supertags.${node.typeId}`, type?.name ?? node.typeId ?? '') : t('blocks.unknown')}
         </span>
-        <span className="mt-0.5 block text-sm text-[var(--text)]">{node ? title : targetId.slice(0, 8)}</span>
+        <span className="mt-0.5 block font-[var(--font-title)] text-lg text-[var(--text)]">{node ? title : targetId.slice(0, 8)}</span>
         {node?.typeId === 'image' && mediaSrc && (
           <img src={mediaSrc} alt={title} className="mt-2 max-h-48 rounded-md bg-[var(--surface-2)] object-contain" />
         )}
