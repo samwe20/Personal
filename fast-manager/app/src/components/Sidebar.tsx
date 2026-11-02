@@ -31,8 +31,8 @@ export function Sidebar() {
   const SettingsIcon = getIcon('settings');
 
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col border-r border-[var(--border)] bg-[var(--bg)] px-4 py-6">
-      <div className="px-0.5 font-[var(--font-title)] text-[15px] tracking-[0.18em] text-[var(--text)]">{t('app.shortName')}</div>
+    <aside className="app-rail flex h-full w-56 shrink-0 flex-col px-5 py-7">
+      <div className="brand">Fast</div>
 
       <div className="mt-8 flex-1 space-y-7 overflow-auto">
         <div>
@@ -55,7 +55,7 @@ export function Sidebar() {
               return (
                 <button key={type.id} type="button" onClick={() => openType(type.id)} className={`ui-nav ${active ? 'is-active' : ''}`}>
                   <span className="min-w-0 flex-1 truncate">{t(`supertags.${type.id}`, type.name)}</span>
-                  <span className="text-[12px] text-[var(--muted)]">{count}</span>
+                  <span className="text-[12px] opacity-70">{count}</span>
                 </button>
               );
             })}
@@ -81,7 +81,7 @@ export function Sidebar() {
                 type="button"
                 title={t('settings.language')}
                 onClick={() => void updateSettings({ language: lang })}
-                className={language === lang ? 'text-[var(--text)]' : ''}
+                className={language === lang ? 'text-[var(--rail-text)]' : 'text-[var(--rail-muted)]'}
               >
                 {lang}
               </button>

@@ -131,7 +131,7 @@ export function ObjectPage() {
         <div className="relative">
         <button
           type="button"
-          className="hover:text-[var(--text)]"
+          className="font-[var(--font-title)] text-[1.05rem] italic text-[var(--accent)]"
           onClick={() => setTypeOpen((open) => !open)}
         >
           {type ? t(`supertags.${type.id}`, type.name) : t('object.type')}

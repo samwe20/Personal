@@ -18,7 +18,7 @@ export function TopBar() {
   const SearchIcon = getIcon('search');
 
   return (
-    <header className="topbar shrink-0 bg-[var(--bg)]">
+    <header className="topbar shrink-0 bg-[var(--desk)]">
       <div className="topbar-search">
         <SearchIcon size={14} className="absolute left-0 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
         <input

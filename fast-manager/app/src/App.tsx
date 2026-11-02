@@ -59,13 +59,13 @@ export default function App() {
   return (
     <div className="flex h-full overflow-hidden">
       <Sidebar />
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--bg)]">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--desk)]">
         {activeView === 'settings' ? (
           <SettingsPanel />
         ) : (
           <>
             <TopBar />
-            <div className="min-h-0 flex-1 overflow-auto bg-[var(--bg)]">
+            <div className="min-h-0 flex-1 overflow-auto bg-[var(--desk)]">
               {activeView === 'object' ? (
                 <ObjectPage />
               ) : activeView === 'calendar' ? (
