@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Projekt je složka. Větev je úkol.
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT"
+
+branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "bez gitu")"
+
+dir_for() {
+  case "$1" in
+    folio) echo folio ;;
+    fast) echo fast-manager ;;
+    deniky) echo deniky ;;
+    ostatni) echo ostatni ;;
+  esac
+}
+
+workspace_for() {
+  case "$1" in
+    folio) echo Folio.code-workspace ;;
+    fast) echo FAST.code-workspace ;;
+    deniky) echo Deniky.code-workspace ;;
+    ostatni) echo Ostatni.code-workspace ;;
+  esac
+}
+
+echo "Personal"
+echo "větev: $branch"
+case "$branch" in
+  main)
+    echo "stav: společný main, všechny čtyři projekty"
+    ;;
+  feat/*|fix/*)
+    echo "stav: rozdělaná změna. Po sloučení do main tu větev smaž."
+    ;;
+  *)
+    echo "stav: tohle není projekt. Je to jiná větev. Projekty jsou složky."
+    ;;
+esac
+
+normalize() {
+  printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+if [[ $# -lt 1 ]]; then
+  echo
+  echo "Projekty:"
+  for key in folio fast deniky ostatni; do
+    dir="$(dir_for "$key")"
+    name="$(head -n 1 "$ROOT/$dir/PROJECT")"
+    printf '  %-8s %s  (%s/)  otevři %s\n' "$key" "$name" "$dir" "$(workspace_for "$key")"
+  done
+  echo
+  echo "Otevři workspace soubor. ./project folio vypíše jen Folio."
+  exit 0
+fi
+
+key="$(normalize "$1")"
+case "$key" in
+  fast|f.a.s.t|fast-manager) key=fast ;;
+  folio) key=folio ;;
+  deniky|deníky|diaries) key=deniky ;;
+  ostatni|ostatní|other) key=ostatni ;;
+  *)
+    echo "Neznámý projekt: $1"
+    echo "Znám folio, fast, deniky, ostatni."
+    exit 1
+    ;;
+esac
+
+dir="$(dir_for "$key")"
+if [[ ! -f "$ROOT/$dir/PROJECT" ]]; then
+  echo "Chybí $dir/PROJECT"
+  exit 1
+fi
+
+echo
+echo "projekt: $(head -n 1 "$ROOT/$dir/PROJECT")"
+echo "složka: $dir/"
+echo "workspace: $(workspace_for "$key")"

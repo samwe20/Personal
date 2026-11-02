@@ -1,0 +1,8 @@
+{
+  "folders": [
+    { "name": "Deníky", "path": "deniky" }
+  ],
+  "settings": {
+    "window.title": "Deníky · ${activeRepositoryBranchName}"
+  }
+}

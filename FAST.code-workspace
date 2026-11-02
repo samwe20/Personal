@@ -1,0 +1,8 @@
+{
+  "folders": [
+    { "name": "FAST", "path": "fast-manager" }
+  ],
+  "settings": {
+    "window.title": "FAST · ${activeRepositoryBranchName}"
+  }
+}

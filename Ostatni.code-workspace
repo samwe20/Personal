@@ -1,0 +1,8 @@
+{
+  "folders": [
+    { "name": "Ostatní", "path": "ostatni" }
+  ],
+  "settings": {
+    "window.title": "Ostatní · ${activeRepositoryBranchName}"
+  }
+}
