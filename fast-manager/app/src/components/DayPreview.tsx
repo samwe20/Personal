@@ -56,7 +56,7 @@ export function DayPreview({
   const url = node.typeId === 'weblink' && typeof fields.url === 'string' ? fields.url : '';
 
   return (
-    <button type="button" className="preview-card" onClick={() => onOpen(node.id)}>
+    <button type="button" className={`preview-card${src ? ' is-media' : ''}`} onClick={() => onOpen(node.id)}>
       <small>{type ? t(`supertags.${type.id}`, type.name) : ''}</small>
       <strong>{title}</strong>
       {snippet && <p>{snippet}</p>}

@@ -32,6 +32,16 @@ describe('preview snippet', () => {
     });
     expect(previewSnippet(note, [note], 'první řádek')).toBe('druhý řádek');
   });
+
+  it('keeps four lines under the title', () => {
+    const note = node({
+      id: 'n2',
+      typeId: 'note',
+      title: 'nadpis',
+      blocks: [{ id: 'b', type: 'paragraph', text: 'nadpis\njedna\ndvě\ntři\nčtyři\npět' }],
+    });
+    expect(previewSnippet(note, [note], 'nadpis')).toBe('jedna\ndvě\ntři\nčtyři');
+  });
 });
 
 describe('day previews', () => {
@@ -67,5 +77,17 @@ describe('day previews', () => {
     });
     const picked = dayPreviewNodes([task, daily, empty, older, todayNote, image], '2026-11-02', ['day', 'task']);
     expect(picked.map((item) => item.id)).toEqual(['today', 'pic', 'older']);
+  });
+
+  it('shows more than the first six cards', () => {
+    const notes = Array.from({ length: 13 }, (_, index) =>
+      node({
+        id: `n${index}`,
+        typeId: 'note',
+        content: `věta ${index}`,
+        updatedAt: `2026-11-01T00:${String(index).padStart(2, '0')}:00.000Z`,
+      }),
+    );
+    expect(dayPreviewNodes(notes, '2026-11-02', []).map((item) => item.id)).toHaveLength(12);
   });
 });

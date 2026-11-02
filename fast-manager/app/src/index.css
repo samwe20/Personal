@@ -389,22 +389,33 @@ select:focus-visible,
 }
 
 .day-previews > div {
+  container-type: inline-size;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+  gap: 0.85rem;
 }
 
 .preview-card {
   display: flex;
-  min-height: 7.25rem;
+  min-height: 8.5rem;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.2rem;
+  gap: 0.28rem;
   border: 1px solid var(--border);
   background: var(--surface);
-  padding: 0.7rem 0.75rem 0.75rem;
+  padding: 0.85rem 0.9rem 0.95rem;
   text-align: left;
   box-shadow: 2px 3px 0 rgba(62, 36, 18, 0.08);
+}
+
+.preview-card.is-media {
+  grid-column: span 2;
+}
+
+@container (max-width: 28rem) {
+  .preview-card.is-media {
+    grid-column: auto;
+  }
 }
 
 .preview-card small {
@@ -416,7 +427,7 @@ select:focus-visible,
 
 .preview-card strong {
   font-family: var(--font-title);
-  font-size: 1.05rem;
+  font-size: 1.2rem;
   font-weight: 500;
   line-height: 1.25;
   color: var(--text);
@@ -426,18 +437,19 @@ select:focus-visible,
 .preview-card em {
   display: -webkit-box;
   overflow: hidden;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
+  white-space: pre-line;
   font-style: normal;
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 14px;
+  line-height: 1.4;
   color: var(--muted);
 }
 
 .preview-card img {
   width: 100%;
-  height: 4.6rem;
-  margin-top: 0.35rem;
+  height: 8.5rem;
+  margin-top: 0.45rem;
   object-fit: cover;
   background: var(--surface-2);
 }

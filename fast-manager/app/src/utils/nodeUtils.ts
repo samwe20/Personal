@@ -91,18 +91,19 @@ export function displayTitle(nodes: NodeRecord[], node: NodeRecord | undefined):
 const EMBED_LINE = /^\[\[[0-9a-fA-F-]{8,}\]\]$/;
 
 export function previewSnippet(node: NodeRecord, nodes: NodeRecord[], title: string): string {
-  const lines = (node.blocks ?? [])
-    .flatMap((block) => block.text.split('\n'))
+  const fromBlocks = (node.blocks ?? []).flatMap((block) => block.text.split('\n'));
+  const source = fromBlocks.some((line) => line.trim()) ? fromBlocks : node.content.split('\n');
+  const lines = source
     .map((line) => line.trim())
     .filter((line) => line && !EMBED_LINE.test(line))
     .map((line) => resolveLinks(line, nodes).replace(/\s+/g, ' ').trim())
     .filter((line) => line && line !== title.trim());
-  return lines.slice(0, 2).join(' · ');
+  return lines.slice(0, 4).join('\n');
 }
 
 const PREVIEW_HIDDEN = new Set(['dailyNote', 'tag', 'folder']);
 
-export function dayPreviewNodes(nodes: NodeRecord[], dayKey: string, excludeIds: string[], limit = 6): NodeRecord[] {
+export function dayPreviewNodes(nodes: NodeRecord[], dayKey: string, excludeIds: string[], limit = 12): NodeRecord[] {
   const excluded = new Set(excludeIds);
   const eligible = nodes.filter((item) => {
     if (item.deleted || excluded.has(item.id)) return false;
