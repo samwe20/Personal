@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
+import { useInkPaper } from '../hooks/useInkPaper';
 import { useAppStore } from '../store/appStore';
+import { labelInk } from '../utils/color';
 import { localToday } from '../utils/dateUtils';
 import { getIcon } from '../utils/icons';
 
@@ -17,6 +19,7 @@ export function Sidebar() {
   const syncNow = useAppStore((s) => s.syncNow);
   const language = useAppStore((s) => s.settings?.language ?? 'cs');
   const updateSettings = useAppStore((s) => s.updateSettings);
+  const paper = useInkPaper();
 
   const today = localToday();
   const selected = nodes.find((node) => node.id === selectedNodeId);
@@ -54,7 +57,7 @@ export function Sidebar() {
               const active = activeView === 'type' && activeTypeId === type.id;
               return (
                 <button key={type.id} type="button" onClick={() => openType(type.id)} className={`ui-nav ${active ? 'is-active' : ''}`}>
-                  <span className="min-w-0 flex-1 truncate">{t(`supertags.${type.id}`, type.name)}</span>
+                  <span className="min-w-0 flex-1 truncate" style={{ color: labelInk(type.color, paper) }}>{t(`supertags.${type.id}`, type.name)}</span>
                   <span className="text-[12px] opacity-70">{count}</span>
                 </button>
               );

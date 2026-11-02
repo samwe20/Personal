@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
+import { useInkPaper } from '../hooks/useInkPaper';
 import { useMediaSrc } from '../hooks/useMediaSrc';
 import { objectToMarkdown } from '../services/objectModel';
 import type { FieldDef } from '../types';
 import { splitIds, joinIds } from '../utils/blocks';
+import { labelInk } from '../utils/color';
 import { getIcon } from '../utils/icons';
 import { blocksWithTag, displayTitle, getReferenceCandidates, getUnlinkedMentions, objectTitle, resolveLinks } from '../utils/nodeUtils';
 import { BlockEditor } from './BlockEditor';
@@ -48,6 +50,7 @@ export function ObjectPage() {
   const createWeblink = useAppStore((s) => s.createWeblink);
   const createObjectFromLine = useAppStore((s) => s.createObjectFromLine);
   const attachMedia = useAppStore((s) => s.attachMedia);
+  const paper = useInkPaper();
 
   const node = nodes.find((item) => item.id === nodeId);
   const [typeOpen, setTypeOpen] = useState(false);
@@ -107,7 +110,7 @@ export function ObjectPage() {
       </button>
 
       {node.typeId === 'dailyNote' && dayKey && (
-        <div className="day-year">{formatDay(dayKey, i18n.language).year}</div>
+        <div className="day-year" style={type ? { color: labelInk(type.color, paper) } : undefined}>{formatDay(dayKey, i18n.language).year}</div>
       )}
 
       {node.typeId === 'dailyNote' && title === dayKey ? (
@@ -132,7 +135,8 @@ export function ObjectPage() {
         <div className="relative">
         <button
           type="button"
-          className="font-[var(--font-title)] text-[1.05rem] italic text-[var(--accent)]"
+          className="font-[var(--font-title)] text-[1.05rem] italic"
+          style={type ? { color: labelInk(type.color, paper) } : undefined}
           onClick={() => setTypeOpen((open) => !open)}
         >
           {type ? t(`supertags.${type.id}`, type.name) : t('object.type')}
@@ -146,6 +150,7 @@ export function ObjectPage() {
                   key={item.id}
                   type="button"
                   className="block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)]"
+                  style={{ color: labelInk(item.color, paper) }}
                   onClick={() => {
                     setTypeOpen(false);
                     void changeObjectType(node.id, item.id);
@@ -169,7 +174,7 @@ export function ObjectPage() {
           {dayTasks.map((task) => (
             <li key={task.id}>
               <button type="button" className="day-task" onClick={() => openObject(task.id)}>
-                <i />
+                <i style={{ background: objectTypes.find((item) => item.id === task.typeId)?.color }} />
                 {displayTitle(nodes, task) || t('object.untitled')}
               </button>
             </li>

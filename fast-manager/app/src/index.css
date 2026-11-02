@@ -15,21 +15,21 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --desk: #f2f3f5;
+  --desk: #f6f6f7;
   --bg: var(--desk);
-  --surface: #fafafa;
-  --surface-2: #e3e5e8;
-  --border: #d7d8dc;
-  --text: #2e3338;
-  --muted: #5c6370;
-  --accent: #705dcf;
+  --surface: #ffffff;
+  --surface-2: #ececee;
+  --border: #e4e4e7;
+  --text: #1c1c1e;
+  --muted: #5f646c;
+  --accent: #3b6fd8;
   --on-accent: #ffffff;
-  --accent-soft: rgba(112, 93, 207, 0.12);
+  --accent-soft: rgba(59, 111, 216, 0.12);
   --paper: #ffffff;
-  --rail: #f2f3f5;
-  --rail-text: #2e3338;
-  --rail-muted: #5c6370;
-  --mark: #705dcf;
+  --rail: #f3f3f4;
+  --rail-text: #1c1c1e;
+  --rail-muted: #5f646c;
+  --mark: #1c1c1e;
   --shadow: none;
   --lemon: #111111;
   --tape: #111111;
@@ -46,30 +46,30 @@
 }
 
 .dark {
-  --desk: #161616;
+  --desk: #1b1b1d;
   --bg: var(--desk);
-  --surface: #262626;
-  --surface-2: #2a2a2a;
-  --border: #333333;
-  --text: #dcddde;
-  --muted: #b3b3b3;
-  --accent: #7f6df2;
+  --surface: #2a2a2c;
+  --surface-2: #343437;
+  --border: #3c3c40;
+  --text: #f2f2f3;
+  --muted: #b3b3b8;
+  --accent: #7aa2f7;
   --on-accent: #ffffff;
-  --accent-soft: rgba(127, 109, 242, 0.18);
-  --paper: #202020;
-  --rail: #161616;
-  --rail-text: #dcddde;
-  --rail-muted: #b3b3b3;
-  --mark: #7f6df2;
+  --accent-soft: rgba(122, 162, 247, 0.18);
+  --paper: #242426;
+  --rail: #1b1b1d;
+  --rail-text: #f2f2f3;
+  --rail-muted: #b3b3b8;
+  --mark: #f2f2f3;
   --shadow: none;
   --lemon: #111111;
   --tape: #111111;
   --tape-stripe: #111111;
-  --sticky: #202020;
-  --sticky-2: #202020;
-  --sticky-3: #202020;
+  --sticky: #242426;
+  --sticky-2: #242426;
+  --sticky-3: #242426;
   --sticky-ink: #ffffff;
-  --search-pill: #1a1a1a;
+  --search-pill: #242426;
 }
 
 * {
@@ -204,10 +204,6 @@ select:focus-visible,
   background: var(--surface-2);
 }
 
-.app-rail .ui-nav.is-active {
-  box-shadow: inset 2px 0 0 var(--accent);
-}
-
 .brand {
   font-family: var(--font-title);
   font-style: italic;
@@ -225,7 +221,7 @@ select:focus-visible,
   height: 0.62rem;
   margin-right: 0.45rem;
   vertical-align: 0.18rem;
-  background: var(--accent);
+  background: var(--mark);
   border-radius: 1px;
 }
 
@@ -263,7 +259,7 @@ select:focus-visible,
   font-weight: 650;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--muted);
 }
 
 .day-tasks {
@@ -303,7 +299,7 @@ select:focus-visible,
   height: 0.5rem;
   flex: none;
   border-radius: 1px;
-  background: var(--accent);
+  background: var(--mark);
 }
 
 .day-previews {
@@ -477,7 +473,7 @@ select:focus-visible,
   height: 2.4rem;
   margin-top: 0.2rem;
   border-radius: 2px;
-  background: #111111;
+  background: var(--accent);
   color: #ffffff;
   font-size: 1.35rem;
   text-decoration: none;
@@ -489,7 +485,7 @@ select:focus-visible,
   width: 1.7rem;
   height: 1.7rem;
   border-radius: 2px;
-  background: #111111;
+  background: var(--accent);
   color: #ffffff;
 }
 
@@ -544,7 +540,7 @@ select:focus-visible,
 .embed-card {
   width: 100%;
   border: 0;
-  border-left: 2px solid var(--accent);
+  border-left: 2px solid var(--border);
   border-radius: 0;
   background: transparent;
   padding: 0.15rem 0 0.2rem 0.9rem;

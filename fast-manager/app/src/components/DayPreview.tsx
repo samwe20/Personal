@@ -1,7 +1,9 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NodeRecord, ObjectTypeRecord } from '../types';
+import { useInkPaper } from '../hooks/useInkPaper';
 import { useMediaSrc } from '../hooks/useMediaSrc';
+import { labelInk } from '../utils/color';
 import { dayPreviewNodes, displayTitle, previewSnippet } from '../utils/nodeUtils';
 
 export function DayPreviews({
@@ -47,6 +49,7 @@ export function DayPreview({
   onOpen: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const paper = useInkPaper();
   const type = objectTypes.find((item) => item.id === node.typeId);
   const fields = node.typeId ? node.fieldValues[node.typeId] ?? {} : {};
   const src = node.typeId === 'image' && typeof fields.src === 'string' ? fields.src : undefined;
@@ -57,7 +60,7 @@ export function DayPreview({
 
   return (
     <button type="button" className={`preview-card${src ? ' is-media' : ''}`} onClick={() => onOpen(node.id)}>
-      <small>{type ? t(`supertags.${type.id}`, type.name) : ''}</small>
+      <small style={type ? { color: labelInk(type.color, paper) } : undefined}>{type ? t(`supertags.${type.id}`, type.name) : ''}</small>
       <strong>{title}</strong>
       {snippet && <p>{snippet}</p>}
       {url && <em>{url}</em>}
