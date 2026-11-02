@@ -59,12 +59,17 @@ jobs:
           New-ItemProperty "$policyRoot\UserDataFolder" -Name 'folio.exe' -PropertyType String -Value (Join-Path (Get-Location) 'test-results/desktop/webview-profile') -Force | Out-Null
       - name: Test the actual Windows application
         run: npm run test:desktop
+      - name: Read Folio version
+        id: folio_version
+        run: |
+          $version = (Get-Content src-tauri/tauri.conf.json | ConvertFrom-Json).version
+          "version=$version" >> $env:GITHUB_OUTPUT
       - name: Publish the installer as a single file
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: folio-windows
-          name: Folio pro Windows
-          prerelease: true
+          tag_name: folio-${{ steps.folio_version.outputs.version }}
+          name: Folio ${{ steps.folio_version.outputs.version }} pro Windows
+          prerelease: false
           make_latest: false
           files: folio/src-tauri/target/release/bundle/nsis/*-setup.exe
       - name: Remove Folio automation configuration
