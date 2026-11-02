@@ -279,7 +279,8 @@
     "created": "Vzniklo ten den"
   },
   "daily": {
-    "tasks": "Úkoly na tento den"
+    "tasks": "Úkoly na tento den",
+    "previews": "Náhledy"
   },
   "queryBuilder": {
     "new": "Nový dotaz",

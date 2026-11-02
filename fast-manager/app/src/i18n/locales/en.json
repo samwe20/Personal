@@ -279,7 +279,8 @@
     "created": "Created this day"
   },
   "daily": {
-    "tasks": "Tasks for this day"
+    "tasks": "Tasks for this day",
+    "previews": "Previews"
   },
   "queryBuilder": {
     "new": "New query",

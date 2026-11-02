@@ -8,6 +8,7 @@ import { splitIds, joinIds } from '../utils/blocks';
 import { getIcon } from '../utils/icons';
 import { blocksWithTag, displayTitle, getReferenceCandidates, getUnlinkedMentions, objectTitle, resolveLinks } from '../utils/nodeUtils';
 import { BlockEditor } from './BlockEditor';
+import { DayPreviews } from './DayPreview';
 import { FieldEditor } from './FieldEditor';
 
 function sentence(value: string): string {
@@ -174,6 +175,16 @@ export function ObjectPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {node.typeId === 'dailyNote' && (
+        <DayPreviews
+          nodes={nodes}
+          objectTypes={objectTypes}
+          dayKey={dayKey}
+          excludeIds={[node.id, ...dayTasks.map((task) => task.id)]}
+          onOpen={openObject}
+        />
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-1.5">
