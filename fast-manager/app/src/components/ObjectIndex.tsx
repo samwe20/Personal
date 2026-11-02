@@ -19,7 +19,6 @@ export function ObjectIndex() {
   const dataView = useAppStore((s) => s.dataView);
   const setDataView = useAppStore((s) => s.setDataView);
   const openObject = useAppStore((s) => s.openObject);
-  const createTypedObject = useAppStore((s) => s.createTypedObject);
   const getVisibleNodes = useAppStore((s) => s.getVisibleNodes);
   const getQueryResults = useAppStore((s) => s.getQueryResults);
   const getSearchResults = useAppStore((s) => s.getSearchResults);
@@ -45,7 +44,6 @@ export function ObjectIndex() {
   const showViews = activeView === 'type' || activeView === 'query' || activeView === 'collection';
   const selectField = type?.fields.find((field) => field.type === 'select');
   const view = showViews ? dataView : 'list';
-  const newType = activeView === 'type' ? activeTypeId : activeView === 'collection' ? collection?.typeId : 'note';
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-8">
@@ -91,13 +89,6 @@ export function ObjectIndex() {
               + {t('queryBuilder.new')}
             </button>
           )}
-          <button
-            type="button"
-            className="rounded-full bg-[var(--accent)] px-3 py-1.5 text-sm text-[var(--on-accent)]"
-            onClick={() => void createTypedObject(newType || 'note')}
-          >
-            + {t('views.new')}
-          </button>
         </div>
       </div>
 

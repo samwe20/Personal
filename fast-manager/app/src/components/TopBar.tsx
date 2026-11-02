@@ -8,7 +8,6 @@ export function TopBar() {
   const searchQuery = useAppStore((s) => s.searchQuery);
   const setSearchQuery = useAppStore((s) => s.setSearchQuery);
   const setView = useAppStore((s) => s.setView);
-  const openQuickCapture = useAppStore((s) => s.openQuickCapture);
   const openCommandPalette = useAppStore((s) => s.openCommandPalette);
   const undo = useAppStore((s) => s.undo);
   const redo = useAppStore((s) => s.redo);
@@ -89,7 +88,6 @@ export function TopBar() {
           disabled={!canRedoAction()}
           onClick={() => void redo()}
         />
-        <ToolbarButton icon="zap" label={t('capture.title')} onClick={openQuickCapture} accent />
         <ToolbarButton icon="command" label={t('commands.title')} onClick={openCommandPalette} />
       </div>
     </header>

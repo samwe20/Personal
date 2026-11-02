@@ -24,6 +24,48 @@ export function clampIndent(value: number | undefined): number {
   return Math.min(MAX_BLOCK_INDENT, Math.floor(value));
 }
 
+export function slashQuery(text: string): { command: string; title: string } | null {
+  if (!text.startsWith('/')) return null;
+  const body = text.slice(1).trimStart();
+  const space = body.search(/\s/);
+  if (space === -1) return { command: body.trim().toLowerCase(), title: '' };
+  return { command: body.slice(0, space).toLowerCase(), title: body.slice(space + 1).trim() };
+}
+
+export function foldSlash(value: string): string {
+  return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
+
+export interface SlashCandidate {
+  id: string;
+  names: string[];
+}
+
+export function slashChoices<T extends SlashCandidate>(command: string, candidates: T[]): T[] {
+  const folded = foldSlash(command);
+  if (!folded) return candidates;
+  const exact = candidates.filter((item) => matchesSlash(item, folded, false));
+  if (exact.length > 0) return exact;
+  return candidates.filter((item) => matchesSlash(item, folded, true));
+}
+
+export function slashPick<T extends SlashCandidate>(command: string, candidates: T[]): T | undefined {
+  const folded = foldSlash(command);
+  if (!folded) return undefined;
+  const exact = candidates.filter((item) => matchesSlash(item, folded, false));
+  if (exact.length > 0) return exact[0];
+  const partial = candidates.filter((item) => matchesSlash(item, folded, true));
+  return partial.length === 1 ? partial[0] : undefined;
+}
+
+function matchesSlash(item: SlashCandidate, folded: string, prefix: boolean): boolean {
+  const names = [item.id, ...item.names];
+  return names.some((name) => {
+    const value = foldSlash(name);
+    return prefix ? value.startsWith(folded) : value === folded;
+  });
+}
+
 export function isEmbedText(text: string): boolean {
   return /^\[\[[0-9a-fA-F-]{8,}\]\]$/.test(text.trim());
 }

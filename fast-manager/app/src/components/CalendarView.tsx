@@ -32,7 +32,7 @@ export function CalendarView() {
   const initial = new Date();
   const [cursor, setCursor] = useState({ year: initial.getFullYear(), month: initial.getMonth() });
   const [selected, setSelected] = useState(today);
-  const [mode, setMode] = useState<'month' | 'week'>('month');
+  const [mode, setMode] = useState<'month' | 'week'>('week');
   const week = weekDates(selected);
 
   const days = useMemo(() => monthMatrix(cursor.year, cursor.month), [cursor]);
@@ -97,7 +97,7 @@ export function CalendarView() {
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setSelected(key)}
+                  onClick={() => void openDaily(key)}
                   className={`min-h-28 rounded-lg px-2 py-2 text-left text-sm ${key === selected ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'bg-[var(--paper)]'}`}
                 >
                   <span className="block text-xs opacity-80">
@@ -128,7 +128,7 @@ export function CalendarView() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setSelected(key)}
+                onClick={() => void openDaily(key)}
                 className={[
                   'h-16 rounded-lg text-left text-sm',
                   key === selected ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'bg-[var(--paper)]',

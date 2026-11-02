@@ -151,7 +151,11 @@
     "syncSection": "Synchronizace",
     "syncEnabled": "Zapnout synchronizaci se serverem",
     "localMode": "Lokální režim — data jen v tomto počítači",
-    "localModeHint": "Výchozí je lokální režim bez serveru. Sync zapněte až budete chtít sdílet data mezi zařízeními."
+    "localModeHint": "Výchozí je lokální režim bez serveru. Sync zapněte až budete chtít sdílet data mezi zařízeními.",
+    "organize": "Uspořádání",
+    "organizeHint": "Denní stránka stačí. Typy, složky, kolekce a dotazy jsou tady.",
+    "organizeMore": "Složky, kolekce a dotazy",
+    "studio": "Typy a šablony"
   },
   "vault": {
     "title": "Vault",
@@ -210,9 +214,9 @@
     "welcome": "Vítejte v F.A.S.T Manager",
     "step1": "Task manager se supertagy — jednodušeji než Tana. Každý uzel může mít typ (#Task, #Question, #Inform…) s vlastními poli.",
     "step2title": "Klávesové zkratky",
-    "step2": "Pracujte rychle bez myši:",
+    "step2": "Dnešní stránka se otevře sama. Řádek zůstane textem, dokud z něj neuděláte objekt:",
     "step3title": "Sync a offline",
-    "step3": "Data jsou lokálně a synchronizují se automaticky. Začněte rychlým zachycením prvního úkolu.",
+    "step3": "Data jsou lokálně. Na dnešní stránce napište /úkol a text se stane úkolem s dnešním datem.",
     "skip": "Přeskočit",
     "next": "Další",
     "start": "Začít"
@@ -273,6 +277,9 @@
     "dated": "S tímto datem",
     "created": "Vzniklo ten den"
   },
+  "daily": {
+    "tasks": "Úkoly na tento den"
+  },
   "queryBuilder": {
     "new": "Nový dotaz",
     "name": "Název",
@@ -284,8 +291,9 @@
     "heading2": "Nadpis 2",
     "bullet": "Odrážka",
     "todo": "Úkol",
+    "check": "Zaškrtnutí",
     "quote": "Citát",
-    "placeholder": "Pište, / pro typ bloku, @ pro odkaz, Shift+Enter pro řádek",
+    "placeholder": "Pište. Enter nový blok, Shift+Enter řádek, /úkol vytvoří úkol",
     "tag": "Štítek",
     "taggedIn": "V blocích",
     "unknown": "Neznámý objekt",

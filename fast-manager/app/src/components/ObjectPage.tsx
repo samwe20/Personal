@@ -31,6 +31,7 @@ export function ObjectPage() {
   const getNodeBacklinks = useAppStore((s) => s.getNodeBacklinks);
   const ensureTag = useAppStore((s) => s.ensureTag);
   const createWeblink = useAppStore((s) => s.createWeblink);
+  const createObjectFromLine = useAppStore((s) => s.createObjectFromLine);
   const attachMedia = useAppStore((s) => s.attachMedia);
 
   const node = nodes.find((item) => item.id === nodeId);
@@ -52,6 +53,17 @@ export function ObjectPage() {
   }
 
   const title = node.title ?? objectTitle(node);
+  const dayKey = node.typeId === 'dailyNote' ? String(node.fieldValues.dailyNote?.date ?? '') : '';
+  const dayTasks =
+    node.typeId === 'dailyNote'
+      ? nodes.filter(
+          (item) =>
+            item.typeId === 'task' &&
+            !item.deleted &&
+            String(item.fieldValues.task?.dueDate ?? '') === dayKey &&
+            item.fieldValues.task?.status !== 'done',
+        )
+      : [];
   const backlinks = getNodeBacklinks(node.id);
   const taggedBlocks = node.typeId === 'tag' ? blocksWithTag(nodes, node.id) : [];
   const mentions = getUnlinkedMentions(nodes, node);
@@ -79,6 +91,21 @@ export function ObjectPage() {
         <Back size={14} />
         {t('object.back')}
       </button>
+
+      {node.typeId === 'dailyNote' && dayTasks.length > 0 && (
+        <section className="mb-6">
+          <div className="text-xs uppercase tracking-wide text-[var(--muted)]">{t('daily.tasks')}</div>
+          <ul className="mt-2 space-y-1">
+            {dayTasks.map((task) => (
+              <li key={task.id}>
+                <button type="button" className="text-left text-sm hover:underline" onClick={() => openObject(task.id)}>
+                  {displayTitle(nodes, task) || t('object.untitled')}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="relative">
         <button
@@ -239,6 +266,7 @@ export function ObjectPage() {
         objectTypes={objectTypes}
         onEnsureTag={ensureTag}
         onCreateWeblink={createWeblink}
+        onCreateObject={(typeId, lineTitle) => createObjectFromLine(typeId, lineTitle, dayKey || undefined)}
         onChange={(blocks) => void saveObjectBody(node.id, title, blocks)}
       />
 

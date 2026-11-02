@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { BUILTIN_SUPERTAGS, getDefaultFieldValues } from '../data/supertags';
+import { BUILTIN_SUPERTAGS, fieldsForLineObject, getDefaultFieldValues } from '../data/supertags';
 import i18n from '../i18n';
 import {
   addNodeEmbed,
@@ -103,6 +103,7 @@ interface AppState {
   selectedNodeId: string | null;
   activeView: ViewMode;
   returnView: ViewMode;
+  returnNodeId: string | null;
   activeQueryId: string | null;
   activeFolderId: string | null;
   activeTypeId: string | null;
@@ -178,6 +179,7 @@ interface AppState {
   saveTypeTemplate: (input: { typeId: string; name: string; title: string; fieldValues: Record<string, string | number | boolean>; blocks: Block[] }) => Promise<void>;
   saveNewQuery: (input: { name: string; expression: QueryExpression }) => Promise<void>;
   openDaily: (date: string) => Promise<void>;
+  createObjectFromLine: (typeId: string, title: string, dueDate?: string) => Promise<string | undefined>;
   createTag: (name: string) => Promise<void>;
   ensureTag: (name: string) => Promise<string | undefined>;
   createWeblink: (url: string) => Promise<string | undefined>;
@@ -207,8 +209,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   collections: [],
   templates: [],
   selectedNodeId: null,
-  activeView: 'inbox',
-  returnView: 'inbox',
+  activeView: 'object',
+  returnView: 'calendar',
+  returnNodeId: null,
   activeQueryId: 'q-tasks',
   activeFolderId: null,
   activeTypeId: null,
@@ -250,6 +253,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         getTemplates(),
       ]);
       const wsId = settings.workspaceId || workspaces[0]?.id || 'default';
+      const todayNote = await ensureDailyNote(wsId, localToday());
       const nodes = await getAllNodes(wsId);
 
       document.documentElement.lang = settings.language;
@@ -279,7 +283,10 @@ export const useAppStore = create<AppState>((set, get) => ({
         objectTypes,
         collections,
         templates,
-        selectedNodeId: null,
+        selectedNodeId: todayNote.id,
+        activeView: 'object',
+        returnView: 'calendar',
+        returnNodeId: null,
         syncClient,
         vaultError,
         vaultSavedAt: null,
@@ -331,11 +338,17 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   openFolder: (folderId) => set({ activeView: 'folder', activeFolderId: folderId, selectedNodeId: null }),
 
-  setSearchQuery: (q) =>
+  setSearchQuery: (q) => {
+    if (!q.trim() && get().activeView === 'search') {
+      set({ searchQuery: '' });
+      void get().openDaily(localToday());
+      return;
+    }
     set({
       searchQuery: q,
-      activeView: q ? 'search' : get().activeView === 'search' ? 'inbox' : get().activeView,
-    }),
+      activeView: q ? 'search' : get().activeView,
+    });
+  },
 
   openQuickCapture: () => set({ quickCaptureOpen: true }),
   closeQuickCapture: () => set({ quickCaptureOpen: false }),
@@ -646,15 +659,27 @@ export const useAppStore = create<AppState>((set, get) => ({
   openObject: (id) =>
     set((state) => ({
       returnView: state.activeView === 'object' ? state.returnView : state.activeView,
+      returnNodeId: state.activeView === 'object' ? state.selectedNodeId : null,
       selectedNodeId: id,
       activeView: 'object',
     })),
 
-  backToIndex: () =>
-    set((state) => ({
-      activeView: state.returnView === 'object' ? 'inbox' : state.returnView,
+  backToIndex: () => {
+    const state = get();
+    if (state.returnNodeId) {
+      set({ selectedNodeId: state.returnNodeId, activeView: 'object', returnNodeId: null });
+      return;
+    }
+    if (state.returnView === 'inbox' || state.returnView === 'today' || state.returnView === 'planned') {
+      void get().openDaily(localToday());
+      return;
+    }
+    set({
+      activeView: state.returnView === 'object' ? 'calendar' : state.returnView,
       selectedNodeId: null,
-    })),
+      returnNodeId: null,
+    });
+  },
 
   openType: (typeId) => {
     const type = get().objectTypes.find((item) => item.id === typeId);
@@ -817,7 +842,31 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!settings) return;
     const note = await ensureDailyNote(settings.workspaceId, date);
     await get().refresh();
-    set({ selectedNodeId: note.id, activeView: 'object', returnView: 'calendar' });
+    set({ selectedNodeId: note.id, activeView: 'object', returnView: 'calendar', returnNodeId: null });
+  },
+
+  createObjectFromLine: async (typeId, title, dueDate) => {
+    const { settings, objectTypes } = get();
+    if (!settings) return undefined;
+    if (typeId === 'tag' || typeId === 'folder' || typeId === 'dailyNote') return undefined;
+    const type = objectTypes.find((item) => item.id === typeId);
+    if (!type) return undefined;
+    const fields = fieldsForLineObject(type, dueDate);
+    const trimmed = title.trim();
+    const node = await get().withHistory(() =>
+      createNode({
+        workspaceId: settings.workspaceId,
+        parentId: null,
+        content: trimmed,
+        title: trimmed,
+        typeId,
+        supertagIds: [typeId],
+        fieldValues: { [typeId]: fields },
+        blocks: [{ ...emptyBlock(), text: trimmed }],
+      }),
+    );
+    await get().refresh();
+    return node.id;
   },
 }));
 

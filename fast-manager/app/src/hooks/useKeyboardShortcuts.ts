@@ -1,14 +1,14 @@
 import { useEffect } from 'react';
 import { useAppStore } from '../store/appStore';
+import { localToday } from '../utils/dateUtils';
 
 export function useKeyboardShortcuts() {
-  const openQuickCapture = useAppStore((s) => s.openQuickCapture);
+  const openDaily = useAppStore((s) => s.openDaily);
   const openCommandPalette = useAppStore((s) => s.openCommandPalette);
   const closeQuickCapture = useAppStore((s) => s.closeQuickCapture);
   const closeCommandPalette = useAppStore((s) => s.closeCommandPalette);
   const quickCaptureOpen = useAppStore((s) => s.quickCaptureOpen);
   const commandPaletteOpen = useAppStore((s) => s.commandPaletteOpen);
-  const addRootNode = useAppStore((s) => s.addRootNode);
   const undo = useAppStore((s) => s.undo);
   const redo = useAppStore((s) => s.redo);
   const completeTask = useAppStore((s) => s.completeTask);
@@ -23,7 +23,7 @@ export function useKeyboardShortcuts() {
       if (mod && e.shiftKey && e.code === 'Space') {
         e.preventDefault();
         if (quickCaptureOpen) closeQuickCapture();
-        else openQuickCapture();
+        else void openDaily(localToday());
         return;
       }
 
@@ -38,7 +38,7 @@ export function useKeyboardShortcuts() {
 
       if (mod && e.key.toLowerCase() === 'n') {
         e.preventDefault();
-        void addRootNode();
+        void openDaily(localToday());
       }
       if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -67,13 +67,12 @@ export function useKeyboardShortcuts() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [
-    openQuickCapture,
+    openDaily,
     closeQuickCapture,
     openCommandPalette,
     closeCommandPalette,
     quickCaptureOpen,
     commandPaletteOpen,
-    addRootNode,
     undo,
     redo,
     completeTask,
