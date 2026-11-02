@@ -124,7 +124,7 @@ export function CalendarView() {
                   key={key}
                   type="button"
                   onClick={() => void openDaily(key)}
-                  className={`h-12 text-left text-sm ${key === today ? 'text-[var(--text)] underline decoration-1 underline-offset-4' : 'text-[var(--muted)]'} ${inMonth ? '' : 'opacity-40'}`}
+                  className={`month-day h-12 text-left text-sm ${key === today ? 'is-today text-[var(--text)]' : 'text-[var(--muted)]'} ${inMonth ? '' : 'opacity-40'}`}
                 >
                   <span className="block">{day.getDate()}</span>
                   {note && <span className="mt-1 block h-px w-3 bg-[var(--muted)]" />}

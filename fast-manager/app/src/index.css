@@ -31,6 +31,14 @@
   --rail-muted: #cbb8a2;
   --mark: #9c4a32;
   --shadow: 0 22px 48px rgba(62, 36, 18, 0.14);
+  --lemon: #f0c43a;
+  --tape: #f3c94e;
+  --tape-stripe: #fff1b8;
+  --sticky: #ffe56a;
+  --sticky-2: #ffc7a3;
+  --sticky-3: #b7e4c7;
+  --sticky-ink: #241c16;
+  --search-pill: rgba(255, 250, 246, 0.55);
   --radius: 2px;
   --radius-lg: 4px;
   --font-title: "Fraunces", "Iowan Old Style", Palatino, Georgia, serif;
@@ -54,6 +62,14 @@
   --rail-muted: #b5a494;
   --mark: #e08a68;
   --shadow: 0 22px 48px rgba(0, 0, 0, 0.45);
+  --lemon: #f0c43a;
+  --tape: #e2b84a;
+  --tape-stripe: #f6d98a;
+  --sticky: #ffe56a;
+  --sticky-2: #ffc7a3;
+  --sticky-3: #b7e4c7;
+  --sticky-ink: #241c16;
+  --search-pill: rgba(255, 250, 246, 0.08);
 }
 
 * {
@@ -182,7 +198,7 @@ select:focus-visible,
 }
 
 .app-rail .ui-nav.is-active {
-  box-shadow: inset 2px 0 0 var(--mark);
+  box-shadow: inset 4px 0 0 var(--lemon);
 }
 
 .brand {
@@ -193,6 +209,18 @@ select:focus-visible,
   line-height: 1;
   letter-spacing: -0.03em;
   color: var(--rail-text);
+}
+
+.brand::before {
+  content: "";
+  display: inline-block;
+  width: 0.78rem;
+  height: 0.78rem;
+  margin-right: 0.45rem;
+  vertical-align: 0.15rem;
+  background: var(--lemon);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  transform: rotate(-8deg);
 }
 
 .brand::after {
@@ -208,12 +236,46 @@ select:focus-visible,
 .calendar-sheet,
 .index-sheet,
 .settings-sheet {
+  position: relative;
   width: min(100% - 2.75rem, 42rem);
-  margin: 1rem auto 1.75rem;
+  margin: 1.35rem auto 1.75rem;
   padding: 3.15rem 2.5rem 4.75rem;
   background: var(--paper);
   box-shadow: var(--shadow);
   border-left: 3px solid var(--mark);
+}
+
+.object-page::before,
+.calendar-sheet::before,
+.index-sheet::before,
+.settings-sheet::before {
+  content: "";
+  position: absolute;
+  top: -0.65rem;
+  left: 50%;
+  z-index: 1;
+  width: 6.75rem;
+  height: 1.35rem;
+  pointer-events: none;
+  border-radius: 1px;
+  background: repeating-linear-gradient(-18deg, var(--tape) 0 7px, var(--tape-stripe) 7px 12px);
+  box-shadow: 0 8px 12px rgba(62, 36, 18, 0.16);
+  transform: translateX(-50%) rotate(-2.5deg);
+}
+
+.object-page::after,
+.calendar-sheet::after,
+.index-sheet::after,
+.settings-sheet::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 1.45rem;
+  height: 1.45rem;
+  pointer-events: none;
+  background: linear-gradient(225deg, var(--desk) 50%, var(--surface) 50%);
+  box-shadow: -1px 1px 0 rgba(62, 36, 18, 0.08);
 }
 
 .object-title,
@@ -231,37 +293,86 @@ select:focus-visible,
 }
 
 .day-year {
-  margin-bottom: 0.15rem;
+  display: inline-grid;
+  place-items: center;
+  width: 4.7rem;
+  height: 4.7rem;
+  margin: 0 0 0.95rem;
+  border: 2px solid var(--accent);
+  outline: 1px dashed var(--accent);
+  outline-offset: 3px;
+  border-radius: 50%;
   font-family: var(--font-title);
   font-style: italic;
   font-weight: 500;
-  font-size: 1.35rem;
-  letter-spacing: -0.02em;
+  font-size: 1.02rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
   color: var(--accent);
+  transform: rotate(-8deg);
+}
+
+.day-title::after {
+  content: "";
+  display: block;
+  width: 8.75rem;
+  height: 0.7rem;
+  margin-top: 0.15rem;
+  background: var(--accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 14'%3E%3Cpath d='M2 9c12-8 22 8 34-1s22-8 34 1 24 6 34-4 22 2 34-2' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 14'%3E%3Cpath d='M2 9c12-8 22 8 34-1s22-8 34 1 24 6 34-4 22 2 34-2' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
 }
 
 .day-tasks {
-  margin: 1.75rem 0 0.25rem;
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin: 1.5rem 0 0.35rem;
+  padding: 0.35rem 0 0.2rem;
   list-style: none;
 }
 
 .day-task {
   display: flex;
-  align-items: baseline;
-  gap: 0.7rem;
-  padding: 0.18rem 0;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 13rem;
+  max-width: 100%;
+  padding: 0.72rem 0.95rem 0.8rem;
   text-align: left;
-  font-size: 15.5px;
+  font-family: var(--font-title);
+  font-size: 1.2rem;
+  line-height: 1.25;
+  color: var(--sticky-ink);
+  background: var(--sticky);
+  box-shadow: 3px 4px 0 rgba(62, 36, 18, 0.16);
+  transform: rotate(-1.4deg);
+}
+
+.day-tasks li:nth-child(3n + 2) .day-task {
+  background: var(--sticky-2);
+  transform: rotate(1.6deg);
+}
+
+.day-tasks li:nth-child(3n) .day-task {
+  background: var(--sticky-3);
+  transform: rotate(-0.5deg);
+}
+
+.day-tasks li .day-task:hover,
+.day-tasks li .day-task:focus-visible {
+  transform: rotate(0deg) translateY(-2px);
 }
 
 .day-task i {
-  width: 0.45rem;
-  height: 0.45rem;
+  width: 0.72rem;
+  height: 0.72rem;
   flex: none;
-  border-radius: 99px;
+  border-radius: 0;
   background: var(--accent);
-  transform: translateY(-1px);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  transform: translateY(1px) rotate(-8deg);
 }
 
 .meta-line {
@@ -301,10 +412,14 @@ select:focus-visible,
 
 .topbar .ui-input {
   border-bottom-color: transparent;
+  border-radius: 999px;
+  background: var(--search-pill);
+  padding: 0.42rem 0.95rem 0.42rem 2.15rem;
 }
 
 .topbar .ui-input:focus {
-  border-bottom-color: var(--border);
+  border-bottom-color: transparent;
+  background: var(--paper);
 }
 
 .index-sheet {
@@ -344,11 +459,29 @@ select:focus-visible,
 }
 
 .week-day.is-today strong {
-  color: var(--accent);
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-underline-offset: 0.28rem;
-  text-decoration-thickness: 1px;
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  margin-top: 0.2rem;
+  border-radius: 50%;
+  background: var(--lemon);
+  color: var(--sticky-ink);
+  font-size: 1.35rem;
+  text-decoration: none;
+  transform: rotate(-7deg);
+  box-shadow: 2px 3px 0 rgba(62, 36, 18, 0.16);
+}
+
+.month-day.is-today span:first-child {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--lemon);
+  color: var(--sticky-ink);
+  transform: rotate(-8deg);
 }
 
 .week-day small {

@@ -20,7 +20,7 @@ export function TopBar() {
   return (
     <header className="topbar shrink-0 bg-[var(--desk)]">
       <div className="topbar-search">
-        <SearchIcon size={14} className="absolute left-0 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+        <SearchIcon size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
         <input
           value={searchQuery}
           onChange={(e) => {
@@ -32,7 +32,7 @@ export function TopBar() {
           }}
           placeholder={t('actions.search')}
           aria-label={t('actions.search')}
-          className="ui-input pl-6"
+          className="ui-input"
         />
       </div>
 
