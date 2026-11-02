@@ -25,6 +25,8 @@ export type DataView = 'list' | 'table' | 'cards' | 'kanban';
 
 export type BlockType = 'paragraph' | 'heading' | 'bullet' | 'todo' | 'quote';
 
+export type LinkView = 'glyph' | 'card' | 'wide';
+
 export interface Block {
   id: string;
   type: BlockType;
@@ -34,6 +36,8 @@ export interface Block {
   indent?: number;
   checked?: boolean;
   tagIds?: string[];
+  /** How an embedded [[object]] is drawn. */
+  linkView?: LinkView;
 }
 
 export interface MediaRecord {

@@ -37,6 +37,7 @@ import {
   Image,
   Link,
   Plus,
+  StretchHorizontal,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -80,6 +81,7 @@ const iconMap: Record<string, LucideIcon> = {
   image: Image,
   link: Link,
   plus: Plus,
+  wide: StretchHorizontal,
 };
 
 export function getIcon(name: string): LucideIcon {

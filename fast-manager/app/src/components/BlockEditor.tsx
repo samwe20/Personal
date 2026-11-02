@@ -344,7 +344,11 @@ export function BlockEditor({
                         node={nodes.find((node) => node.id === embedTarget)}
                         objectTypes={objectTypes}
                         nodes={nodes}
+                        linkView={block.linkView}
                         onOpen={onOpen}
+                        onLinkView={(linkView) => {
+                          commit(draftRef.current.map((item, i) => (i === index ? { ...item, linkView } : item)));
+                        }}
                         onKeyDown={(event) => onStructuralKey(event, index, block, 'card')}
                       />
                       <button

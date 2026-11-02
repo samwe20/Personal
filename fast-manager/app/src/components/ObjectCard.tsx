@@ -1,9 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import type { KeyboardEvent } from 'react';
-import type { NodeRecord, ObjectTypeRecord } from '../types';
+import type { LinkView, NodeRecord, ObjectTypeRecord } from '../types';
+import { useInkPaper } from '../hooks/useInkPaper';
 import { useMediaSrc } from '../hooks/useMediaSrc';
+import { labelInk } from '../utils/color';
 import { getIcon } from '../utils/icons';
-import { displayTitle } from '../utils/nodeUtils';
+import { displayTitle, previewSnippet } from '../utils/nodeUtils';
+
+const LINK_VIEWS: LinkView[] = ['glyph', 'card', 'wide'];
 
 interface ObjectCardProps {
   blockId: string;
@@ -11,47 +15,76 @@ interface ObjectCardProps {
   targetId: string;
   objectTypes: ObjectTypeRecord[];
   nodes: NodeRecord[];
+  linkView?: LinkView;
   onOpen: (id: string) => void;
+  onLinkView?: (view: LinkView) => void;
   onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
 }
 
-export function ObjectCard({ blockId, node, targetId, objectTypes, nodes, onOpen, onKeyDown }: ObjectCardProps) {
+export function ObjectCard({
+  blockId,
+  node,
+  targetId,
+  objectTypes,
+  nodes,
+  linkView = 'card',
+  onOpen,
+  onLinkView,
+  onKeyDown,
+}: ObjectCardProps) {
   const { t } = useTranslation();
+  const paper = useInkPaper();
   const type = objectTypes.find((item) => item.id === node?.typeId);
   const fields = node?.typeId ? node.fieldValues[node.typeId] ?? {} : {};
   const src = typeof fields.src === 'string' ? fields.src : undefined;
   const mediaSrc = useMediaSrc(node && (node.typeId === 'image' || node.typeId === 'file') ? src : undefined);
   const Icon = getIcon(type?.icon ?? 'file-text');
+  const ink = type ? labelInk(type.color, paper) : undefined;
   const title = node ? displayTitle(nodes, node) || t('object.untitled') : t('blocks.unknown');
   const url = node?.typeId === 'weblink' && typeof fields.url === 'string' ? fields.url : '';
   const fileName = typeof fields.fileName === 'string' && fields.fileName ? fields.fileName : title;
+  const snippet = node ? previewSnippet(node, nodes, title) : '';
+  const typeLabel = node ? t(`supertags.${node.typeId}`, type?.name ?? node.typeId ?? '') : t('blocks.unknown');
+
+  const open = () => {
+    if (node && !node.deleted) onOpen(node.id);
+  };
 
   return (
     <div
       id={`block-${blockId}`}
-      className="embed-card"
+      className={`embed-card is-${linkView}`}
       tabIndex={0}
       data-embed={targetId}
       onKeyDown={onKeyDown}
     >
-      <button
-        type="button"
-        className="block w-full text-left"
-        onClick={() => {
-          if (node && !node.deleted) onOpen(node.id);
-        }}
-      >
-        <span className="flex items-center gap-1.5 text-[12px] text-[var(--muted)]">
-          <Icon size={13} strokeWidth={1.5} />
-          {node ? t(`supertags.${node.typeId}`, type?.name ?? node.typeId ?? '') : t('blocks.unknown')}
+      {onLinkView && (
+        <div className="embed-view-switch">
+          {LINK_VIEWS.map((view) => (
+            <button
+              key={view}
+              type="button"
+              title={t(`views.${view}`)}
+              className={view === linkView ? 'is-on' : ''}
+              onClick={(event) => {
+                event.stopPropagation();
+                onLinkView(view);
+              }}
+            >
+              {t(`views.${view}`)}
+            </button>
+          ))}
+        </div>
+      )}
+      <button type="button" className={`embed-body is-${linkView}`} onClick={open}>
+        <span className="embed-kind" style={ink ? { color: ink } : undefined}>
+          <Icon size={13} strokeWidth={1.5} color={ink} />
+          {linkView !== 'glyph' && typeLabel}
         </span>
-        <span className="mt-0.5 block font-[var(--font-title)] text-lg text-[var(--text)]">{node ? title : targetId.slice(0, 8)}</span>
-        {node?.typeId === 'image' && mediaSrc && (
-          <img src={mediaSrc} alt={title} className="mt-2 max-h-48 rounded-md bg-[var(--surface-2)] object-contain" />
-        )}
-        {node?.typeId === 'image' && !mediaSrc && (
-          <span className="mt-2 block h-16 rounded-md border border-dashed border-[var(--border)] bg-[var(--surface-2)]" />
-        )}
+        <span className="embed-title">{node ? title : targetId.slice(0, 8)}</span>
+        {linkView === 'wide' && snippet && <span className="embed-snippet">{snippet}</span>}
+        {node?.typeId === 'image' && mediaSrc && <img src={mediaSrc} alt={title} />}
+        {node?.typeId === 'image' && !mediaSrc && <span className="embed-image-empty" />}
       </button>
       {url && (
         <a

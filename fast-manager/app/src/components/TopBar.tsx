@@ -13,6 +13,8 @@ export function TopBar() {
   const canUndoAction = useAppStore((s) => s.canUndoAction);
   const canRedoAction = useAppStore((s) => s.canRedoAction);
   const historyTick = useAppStore((s) => s.historyTick);
+  const wideLayout = useAppStore((s) => !!s.settings?.wideLayout);
+  const updateSettings = useAppStore((s) => s.updateSettings);
   void historyTick;
 
   const SearchIcon = getIcon('search');
@@ -50,6 +52,12 @@ export function TopBar() {
           onClick={() => void redo()}
         />
         <ToolbarButton icon="command" label={t('commands.title')} onClick={openCommandPalette} />
+        <ToolbarButton
+          icon="wide"
+          label={t('settings.wide')}
+          accent={wideLayout}
+          onClick={() => void updateSettings({ wideLayout: !wideLayout })}
+        />
       </div>
     </header>
   );
