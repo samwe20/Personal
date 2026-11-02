@@ -27,6 +27,17 @@ import { loadSettings, saveSettings } from "./lib/settings";
 import { sortNotes } from "./lib/sortNotes";
 import type { AppSettings, NoteMeta } from "./types";
 
+type FolderNode = {
+  name: string;
+  path: string;
+  folders: Map<string, FolderNode>;
+  notes: NoteMeta[];
+};
+
+function folderNode(name: string, path: string): FolderNode {
+  return { name, path, folders: new Map(), notes: [] };
+}
+
 export class FolioApp {
   private settings!: AppSettings;
   private notes: NoteMeta[] = [];
@@ -44,6 +55,7 @@ export class FolioApp {
   private previewOn = false;
   private commandIndex = 0;
   private commandItems: NoteMeta[] = [];
+  private collapsedFolders = new Set<string>();
   private mobile = isMobileUi();
   private appleMobile = isAppleMobile();
   private native = isTauri();
@@ -300,11 +312,6 @@ export class FolioApp {
       this.settings.theme = next;
       this.applyTheme(next);
       this.editor.setTheme(next);
-      this.els.btnTheme.textContent = next === "light" ? "Dark" : "Light";
-      document.querySelector('meta[name="theme-color"]')?.setAttribute(
-        "content",
-        next === "dark" ? "#16181c" : "#f3f4f3",
-      );
       void saveSettings(this.settings);
     });
 
@@ -468,7 +475,7 @@ export class FolioApp {
     document.documentElement.style.colorScheme = theme;
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
       "content",
-      theme === "dark" ? "#16181c" : "#f3f4f3",
+      theme === "dark" ? "#000000" : "#f3efe4",
     );
   }
 
@@ -674,7 +681,7 @@ export class FolioApp {
 
   private renderNoteList() {
     this.notes = sortNotes(this.notes, this.settings);
-    this.els.noteList.innerHTML = "";
+    this.els.noteList.replaceChildren();
     if (!this.notes.length) {
       const empty = document.createElement("div");
       empty.className = "note-empty";
@@ -682,30 +689,84 @@ export class FolioApp {
       this.els.noteList.appendChild(empty);
       return;
     }
+    if (this.current) this.expandFoldersAround(this.current.relativePath);
+    this.renderFolder(this.fileTree(this.notes), this.els.noteList, 0);
+  }
 
-    for (const note of this.notes) {
+  private expandFoldersAround(relativePath: string) {
+    const parts = relativePath.split("/").filter(Boolean);
+    parts.pop();
+    let path = "";
+    for (const part of parts) {
+      path = path ? `${path}/${part}` : part;
+      this.collapsedFolders.delete(path);
+    }
+  }
+
+  private fileTree(notes: NoteMeta[]) {
+    const root = folderNode("", "");
+    for (const note of notes) {
+      const parts = note.relativePath.split("/").filter(Boolean);
+      parts.pop();
+      let node = root;
+      let path = "";
+      for (const part of parts) {
+        path = path ? `${path}/${part}` : part;
+        let child = node.folders.get(part);
+        if (!child) {
+          child = folderNode(part, path);
+          node.folders.set(part, child);
+        }
+        node = child;
+      }
+      node.notes.push(note);
+    }
+    return root;
+  }
+
+  private renderFolder(node: FolderNode, parent: HTMLElement, depth: number) {
+    const direction = this.settings.sortDirection === "desc" ? -1 : 1;
+    const folders = [...node.folders.values()].sort(
+      (a, b) => a.name.localeCompare(b.name, "cs", { sensitivity: "base", numeric: true }) * direction,
+    );
+    for (const folder of folders) {
+      const collapsed = this.collapsedFolders.has(folder.path);
+      const row = document.createElement("button");
+      row.type = "button";
+      row.className = "tree-folder";
+      row.style.setProperty("--depth", String(depth));
+      row.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      const chevron = document.createElement("span");
+      chevron.className = "tree-chevron";
+      chevron.setAttribute("aria-hidden", "true");
+      const label = document.createElement("span");
+      label.className = "tree-label";
+      label.textContent = folder.name;
+      row.append(chevron, label);
+      row.addEventListener("click", () => {
+        if (this.collapsedFolders.has(folder.path)) this.collapsedFolders.delete(folder.path);
+        else this.collapsedFolders.add(folder.path);
+        this.renderNoteList();
+      });
+      parent.appendChild(row);
+      if (!collapsed) this.renderFolder(folder, parent, depth + 1);
+    }
+    for (const note of node.notes) {
       const item = document.createElement("button");
       item.type = "button";
       item.className = "note-item";
+      item.style.setProperty("--depth", String(depth));
       if (this.current?.path === note.path) item.classList.add("active");
-
       const title = document.createElement("span");
       title.className = "note-item-title";
       title.textContent = note.title;
-
-      const meta = document.createElement("span");
-      meta.className = "note-item-meta";
-      meta.textContent = note.relativePath.includes("/")
-        ? note.relativePath.split("/").slice(0, -1).join("/")
-        : "root";
-
-      item.append(title, meta);
+      item.append(title);
       item.addEventListener("click", () => void this.runAction(() => this.openNote(note)));
       item.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         if (confirm(`Smazat „${note.title}“?`)) void this.runAction(() => this.removeNote(note));
       });
-      this.els.noteList.appendChild(item);
+      parent.appendChild(item);
     }
   }
 
