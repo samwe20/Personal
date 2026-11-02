@@ -6,6 +6,8 @@ import {
   lineToBlock,
   mirrorContent,
   moveBlock,
+  parseContentField,
+  serializeContentField,
 } from '../src/utils/blocks';
 import { linkIdsInNode } from '../src/utils/blocks';
 import type { Block, NodeRecord } from '../src/types';
@@ -82,5 +84,17 @@ describe('markdown mirror', () => {
       blocks: [block({ id: 'e', text: `[[${id}]]` })],
     } as NodeRecord;
     expect(linkIdsInNode(node)).toEqual([id]);
+  });
+});
+
+describe('content property', () => {
+  it('round-trips a block body stored on a property', () => {
+    const blocks = [block({ id: 'body', type: 'paragraph', text: 'další tělo' })];
+    expect(parseContentField(serializeContentField(blocks))).toEqual(blocks);
+  });
+
+  it('reads a plain string as lines', () => {
+    const blocks = parseContentField('první\ndruhý');
+    expect(blocks.map((item) => item.text)).toEqual(['první', 'druhý']);
   });
 });

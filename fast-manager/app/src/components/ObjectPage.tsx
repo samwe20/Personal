@@ -8,7 +8,7 @@ import type { FieldDef } from '../types';
 import { splitIds, joinIds } from '../utils/blocks';
 import { labelInk } from '../utils/color';
 import { getIcon } from '../utils/icons';
-import { blocksWithTag, displayTitle, getReferenceCandidates, getUnlinkedMentions, objectTitle, resolveLinks } from '../utils/nodeUtils';
+import { blocksWithTag, dayTodoBlocks, displayTitle, getReferenceCandidates, getUnlinkedMentions, objectTitle, resolveLinks } from '../utils/nodeUtils';
 import { BlockEditor } from './BlockEditor';
 import { DayPreviews } from './DayPreview';
 import { FieldEditor } from './FieldEditor';
@@ -50,6 +50,7 @@ export function ObjectPage() {
   const createWeblink = useAppStore((s) => s.createWeblink);
   const createObjectFromLine = useAppStore((s) => s.createObjectFromLine);
   const attachMedia = useAppStore((s) => s.attachMedia);
+  const setMediaProperty = useAppStore((s) => s.setMediaProperty);
   const paper = useInkPaper();
 
   const node = nodes.find((item) => item.id === nodeId);
@@ -82,6 +83,7 @@ export function ObjectPage() {
             item.fieldValues.task?.status !== 'done',
         )
       : [];
+  const dayChecks = node.typeId === 'dailyNote' && dayKey ? dayTodoBlocks(nodes, dayKey, [node.id]) : [];
   const backlinks = getNodeBacklinks(node.id);
   const taggedBlocks = node.typeId === 'tag' ? blocksWithTag(nodes, node.id) : [];
   const mentions = getUnlinkedMentions(nodes, node);
@@ -111,6 +113,12 @@ export function ObjectPage() {
 
       {node.typeId === 'dailyNote' && dayKey && (
         <div className="day-year" style={type ? { color: labelInk(type.color, paper) } : undefined}>{formatDay(dayKey, i18n.language).year}</div>
+      )}
+
+      {type && node.typeId !== 'dailyNote' && (
+        <div className="type-chip" style={{ color: labelInk(type.color, paper) }}>
+          {t(`supertags.${type.id}`, type.name)}
+        </div>
       )}
 
       {node.typeId === 'dailyNote' && title === dayKey ? (
@@ -169,13 +177,21 @@ export function ObjectPage() {
         )}
       </div>
 
-      {node.typeId === 'dailyNote' && dayTasks.length > 0 && (
+      {node.typeId === 'dailyNote' && (dayTasks.length > 0 || dayChecks.length > 0) && (
         <ul className="day-tasks">
           {dayTasks.map((task) => (
             <li key={task.id}>
               <button type="button" className="day-task" onClick={() => openObject(task.id)}>
                 <i style={{ background: objectTypes.find((item) => item.id === task.typeId)?.color }} />
                 {displayTitle(nodes, task) || t('object.untitled')}
+              </button>
+            </li>
+          ))}
+          {dayChecks.map((hit) => (
+            <li key={hit.blockId}>
+              <button type="button" className="day-task" onClick={() => openObject(hit.nodeId)}>
+                <i style={{ background: 'transparent', boxShadow: 'inset 0 0 0 1px var(--border)' }} />
+                {resolveLinks(hit.text, nodes)}
               </button>
             </li>
           ))}
@@ -279,6 +295,10 @@ export function ObjectPage() {
                       field={field}
                       hideLabel
                       value={fields[field.key]}
+                      nodes={nodes}
+                      objectTypes={objectTypes}
+                      onOpen={openObject}
+                      onUpload={(file) => void setMediaProperty(node.id, node.typeId!, field.key, file)}
                       onChange={(value) => void setObjectField(node.id, node.typeId!, field.key, value)}
                     />
                   )}

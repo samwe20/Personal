@@ -37,6 +37,14 @@ export function SettingsPanel() {
 
       <section className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3.5">
         <h2 className="mb-3 text-xs font-semibold">{t('settings.theme')}</h2>
+        <label className="mb-3 flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={!!settings.wideLayout}
+            onChange={(event) => void updateSettings({ wideLayout: event.target.checked })}
+          />
+          {t('settings.wide')}
+        </label>
         <div className="flex flex-wrap gap-1.5">
           {(['light', 'dark', 'system'] as Theme[]).map((theme) => (
             <button

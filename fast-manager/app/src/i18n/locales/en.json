@@ -138,6 +138,7 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "themeSystem": "System",
+    "wide": "Wide page",
     "language": "Language",
     "syncUrl": "Sync server URL",
     "syncUrlHint": "Empty = local proxy (/api)",

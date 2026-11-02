@@ -1,4 +1,4 @@
-export type FieldType = 'text' | 'date' | 'datetime' | 'select' | 'number' | 'checkbox' | 'reference';
+export type FieldType = 'text' | 'date' | 'datetime' | 'select' | 'number' | 'checkbox' | 'reference' | 'content' | 'cover';
 
 export interface FieldDef {
   key: string;
@@ -160,6 +160,8 @@ export interface AppSettings {
   /** Absolute folder in the desktop app. Empty in the browser, which keeps a folder handle. */
   vaultPath?: string | null;
   vaultLabel?: string | null;
+  /** Stretch the reading column past the default 45rem. */
+  wideLayout?: boolean;
 }
 
 export interface QuickCaptureInput {

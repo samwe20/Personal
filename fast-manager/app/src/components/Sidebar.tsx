@@ -55,9 +55,12 @@ export function Sidebar() {
             {types.map((type) => {
               const count = nodes.filter((node) => node.typeId === type.id).length;
               const active = activeView === 'type' && activeTypeId === type.id;
+              const Icon = getIcon(type.icon);
+              const ink = labelInk(type.color, paper);
               return (
                 <button key={type.id} type="button" onClick={() => openType(type.id)} className={`ui-nav ${active ? 'is-active' : ''}`}>
-                  <span className="min-w-0 flex-1 truncate" style={{ color: labelInk(type.color, paper) }}>{t(`supertags.${type.id}`, type.name)}</span>
+                  <Icon size={14} strokeWidth={1.5} color={ink} />
+                  <span className="min-w-0 flex-1 truncate" style={{ color: ink }}>{t(`supertags.${type.id}`, type.name)}</span>
                   <span className="text-[12px] opacity-70">{count}</span>
                 </button>
               );

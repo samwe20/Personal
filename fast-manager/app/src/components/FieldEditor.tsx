@@ -1,17 +1,24 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
+import { useMediaSrc } from '../hooks/useMediaSrc';
+import { parseContentField, serializeContentField, joinIds, splitIds } from '../utils/blocks';
 import { getReferenceCandidates, objectTitle } from '../utils/nodeUtils';
-import type { FieldDef } from '../types';
+import type { FieldDef, NodeRecord, ObjectTypeRecord } from '../types';
+import { BlockEditor } from './BlockEditor';
 
 interface FieldEditorProps {
   field: FieldDef;
   value: string | number | boolean | undefined;
   onChange: (value: string | number | boolean) => void;
   hideLabel?: boolean;
+  nodes?: NodeRecord[];
+  objectTypes?: ObjectTypeRecord[];
+  onOpen?: (id: string) => void;
+  onUpload?: (file: File) => void;
 }
 
-export function FieldEditor({ field, value, onChange, hideLabel = false }: FieldEditorProps) {
+export function FieldEditor({ field, value, onChange, hideLabel = false, nodes: linkNodes, objectTypes, onOpen, onUpload }: FieldEditorProps) {
   const { t } = useTranslation();
   const nodes = useAppStore((s) => s.nodes);
   const resolveNodeTitle = useAppStore((s) => s.resolveNodeTitle);
@@ -80,6 +87,27 @@ export function FieldEditor({ field, value, onChange, hideLabel = false }: Field
     );
   }
 
+  if (field.type === 'select' && field.multiple) {
+    const selected = splitIds(value);
+    return (
+      <div className="flex flex-wrap gap-1">
+        {(field.options ?? []).map((option) => {
+          const on = selected.includes(option);
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onChange(joinIds(on ? selected.filter((item) => item !== option) : [...selected, option]))}
+              className={`rounded-full px-2 py-0.5 text-xs ${on ? 'bg-[var(--accent)] text-[var(--on-accent)]' : 'bg-[var(--surface-2)]'}`}
+            >
+              {t(`status.${option}`, option)}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   if (field.type === 'select') {
     return (
       <div>
@@ -94,6 +122,22 @@ export function FieldEditor({ field, value, onChange, hideLabel = false }: Field
         </select>
       </div>
     );
+  }
+
+  if (field.type === 'content' && linkNodes && onOpen) {
+    return (
+      <BlockEditor
+        blocks={parseContentField(value)}
+        nodes={linkNodes}
+        objectTypes={objectTypes}
+        onOpen={onOpen}
+        onChange={(blocks) => onChange(serializeContentField(blocks))}
+      />
+    );
+  }
+
+  if (field.type === 'cover') {
+    return <CoverField value={value} onUpload={onUpload} />;
   }
 
   if (field.type === 'datetime') {
@@ -127,6 +171,29 @@ export function FieldEditor({ field, value, onChange, hideLabel = false }: Field
         value={String(value ?? '')}
         onChange={(e) => onChange(field.type === 'number' ? Number(e.target.value) : e.target.value)}
         className="ui-input"
+      />
+    </div>
+  );
+}
+
+function CoverField({
+  value,
+  onUpload,
+}: {
+  value: string | number | boolean | undefined;
+  onUpload?: (file: File) => void;
+}) {
+  const src = useMediaSrc(typeof value === 'string' ? value : undefined);
+  return (
+    <div>
+      {src && <img src={src} alt="" className="mb-2 max-h-40 w-full object-cover" />}
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) onUpload?.(file);
+        }}
       />
     </div>
   );

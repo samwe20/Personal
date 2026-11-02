@@ -138,6 +138,7 @@
     "themeLight": "Světlý",
     "themeDark": "Tmavý",
     "themeSystem": "Systém",
+    "wide": "Široká stránka",
     "language": "Jazyk",
     "syncUrl": "URL sync serveru",
     "syncUrlHint": "Prázdné = lokální proxy (/api)",

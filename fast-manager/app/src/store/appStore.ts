@@ -184,6 +184,7 @@ interface AppState {
   ensureTag: (name: string) => Promise<string | undefined>;
   createWeblink: (url: string) => Promise<string | undefined>;
   attachMedia: (nodeId: string, typeId: string, file: File) => Promise<void>;
+  setMediaProperty: (nodeId: string, typeId: string, key: string, file: File) => Promise<void>;
   vaultError: string | null;
   vaultSavedAt: string | null;
   chooseVault: () => Promise<void>;
@@ -833,6 +834,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       const id = await saveMediaFile(file);
       await setObjectProperty(nodeId, typeId, 'src', blobRef(id));
       if (typeId === 'file') await setObjectProperty(nodeId, typeId, 'fileName', file.name);
+      await get().refresh();
+    });
+  },
+
+  setMediaProperty: async (nodeId, typeId, key, file) => {
+    await get().withHistory(async () => {
+      const id = await saveMediaFile(file);
+      await setObjectProperty(nodeId, typeId, key, blobRef(id));
       await get().refresh();
     });
   },

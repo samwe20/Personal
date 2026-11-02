@@ -7,6 +7,27 @@ export function newBlockId(): string {
   return `b-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+export function parseContentField(value: unknown): Block[] {
+  if (typeof value !== 'string' || !value.trim()) return [emptyBlock()];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (Array.isArray(parsed)) {
+      const blocks = parsed.filter(
+        (item): item is Block =>
+          !!item && typeof item === 'object' && typeof (item as Block).id === 'string' && typeof (item as Block).text === 'string',
+      );
+      if (blocks.length) return blocks;
+    }
+  } catch {
+    // A plain string is one paragraph per line.
+  }
+  return value.split('\n').map((line) => ({ ...emptyBlock(), text: line }));
+}
+
+export function serializeContentField(blocks: Block[]): string {
+  return JSON.stringify(blocks);
+}
+
 export function emptyBlock(type: BlockType = 'paragraph'): Block {
   return {
     id: newBlockId(),

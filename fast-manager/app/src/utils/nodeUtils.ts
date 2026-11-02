@@ -7,6 +7,36 @@ export interface TaggedBlockHit {
   text: string;
 }
 
+export interface DayTodoHit {
+  nodeId: string;
+  blockId: string;
+  text: string;
+}
+
+function belongsToDay(node: NodeRecord, dayKey: string): boolean {
+  if (node.createdAt.slice(0, 10) === dayKey) return true;
+  return Object.values(node.fieldValues).some((bag) =>
+    Object.values(bag).some((value) => typeof value === 'string' && value.slice(0, 10) === dayKey),
+  );
+}
+
+/** Open checkbox blocks on other objects that belong to this day. */
+export function dayTodoBlocks(nodes: NodeRecord[], dayKey: string, excludeIds: string[] = []): DayTodoHit[] {
+  if (!dayKey) return [];
+  const hidden = new Set(['dailyNote', 'tag', 'folder', ...excludeIds]);
+  const hits: DayTodoHit[] = [];
+  for (const node of nodes) {
+    if (node.deleted || hidden.has(node.id) || hidden.has(node.typeId ?? '')) continue;
+    if (!belongsToDay(node, dayKey)) continue;
+    for (const block of node.blocks ?? []) {
+      if (block.type === 'todo' && !block.checked && block.text.trim()) {
+        hits.push({ nodeId: node.id, blockId: block.id, text: block.text });
+      }
+    }
+  }
+  return hits;
+}
+
 export { objectTitle };
 
 export function searchNodes(nodes: NodeRecord[], query: string): NodeRecord[] {
