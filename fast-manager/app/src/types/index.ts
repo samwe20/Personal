@@ -1,4 +1,4 @@
-export type FieldType = 'text' | 'date' | 'datetime' | 'select' | 'number' | 'checkbox' | 'reference';
+export type FieldType = 'text' | 'date' | 'datetime' | 'select' | 'number' | 'checkbox' | 'reference' | 'content' | 'cover';
 
 export interface FieldDef {
   key: string;
@@ -25,6 +25,8 @@ export type DataView = 'list' | 'table' | 'cards' | 'kanban';
 
 export type BlockType = 'paragraph' | 'heading' | 'bullet' | 'todo' | 'quote';
 
+export type LinkView = 'glyph' | 'card' | 'wide';
+
 export interface Block {
   id: string;
   type: BlockType;
@@ -34,6 +36,8 @@ export interface Block {
   indent?: number;
   checked?: boolean;
   tagIds?: string[];
+  /** How an embedded [[object]] is drawn. */
+  linkView?: LinkView;
 }
 
 export interface MediaRecord {
@@ -160,6 +164,8 @@ export interface AppSettings {
   /** Absolute folder in the desktop app. Empty in the browser, which keeps a folder handle. */
   vaultPath?: string | null;
   vaultLabel?: string | null;
+  /** Stretch the reading column past the default 45rem. */
+  wideLayout?: boolean;
 }
 
 export interface QuickCaptureInput {

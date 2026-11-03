@@ -19,6 +19,7 @@ export default function App() {
   const initError = useAppStore((s) => s.initError);
   const init = useAppStore((s) => s.init);
   const activeView = useAppStore((s) => s.activeView);
+  const wideLayout = useAppStore((s) => s.settings?.wideLayout);
 
   useKeyboardShortcuts();
 
@@ -57,15 +58,15 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className={`flex h-full overflow-hidden ${wideLayout ? 'wide-layout' : ''}`}>
       <Sidebar />
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--bg)]">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--desk)]">
         {activeView === 'settings' ? (
           <SettingsPanel />
         ) : (
           <>
             <TopBar />
-            <div className="min-h-0 flex-1 overflow-auto bg-[var(--bg)]">
+            <div className="min-h-0 flex-1 overflow-auto bg-[var(--desk)]">
               {activeView === 'object' ? (
                 <ObjectPage />
               ) : activeView === 'calendar' ? (

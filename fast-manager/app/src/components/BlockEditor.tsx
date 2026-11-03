@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Block, BlockType, NodeRecord, ObjectTypeRecord } from '../types';
-import { adjustIndent, clampIndent, embedIdFromText, emptyBlock, isEmbedText, moveBlock } from '../utils/blocks';
+import { adjustIndent, clampIndent, embedIdFromText, emptyBlock, isEmbedText, moveBlock, slashPick, slashQuery, slashChoices } from '../utils/blocks';
 import { getIcon } from '../utils/icons';
 import { objectTitle } from '../utils/nodeUtils';
 import { isStandaloneUrl } from '../utils/weblink';
@@ -15,15 +15,16 @@ interface BlockEditorProps {
   onOpen: (id: string) => void;
   onEnsureTag?: (name: string) => Promise<string | undefined>;
   onCreateWeblink?: (url: string) => Promise<string | undefined>;
+  onCreateObject?: (typeId: string, title: string) => Promise<string | undefined>;
 }
 
-const SLASH: { id: BlockType; level?: 1 | 2 | 3; labelKey: string }[] = [
-  { id: 'paragraph', labelKey: 'blocks.paragraph' },
-  { id: 'heading', level: 1, labelKey: 'blocks.heading1' },
-  { id: 'heading', level: 2, labelKey: 'blocks.heading2' },
-  { id: 'bullet', labelKey: 'blocks.bullet' },
-  { id: 'todo', labelKey: 'blocks.todo' },
-  { id: 'quote', labelKey: 'blocks.quote' },
+const BLOCK_SLASH: { id: string; type: BlockType; level?: 1 | 2 | 3; labelKey: string }[] = [
+  { id: 'paragraph', type: 'paragraph', labelKey: 'blocks.paragraph' },
+  { id: 'heading1', type: 'heading', level: 1, labelKey: 'blocks.heading1' },
+  { id: 'heading2', type: 'heading', level: 2, labelKey: 'blocks.heading2' },
+  { id: 'bullet', type: 'bullet', labelKey: 'blocks.bullet' },
+  { id: 'check', type: 'todo', labelKey: 'blocks.check' },
+  { id: 'quote', type: 'quote', labelKey: 'blocks.quote' },
 ];
 
 export function BlockEditor({
@@ -34,6 +35,7 @@ export function BlockEditor({
   onOpen,
   onEnsureTag,
   onCreateWeblink,
+  onCreateObject,
 }: BlockEditorProps) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(blocks);
@@ -88,6 +90,19 @@ export function BlockEditor({
       .slice(0, 8);
   }, [nodes, tagAt, tagQuery]);
 
+  const objectCandidates = useMemo(
+    () =>
+      objectTypes
+        .filter((type) => type.id !== 'tag' && type.id !== 'folder' && type.id !== 'dailyNote')
+        .map((type) => ({ id: type.id, names: [type.name, t(`supertags.${type.id}`, type.name)] })),
+    [objectTypes, t],
+  );
+
+  const blockCandidates = useMemo(
+    () => BLOCK_SLASH.map((item) => ({ id: item.id, names: [t(item.labelKey)] })),
+    [t],
+  );
+
   const linkHits = useMemo(() => {
     if (!linkAt) return [];
     const q = linkAt.query.toLowerCase();
@@ -133,6 +148,20 @@ export function BlockEditor({
     const text = current.text.replace(/(?:@|\[\[)([^\]\n]*)$/, `[[${node.id}]] `);
     setLinkAt(null);
     commit(draftRef.current.map((block, i) => (i === index ? { ...block, text } : block)));
+  };
+
+  const turnIntoObject = async (index: number, typeId: string, title: string) => {
+    if (!onCreateObject) return false;
+    pendingRef.current = true;
+    setSlash(null);
+    const id = await onCreateObject(typeId, title);
+    if (!id) {
+      pendingRef.current = false;
+      return false;
+    }
+    pendingText.current = `[[${id}]]`;
+    commit(draftRef.current.map((block, i) => (i === index ? { ...block, text: `[[${id}]]` } : block)));
+    return true;
   };
 
   const turnIntoWeblink = async (index: number, url: string) => {
@@ -315,7 +344,11 @@ export function BlockEditor({
                         node={nodes.find((node) => node.id === embedTarget)}
                         objectTypes={objectTypes}
                         nodes={nodes}
+                        linkView={block.linkView}
                         onOpen={onOpen}
+                        onLinkView={(linkView) => {
+                          commit(draftRef.current.map((item, i) => (i === index ? { ...item, linkView } : item)));
+                        }}
                         onKeyDown={(event) => onStructuralKey(event, index, block, 'card')}
                       />
                       <button
@@ -350,8 +383,25 @@ export function BlockEditor({
                         if (onStructuralKey(event, index, block, 'input')) return;
                         if (event.key === 'Enter' && !event.shiftKey) {
                           event.preventDefault();
-                          if (isStandaloneUrl(block.text) && onCreateWeblink) {
-                            void turnIntoWeblink(index, block.text);
+                          const text = draftRef.current[index]?.text ?? block.text;
+                          const parsed = slashQuery(text);
+                          if (parsed?.command && onCreateObject) {
+                            const objectPick = slashPick(parsed.command, objectCandidates);
+                            if (objectPick) {
+                              void turnIntoObject(index, objectPick.id, parsed.title);
+                              return;
+                            }
+                          }
+                          if (parsed?.command && !parsed.title) {
+                            const blockPick = slashPick(parsed.command, blockCandidates);
+                            const item = BLOCK_SLASH.find((entry) => entry.id === blockPick?.id);
+                            if (item) {
+                              applySlash(index, item.type, item.level);
+                              return;
+                            }
+                          }
+                          if (isStandaloneUrl(text) && onCreateWeblink) {
+                            void turnIntoWeblink(index, text);
                             return;
                           }
                           insertAfter(index, block);
@@ -442,23 +492,47 @@ export function BlockEditor({
                     )}
                   </div>
                 )}
-                {slash === index && (
-                  <div className="absolute z-20 mt-1 w-48 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--paper)] shadow-lg">
-                    {SLASH.map((item) => (
-                      <button
-                        key={item.labelKey}
-                        type="button"
-                        className="block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)]"
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          applySlash(index, item.id, item.level);
-                        }}
-                      >
-                        {t(item.labelKey)}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {slash === index && (() => {
+                  const parsed = slashQuery(block.text);
+                  const command = parsed?.command ?? '';
+                  const objectHits = slashChoices(command, objectCandidates);
+                  const blockHits = slashChoices(command, blockCandidates);
+                  if (objectHits.length === 0 && blockHits.length === 0) return null;
+                  return (
+                    <div className="absolute z-20 mt-1 w-56 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--paper)] shadow-lg">
+                      {objectHits.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className="block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)]"
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            void turnIntoObject(index, item.id, parsed?.title ?? '');
+                          }}
+                        >
+                          {t(`supertags.${item.id}`, item.names[0])}
+                        </button>
+                      ))}
+                      {blockHits.map((item) => {
+                        const entry = BLOCK_SLASH.find((candidate) => candidate.id === item.id);
+                        if (!entry) return null;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            className="block w-full px-3 py-1.5 text-left text-sm text-[var(--muted)] hover:bg-[var(--surface-2)]"
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              applySlash(index, entry.type, entry.level);
+                            }}
+                          >
+                            {t(entry.labelKey)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 {linkAt?.index === index && linkHits.length > 0 && (
                   <div className="absolute z-20 mt-1 w-64 overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--paper)] shadow-lg">
                     {linkHits.map((node) => (

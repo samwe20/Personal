@@ -1,17 +1,34 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
+import { useInkPaper } from '../hooks/useInkPaper';
 import { useMediaSrc } from '../hooks/useMediaSrc';
 import { objectToMarkdown } from '../services/objectModel';
 import type { FieldDef } from '../types';
 import { splitIds, joinIds } from '../utils/blocks';
+import { labelInk } from '../utils/color';
 import { getIcon } from '../utils/icons';
-import { blocksWithTag, displayTitle, getReferenceCandidates, getUnlinkedMentions, objectTitle, resolveLinks } from '../utils/nodeUtils';
+import { blocksWithTag, dayTodoBlocks, displayTitle, getReferenceCandidates, getUnlinkedMentions, objectTitle, resolveLinks } from '../utils/nodeUtils';
 import { BlockEditor } from './BlockEditor';
+import { DayPreviews } from './DayPreview';
 import { FieldEditor } from './FieldEditor';
 
+function sentence(value: string): string {
+  if (!value) return value;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function formatDay(isoDate: string, language: string): { year: string; label: string } {
+  const date = new Date(`${isoDate}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return { year: '', label: isoDate };
+  return {
+    year: String(date.getFullYear()),
+    label: sentence(new Intl.DateTimeFormat(language, { weekday: 'long', day: 'numeric', month: 'long' }).format(date)),
+  };
+}
+
 export function ObjectPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const nodeId = useAppStore((s) => s.selectedNodeId);
   const nodes = useAppStore((s) => s.nodes);
   const objectTypes = useAppStore((s) => s.objectTypes);
@@ -31,7 +48,10 @@ export function ObjectPage() {
   const getNodeBacklinks = useAppStore((s) => s.getNodeBacklinks);
   const ensureTag = useAppStore((s) => s.ensureTag);
   const createWeblink = useAppStore((s) => s.createWeblink);
+  const createObjectFromLine = useAppStore((s) => s.createObjectFromLine);
   const attachMedia = useAppStore((s) => s.attachMedia);
+  const setMediaProperty = useAppStore((s) => s.setMediaProperty);
+  const paper = useInkPaper();
 
   const node = nodes.find((item) => item.id === nodeId);
   const [typeOpen, setTypeOpen] = useState(false);
@@ -52,11 +72,22 @@ export function ObjectPage() {
   }
 
   const title = node.title ?? objectTitle(node);
+  const dayKey = node.typeId === 'dailyNote' ? String(node.fieldValues.dailyNote?.date ?? '') : '';
+  const dayTasks =
+    node.typeId === 'dailyNote'
+      ? nodes.filter(
+          (item) =>
+            item.typeId === 'task' &&
+            !item.deleted &&
+            String(item.fieldValues.task?.dueDate ?? '') === dayKey &&
+            item.fieldValues.task?.status !== 'done',
+        )
+      : [];
+  const dayChecks = node.typeId === 'dailyNote' && dayKey ? dayTodoBlocks(nodes, dayKey, [node.id]) : [];
   const backlinks = getNodeBacklinks(node.id);
   const taggedBlocks = node.typeId === 'tag' ? blocksWithTag(nodes, node.id) : [];
   const mentions = getUnlinkedMentions(nodes, node);
   const Back = getIcon('arrow-left');
-  const Icon = getIcon(type?.icon ?? 'file-text');
 
   const download = (filename: string, contents: string, mime: string) => {
     const blob = new Blob([contents], { type: mime });
@@ -75,42 +106,24 @@ export function ObjectPage() {
 
   return (
     <article className="object-page">
-      <button type="button" onClick={back} className="mb-6 flex items-center gap-1 text-sm text-[var(--muted)] hover:text-[var(--text)]">
-        <Back size={14} />
+      <button type="button" onClick={back} className="mb-8 flex items-center gap-1 text-[13px] text-[var(--muted)] hover:text-[var(--text)]">
+        <Back size={13} strokeWidth={1.5} />
         {t('object.back')}
       </button>
 
-      <div className="relative">
-        <button
-          type="button"
-          className="mb-2 inline-flex items-center gap-1.5 text-xs font-semibold"
-          style={{ color: type?.color ?? 'var(--accent)' }}
-          onClick={() => setTypeOpen((open) => !open)}
-        >
-          <Icon size={14} />
-          {type ? t(`supertags.${type.id}`, type.name) : t('object.type')}
-        </button>
-        {typeOpen && (
-          <div className="absolute z-20 mt-1 max-h-64 w-56 overflow-auto rounded-lg border border-[var(--border)] bg-[var(--paper)] shadow-lg">
-            {objectTypes
-              .filter((item) => item.id !== 'tag')
-              .map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className="block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)]"
-                  onClick={() => {
-                    setTypeOpen(false);
-                    void changeObjectType(node.id, item.id);
-                  }}
-                >
-                  {t(`supertags.${item.id}`, item.name)}
-                </button>
-              ))}
-          </div>
-        )}
-      </div>
+      {node.typeId === 'dailyNote' && dayKey && (
+        <div className="day-year" style={type ? { color: labelInk(type.color, paper) } : undefined}>{formatDay(dayKey, i18n.language).year}</div>
+      )}
 
+      {type && node.typeId !== 'dailyNote' && (
+        <div className="type-chip" style={{ color: labelInk(type.color, paper) }}>
+          {t(`supertags.${type.id}`, type.name)}
+        </div>
+      )}
+
+      {node.typeId === 'dailyNote' && title === dayKey ? (
+        <h1 className="day-title">{formatDay(dayKey, i18n.language).label}</h1>
+      ) : (
       <input
         className="object-title"
         value={titleDraft ?? title}
@@ -124,8 +137,78 @@ export function ObjectPage() {
           setTitleDraft(null);
         }}
       />
+      )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+      <div className="meta-line">
+        <div className="relative">
+        <button
+          type="button"
+          className="font-[var(--font-title)] text-[1.05rem] italic"
+          style={type ? { color: labelInk(type.color, paper) } : undefined}
+          onClick={() => setTypeOpen((open) => !open)}
+        >
+          {type ? t(`supertags.${type.id}`, type.name) : t('object.type')}
+        </button>
+        {typeOpen && (
+          <div className="absolute z-20 mt-1 max-h-64 w-56 overflow-auto rounded-lg border border-[var(--border)] bg-[var(--paper)] shadow-lg">
+            {objectTypes
+              .filter((item) => item.id !== 'tag')
+              .map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="block w-full px-3 py-1.5 text-left text-sm hover:bg-[var(--surface-2)]"
+                  style={{ color: labelInk(item.color, paper) }}
+                  onClick={() => {
+                    setTypeOpen(false);
+                    void changeObjectType(node.id, item.id);
+                  }}
+                >
+                  {t(`supertags.${item.id}`, item.name)}
+                </button>
+              ))}
+          </div>
+        )}
+        </div>
+        {node.typeId === 'dailyNote' && (
+          <button type="button" className={node.reviewed ? 'text-[var(--text)]' : ''} onClick={() => void setReviewed(node.id, !node.reviewed)}>
+            {t('object.reviewed')}
+          </button>
+        )}
+      </div>
+
+      {node.typeId === 'dailyNote' && (dayTasks.length > 0 || dayChecks.length > 0) && (
+        <ul className="day-tasks">
+          {dayTasks.map((task) => (
+            <li key={task.id}>
+              <button type="button" className="day-task" onClick={() => openObject(task.id)}>
+                <i style={{ background: objectTypes.find((item) => item.id === task.typeId)?.color }} />
+                {displayTitle(nodes, task) || t('object.untitled')}
+              </button>
+            </li>
+          ))}
+          {dayChecks.map((hit) => (
+            <li key={hit.blockId}>
+              <button type="button" className="day-task" onClick={() => openObject(hit.nodeId)}>
+                <i style={{ background: 'transparent', boxShadow: 'inset 0 0 0 1px var(--border)' }} />
+                {resolveLinks(hit.text, nodes)}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {node.typeId === 'dailyNote' && (
+        <DayPreviews
+          nodes={nodes}
+          objectTypes={objectTypes}
+          dayKey={dayKey}
+          excludeIds={[node.id, ...dayTasks.map((task) => task.id)]}
+          onOpen={openObject}
+        />
+      )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-1.5">
         {(node.tagIds ?? []).map((tagId) => {
           const tag = nodes.find((item) => item.id === tagId);
           return (
@@ -164,17 +247,6 @@ export function ObjectPage() {
         </form>
       </div>
 
-      {node.typeId === 'dailyNote' && (
-        <label className="mt-4 flex items-center gap-2 text-sm text-[var(--muted)]">
-          <input
-            type="checkbox"
-            checked={!!node.reviewed}
-            onChange={(event) => void setReviewed(node.id, event.target.checked)}
-          />
-          {t('object.reviewed')}
-        </label>
-      )}
-
       {node.typeId === 'weblink' && typeof fields.url === 'string' && fields.url && (
         <a
           href={fields.url}
@@ -204,10 +276,10 @@ export function ObjectPage() {
         </div>
       )}
 
-      {type && type.fields.filter((field) => field.key !== 'src').length > 0 && (
-        <div className="mt-6">
+      {type && type.fields.filter((field) => field.key !== 'src' && !(node.typeId === 'dailyNote' && field.key === 'date')).length > 0 && (
+        <div className="mt-8">
           {type.fields
-            .filter((field) => field.key !== 'src')
+            .filter((field) => field.key !== 'src' && !(node.typeId === 'dailyNote' && field.key === 'date'))
             .map((field) => (
               <div key={field.key} className="prop-row">
                 <div className="pt-1 text-sm text-[var(--muted)]">{field.label || t(`fields.${field.key}`, field.key)}</div>
@@ -223,6 +295,10 @@ export function ObjectPage() {
                       field={field}
                       hideLabel
                       value={fields[field.key]}
+                      nodes={nodes}
+                      objectTypes={objectTypes}
+                      onOpen={openObject}
+                      onUpload={(file) => void setMediaProperty(node.id, node.typeId!, field.key, file)}
                       onChange={(value) => void setObjectField(node.id, node.typeId!, field.key, value)}
                     />
                   )}
@@ -239,6 +315,7 @@ export function ObjectPage() {
         objectTypes={objectTypes}
         onEnsureTag={ensureTag}
         onCreateWeblink={createWeblink}
+        onCreateObject={(typeId, lineTitle) => createObjectFromLine(typeId, lineTitle, dayKey || undefined)}
         onChange={(blocks) => void saveObjectBody(node.id, title, blocks)}
       />
 
@@ -265,8 +342,10 @@ export function ObjectPage() {
         </section>
       )}
 
-      <section className="mt-10">
-        <div className="text-xs uppercase tracking-wide text-[var(--muted)]">{t('object.aliases')}</div>
+      <details className="quiet-fold">
+        <summary>{t('object.more')}</summary>
+      <section className="mt-6">
+        <div className="quiet-label">{t('object.aliases')}</div>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {(node.aliases ?? []).map((alias) => (
             <button
@@ -324,7 +403,7 @@ export function ObjectPage() {
       <LinkSection title={t('object.backlinks')} rows={backlinks} onOpen={openObject} />
       <LinkSection title={t('object.mentions')} rows={mentions} onOpen={openObject} />
 
-      <div className="mt-8 flex gap-2">
+      <div className="mt-6 flex gap-4">
         <button
           type="button"
           className="text-xs text-[var(--muted)] underline"
@@ -342,10 +421,11 @@ export function ObjectPage() {
         >
           {t('object.exportMd')}
         </button>
-        <button type="button" className="text-xs text-red-700" onClick={() => void removeNode(node.id).then(back)}>
+        <button type="button" className="text-xs text-[var(--muted)]" onClick={() => void removeNode(node.id).then(back)}>
           {t('actions.delete')}
         </button>
       </div>
+      </details>
     </article>
   );
 }

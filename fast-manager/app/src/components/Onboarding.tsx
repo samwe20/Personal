@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
+import { localToday } from '../utils/dateUtils';
 
 const STEPS = 3;
 
@@ -8,7 +9,7 @@ export function Onboarding() {
   const { t } = useTranslation();
   const settings = useAppStore((s) => s.settings);
   const markOnboardingDone = useAppStore((s) => s.markOnboardingDone);
-  const openQuickCapture = useAppStore((s) => s.openQuickCapture);
+  const openDaily = useAppStore((s) => s.openDaily);
   const [step, setStep] = useState(0);
 
   if (!settings || settings.onboardingDone) return null;
@@ -35,7 +36,7 @@ export function Onboarding() {
             <h2 className="mb-2 text-xl font-bold">{t('onboarding.step2title')}</h2>
             <p className="text-sm leading-relaxed text-[var(--muted)]">{t('onboarding.step2')}</p>
             <ul className="mt-3 space-y-1 text-sm text-[var(--muted)]">
-              <li><kbd className="rounded border border-[var(--border)] px-1">Ctrl+Shift+Space</kbd> — {t('capture.title')}</li>
+              <li><kbd className="rounded border border-[var(--border)] px-1">Ctrl+Shift+Space</kbd> — {t('nav.today')}</li>
               <li><kbd className="rounded border border-[var(--border)] px-1">Ctrl+K</kbd> — {t('commands.title')}</li>
               <li><kbd className="rounded border border-[var(--border)] px-1">Ctrl+Enter</kbd> — {t('commands.completeTask')}</li>
             </ul>
@@ -58,11 +59,11 @@ export function Onboarding() {
                 type="button"
                 onClick={() => {
                   finish();
-                  openQuickCapture();
+                  void openDaily(localToday());
                 }}
                 className="rounded-lg border border-[var(--border)] px-3 py-2 text-sm"
               >
-                {t('capture.title')}
+                {t('nav.today')}
               </button>
             )}
             {step < STEPS - 1 ? (

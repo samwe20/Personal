@@ -7,6 +7,36 @@ export interface TaggedBlockHit {
   text: string;
 }
 
+export interface DayTodoHit {
+  nodeId: string;
+  blockId: string;
+  text: string;
+}
+
+function belongsToDay(node: NodeRecord, dayKey: string): boolean {
+  if (node.createdAt.slice(0, 10) === dayKey) return true;
+  return Object.values(node.fieldValues).some((bag) =>
+    Object.values(bag).some((value) => typeof value === 'string' && value.slice(0, 10) === dayKey),
+  );
+}
+
+/** Open checkbox blocks on other objects that belong to this day. */
+export function dayTodoBlocks(nodes: NodeRecord[], dayKey: string, excludeIds: string[] = []): DayTodoHit[] {
+  if (!dayKey) return [];
+  const hidden = new Set(['dailyNote', 'tag', 'folder', ...excludeIds]);
+  const hits: DayTodoHit[] = [];
+  for (const node of nodes) {
+    if (node.deleted || hidden.has(node.id) || hidden.has(node.typeId ?? '')) continue;
+    if (!belongsToDay(node, dayKey)) continue;
+    for (const block of node.blocks ?? []) {
+      if (block.type === 'todo' && !block.checked && block.text.trim()) {
+        hits.push({ nodeId: node.id, blockId: block.id, text: block.text });
+      }
+    }
+  }
+  return hits;
+}
+
 export { objectTitle };
 
 export function searchNodes(nodes: NodeRecord[], query: string): NodeRecord[] {
@@ -86,6 +116,43 @@ export function resolveLinks(text: string, nodes: NodeRecord[]): string {
 
 export function displayTitle(nodes: NodeRecord[], node: NodeRecord | undefined): string {
   return resolveLinks(objectTitle(node), nodes);
+}
+
+const EMBED_LINE = /^\[\[[0-9a-fA-F-]{8,}\]\]$/;
+
+export function previewSnippet(node: NodeRecord, nodes: NodeRecord[], title: string): string {
+  const fromBlocks = (node.blocks ?? []).flatMap((block) => block.text.split('\n'));
+  const source = fromBlocks.some((line) => line.trim()) ? fromBlocks : node.content.split('\n');
+  const lines = source
+    .map((line) => line.trim())
+    .filter((line) => line && !EMBED_LINE.test(line))
+    .map((line) => resolveLinks(line, nodes).replace(/\s+/g, ' ').trim())
+    .filter((line) => line && line !== title.trim());
+  return lines.slice(0, 4).join('\n');
+}
+
+const PREVIEW_HIDDEN = new Set(['dailyNote', 'tag', 'folder']);
+
+export function dayPreviewNodes(nodes: NodeRecord[], dayKey: string, excludeIds: string[], limit = 12): NodeRecord[] {
+  const excluded = new Set(excludeIds);
+  const eligible = nodes.filter((item) => {
+    if (item.deleted || excluded.has(item.id)) return false;
+    if (!item.typeId || PREVIEW_HIDDEN.has(item.typeId)) return false;
+    const title = displayTitle(nodes, item).trim();
+    const fields = item.fieldValues[item.typeId] ?? {};
+    const hasImage = item.typeId === 'image' && typeof fields.src === 'string' && fields.src.length > 0;
+    const hasLink = item.typeId === 'weblink' && typeof fields.url === 'string' && fields.url.length > 0;
+    if (!title && !hasImage && !hasLink && !previewSnippet(item, nodes, title)) return false;
+    return true;
+  });
+  const onDay = (item: NodeRecord) => {
+    if (item.createdAt.slice(0, 10) === dayKey) return 1;
+    const bag = item.fieldValues[item.typeId ?? ''] ?? {};
+    return Object.values(bag).some((value) => typeof value === 'string' && value.slice(0, 10) === dayKey) ? 1 : 0;
+  };
+  return eligible
+    .sort((a, b) => onDay(b) - onDay(a) || b.updatedAt.localeCompare(a.updatedAt))
+    .slice(0, limit);
 }
 
 export function resolveNodeTitle(nodes: NodeRecord[], nodeId: string): string {

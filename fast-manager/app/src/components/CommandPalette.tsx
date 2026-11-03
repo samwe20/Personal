@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
+import { localToday } from '../utils/dateUtils';
 import { getIcon } from '../utils/icons';
 
 interface Command {
@@ -14,9 +15,8 @@ export function CommandPalette() {
   const { t } = useTranslation();
   const open = useAppStore((s) => s.commandPaletteOpen);
   const close = useAppStore((s) => s.closeCommandPalette);
-  const openQuickCapture = useAppStore((s) => s.openQuickCapture);
+  const openDaily = useAppStore((s) => s.openDaily);
   const setView = useAppStore((s) => s.setView);
-  const addRootNode = useAppStore((s) => s.addRootNode);
   const syncNow = useAppStore((s) => s.syncNow);
   const undo = useAppStore((s) => s.undo);
   const redo = useAppStore((s) => s.redo);
@@ -28,14 +28,10 @@ export function CommandPalette() {
 
   const commands: Command[] = useMemo(
     () => [
-      { id: 'capture', label: t('commands.capture'), shortcut: 'Ctrl+Shift+Space', action: () => { close(); openQuickCapture(); } },
+      { id: 'today', label: t('nav.today'), shortcut: 'Ctrl+Shift+Space', action: () => { close(); void openDaily(localToday()); } },
       { id: 'search', label: t('commands.search'), shortcut: 'Ctrl+F', action: () => { close(); setView('search'); } },
-      { id: 'newFolder', label: t('folders.newFolder'), action: () => { close(); void useAppStore.getState().addFolder(); } },
-      { id: 'newDoc', label: t('folders.newDocument'), action: () => { close(); void useAppStore.getState().addDocument(); } },
-      { id: 'tasks', label: t('queries.myTasks'), action: () => { close(); setView('query', 'q-tasks'); } },
-      { id: 'today', label: t('nav.today'), action: () => { close(); setView('today'); } },
-      { id: 'planned', label: t('nav.planned'), action: () => { close(); setView('planned'); } },
-      { id: 'inbox', label: t('nav.inbox'), action: () => { close(); setView('inbox'); } },
+      { id: 'planned', label: t('nav.planned'), action: () => { close(); void openDaily(localToday()); } },
+      { id: 'inbox', label: t('nav.inbox'), action: () => { close(); void openDaily(localToday()); } },
       { id: 'sync', label: t('actions.sync'), action: () => { close(); void syncNow(); } },
       { id: 'undo', label: t('commands.undo'), shortcut: 'Ctrl+Z', action: () => { close(); void undo(); } },
       { id: 'redo', label: t('commands.redo'), shortcut: 'Ctrl+Y', action: () => { close(); void redo(); } },
@@ -50,7 +46,7 @@ export function CommandPalette() {
       },
       { id: 'settings', label: t('nav.settings'), action: () => { close(); setView('settings'); } },
     ],
-    [t, close, openQuickCapture, setView, addRootNode, syncNow, undo, redo, completeTask, selectedNodeId],
+    [t, close, openDaily, setView, syncNow, undo, redo, completeTask, selectedNodeId],
   );
 
   const filtered = commands.filter((c) => c.label.toLowerCase().includes(filter.toLowerCase()));

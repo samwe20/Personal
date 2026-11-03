@@ -138,6 +138,7 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "themeSystem": "System",
+    "wide": "Wide page",
     "language": "Language",
     "syncUrl": "Sync server URL",
     "syncUrlHint": "Empty = local proxy (/api)",
@@ -151,7 +152,11 @@
     "syncSection": "Synchronization",
     "syncEnabled": "Enable sync server",
     "localMode": "Local mode — data stays on this device",
-    "localModeHint": "Default is local-only with no server. Enable sync when you want to share data across devices."
+    "localModeHint": "Default is local-only with no server. Enable sync when you want to share data across devices.",
+    "organize": "Organization",
+    "organizeHint": "The daily page is enough. Types, folders, collections, and queries live here.",
+    "organizeMore": "Folders, collections, and queries",
+    "studio": "Types and templates"
   },
   "vault": {
     "title": "Vault",
@@ -210,15 +215,16 @@
     "welcome": "Welcome to F.A.S.T Manager",
     "step1": "Task manager with supertags — simpler than Tana. Each node can have a type (#Task, #Question, #Inform…) with its own fields.",
     "step2title": "Keyboard shortcuts",
-    "step2": "Work fast without the mouse:",
+    "step2": "Today's page opens on its own. A line stays text until you turn it into an object:",
     "step3title": "Sync & offline",
-    "step3": "Data stays local and syncs automatically. Start with your first quick capture.",
+    "step3": "Data stays local. On today's page, type /task and the line becomes a task dated today.",
     "skip": "Skip",
     "next": "Next",
     "start": "Get started"
   },
   "object": {
     "back": "Back",
+    "more": "More",
     "untitled": "Untitled",
     "title": "Title",
     "type": "Type",
@@ -240,6 +246,9 @@
     "list": "List",
     "table": "Table",
     "cards": "Cards",
+    "glyph": "Glyph",
+    "card": "Card",
+    "wide": "Wide",
     "kanban": "Board",
     "new": "New object",
     "empty": "Nothing here yet.",
@@ -273,6 +282,10 @@
     "dated": "Dated this day",
     "created": "Created this day"
   },
+  "daily": {
+    "tasks": "Tasks for this day",
+    "previews": "Previews"
+  },
   "queryBuilder": {
     "new": "New query",
     "name": "Name",
@@ -284,8 +297,9 @@
     "heading2": "Heading 2",
     "bullet": "Bullet",
     "todo": "To-do",
+    "check": "Checkbox",
     "quote": "Quote",
-    "placeholder": "Write, / for a block, @ for a link, Shift+Enter for a line",
+    "placeholder": "Write. Enter starts a block, Shift+Enter a line, /task creates a task",
     "tag": "Tag",
     "taggedIn": "In blocks",
     "unknown": "Unknown object",

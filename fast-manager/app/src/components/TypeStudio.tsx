@@ -5,7 +5,7 @@ import type { FieldDef, FieldType, ObjectTypeRecord } from '../types';
 import { exportSpace, slugifyKey } from '../services/objectModel';
 import { emptyBlock } from '../utils/blocks';
 
-const FIELD_TYPES: FieldType[] = ['text', 'number', 'checkbox', 'date', 'select', 'reference'];
+const FIELD_TYPES: FieldType[] = ['text', 'number', 'checkbox', 'date', 'datetime', 'select', 'reference', 'content', 'cover'];
 
 export function TypeStudio() {
   const { t } = useTranslation();

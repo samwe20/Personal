@@ -7,6 +7,27 @@ export function newBlockId(): string {
   return `b-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+export function parseContentField(value: unknown): Block[] {
+  if (typeof value !== 'string' || !value.trim()) return [emptyBlock()];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (Array.isArray(parsed)) {
+      const blocks = parsed.filter(
+        (item): item is Block =>
+          !!item && typeof item === 'object' && typeof (item as Block).id === 'string' && typeof (item as Block).text === 'string',
+      );
+      if (blocks.length) return blocks;
+    }
+  } catch {
+    // A plain string is one paragraph per line.
+  }
+  return value.split('\n').map((line) => ({ ...emptyBlock(), text: line }));
+}
+
+export function serializeContentField(blocks: Block[]): string {
+  return JSON.stringify(blocks);
+}
+
 export function emptyBlock(type: BlockType = 'paragraph'): Block {
   return {
     id: newBlockId(),
@@ -22,6 +43,48 @@ export const MAX_BLOCK_INDENT = 4;
 export function clampIndent(value: number | undefined): number {
   if (!value || value < 0) return 0;
   return Math.min(MAX_BLOCK_INDENT, Math.floor(value));
+}
+
+export function slashQuery(text: string): { command: string; title: string } | null {
+  if (!text.startsWith('/')) return null;
+  const body = text.slice(1).trimStart();
+  const space = body.search(/\s/);
+  if (space === -1) return { command: body.trim().toLowerCase(), title: '' };
+  return { command: body.slice(0, space).toLowerCase(), title: body.slice(space + 1).trim() };
+}
+
+export function foldSlash(value: string): string {
+  return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+}
+
+export interface SlashCandidate {
+  id: string;
+  names: string[];
+}
+
+export function slashChoices<T extends SlashCandidate>(command: string, candidates: T[]): T[] {
+  const folded = foldSlash(command);
+  if (!folded) return candidates;
+  const exact = candidates.filter((item) => matchesSlash(item, folded, false));
+  if (exact.length > 0) return exact;
+  return candidates.filter((item) => matchesSlash(item, folded, true));
+}
+
+export function slashPick<T extends SlashCandidate>(command: string, candidates: T[]): T | undefined {
+  const folded = foldSlash(command);
+  if (!folded) return undefined;
+  const exact = candidates.filter((item) => matchesSlash(item, folded, false));
+  if (exact.length > 0) return exact[0];
+  const partial = candidates.filter((item) => matchesSlash(item, folded, true));
+  return partial.length === 1 ? partial[0] : undefined;
+}
+
+function matchesSlash(item: SlashCandidate, folded: string, prefix: boolean): boolean {
+  const names = [item.id, ...item.names];
+  return names.some((name) => {
+    const value = foldSlash(name);
+    return prefix ? value.startsWith(folded) : value === folded;
+  });
 }
 
 export function isEmbedText(text: string): boolean {
