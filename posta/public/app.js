@@ -75,10 +75,11 @@ function initials(person) {
   return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
 }
 
-function hue(email) {
+function shade(email) {
   let value = 0;
-  for (const char of String(email || '')) value = (value * 33 + char.charCodeAt(0)) % 360;
-  return value;
+  for (const char of String(email || '')) value = (value * 33 + char.charCodeAt(0)) >>> 0;
+  const level = 236 - (value % 4) * 12;
+  return `rgb(${level} ${level} ${level})`;
 }
 
 function setHtml(node, html) {
@@ -191,7 +192,7 @@ function renderList() {
       el('span', {
         class: 'avatar',
         text: initials(item.from),
-        style: `background: hsl(${hue(item.from?.email)} 42% 36%)`,
+        style: `background: ${shade(item.from?.email)}`,
       }),
       el('span', { class: 'row-main' }, [
         el('span', { class: 'row-top' }, [
@@ -309,7 +310,7 @@ function renderReading() {
       el('span', {
         class: 'avatar',
         text: initials(item.from),
-        style: `background: hsl(${hue(item.from?.email)} 42% 36%)`,
+        style: `background: ${shade(item.from?.email)}`,
       }),
       el('div', {}, [
         el('h3', { text: item.from?.name || item.from?.email || 'Neznámý' }),
