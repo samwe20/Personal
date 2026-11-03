@@ -12,6 +12,7 @@ dir_for() {
     fast) echo fast-manager ;;
     deniky) echo deniky ;;
     ostatni) echo ostatni ;;
+    posta) echo posta ;;
   esac
 }
 
@@ -21,6 +22,7 @@ workspace_for() {
     fast) echo FAST.code-workspace ;;
     deniky) echo Deniky.code-workspace ;;
     ostatni) echo Ostatni.code-workspace ;;
+    posta) echo Posta.code-workspace ;;
   esac
 }
 
@@ -28,7 +30,7 @@ echo "Personal"
 echo "větev: $branch"
 case "$branch" in
   main)
-    echo "stav: společný main, všechny čtyři projekty"
+    echo "stav: společný main, všech pět projektů"
     ;;
   feat/*|fix/*)
     echo "stav: rozdělaná změna. Po sloučení do main tu větev smaž."
@@ -45,7 +47,7 @@ normalize() {
 if [[ $# -lt 1 ]]; then
   echo
   echo "Projekty:"
-  for key in folio fast deniky ostatni; do
+  for key in folio fast deniky ostatni posta; do
     dir="$(dir_for "$key")"
     name="$(head -n 1 "$ROOT/$dir/PROJECT")"
     printf '  %-8s %s  (%s/)  otevři %s\n' "$key" "$name" "$dir" "$(workspace_for "$key")"
@@ -61,9 +63,10 @@ case "$key" in
   folio) key=folio ;;
   deniky|deníky|diaries) key=deniky ;;
   ostatni|ostatní|other) key=ostatni ;;
+  posta|pošta) key=posta ;;
   *)
     echo "Neznámý projekt: $1"
-    echo "Znám folio, fast, deniky, ostatni."
+    echo "Znám folio, fast, deniky, ostatni, posta."
     exit 1
     ;;
 esac

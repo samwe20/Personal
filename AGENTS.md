@@ -4,7 +4,7 @@
 
 ### What this repo is
 
-**Personal** is one repository with four projects. A project is a directory. A branch is a task, and it is never a way to switch projects.
+**Personal** is one repository with five projects. A project is a directory. A branch is a task, and it is never a way to switch projects.
 
 | Project | Directory | Open |
 | --- | --- | --- |
@@ -12,10 +12,11 @@
 | FAST | `fast-manager/` | `FAST.code-workspace` |
 | Deníky (Schneller diary) | `deniky/` | `Deniky.code-workspace` |
 | Other (empty-houses scrape, notes) | `ostatni/` | `Ostatni.code-workspace` |
+| Pošta (mail) | `posta/` | `Posta.code-workspace` |
 
-The only long-lived branch is `main`. It contains all four. `feat/…` and `fix/…` are unfinished changes and are deleted after they merge. Branches named `cursor/…` or `claude/…` are old tasks. Do not treat them as Folio, FAST, or the diaries.
+The only long-lived branch is `main`. It contains all five. `feat/…` and `fix/…` are unfinished changes and are deleted after they merge. Branches named `cursor/…` or `claude/…` are old tasks. Do not treat them as Folio, FAST, or the diaries.
 
-`./project` prints the branch and the four projects. `./project folio` (or `fast`, `deniky`, `ostatni`) prints the directory for that one project.
+`./project` prints the branch and the five projects. `./project folio` (or `fast`, `deniky`, `ostatni`, `posta`) prints the directory for that one project.
 
 There is no Galactic Empire game in this repository. Do not look for `game.js`, `ui.js`, or a root `index.html`.
 
@@ -45,6 +46,14 @@ Czech revision of the Schneller diary is in `deniky/schneller-tagebuch-cs/`. Scr
 
 Scrape scripts and their JSON live in `ostatni/`. Run them from that directory (`pip install -r requirements.txt`, then `python3 scrape_prazdnedomy.py`).
 
+### Running Pošta
+
+```bash
+cd posta && npm ci && npm start
+```
+
+The mail app listens on http://localhost:1430. `npm test` runs the mailbox tests. The mailbox file `posta/data/mailbox.json` is local and stays out of git.
+
 ### Checks
 
-Folio: `cd folio && npm test` and `npm run check`. FAST has its own Windows workflow in `.github/workflows/fast-manager.yml`. There is no root package manager.
+Folio: `cd folio && npm test` and `npm run check`. Pošta: `cd posta && npm test`. FAST has its own Windows workflow in `.github/workflows/fast-manager.yml`. There is no root package manager.
