@@ -83,7 +83,7 @@ export function NodeEmbeds({ node, compact = false }: NodeEmbedsProps) {
             <button type="button" onClick={() => setAdding(false)} className="rounded-md px-2 py-1 text-[10px] text-[var(--muted)]">
               {t('capture.cancel')}
             </button>
-            <button type="button" onClick={submitEmbed} className="rounded-md bg-[var(--accent)] px-2 py-1 text-[10px] text-white">
+            <button type="button" onClick={submitEmbed} className="rounded-md bg-[var(--accent)] px-2 py-1 text-[10px] text-[var(--on-accent)]">
               {t('embeds.insert')}
             </button>
           </div>

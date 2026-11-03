@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../store/appStore';
 import { getIcon } from '../utils/icons';
 import { isFolderNode } from '../utils/folderUtils';
+import { objectTitle } from '../utils/nodeUtils';
 
 interface FolderTreeProps {
   parentId: string | null;
@@ -43,9 +44,9 @@ export function FolderTree({ parentId, depth = 0 }: FolderTreeProps) {
                 autoFocus
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                onBlur={() => saveRename(folder.id, folder.content)}
+                onBlur={() => saveRename(folder.id, objectTitle(folder))}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') saveRename(folder.id, folder.content);
+                  if (e.key === 'Enter') saveRename(folder.id, objectTitle(folder));
                   if (e.key === 'Escape') setEditingId(null);
                 }}
                 onClick={(e) => e.stopPropagation()}
@@ -58,14 +59,14 @@ export function FolderTree({ parentId, depth = 0 }: FolderTreeProps) {
                 onClick={() => openFolder(folder.id)}
                 onDoubleClick={() => {
                   setEditingId(folder.id);
-                  setDraft(folder.content.trim());
+                  setDraft(objectTitle(folder));
                 }}
                 title={t('folders.renameHint')}
                 className={`ui-nav ${active ? 'bg-[var(--accent-soft)] text-[var(--accent)]' : 'text-[var(--muted)] hover:bg-[var(--surface-2)]'}`}
                 style={{ paddingLeft: `${8 + depth * 10}px` }}
               >
                 <Icon size={13} strokeWidth={2} />
-                <span className="truncate">{folder.content.trim() || t('folders.unnamed')}</span>
+                <span className="truncate">{objectTitle(folder) || t('folders.unnamed')}</span>
               </button>
             )}
             <FolderTree parentId={folder.id} depth={depth + 1} />

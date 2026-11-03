@@ -80,7 +80,7 @@ export function QuickCapture() {
           <button type="button" onClick={closeQuickCapture} className="rounded-md px-3 py-1.5 text-xs text-[var(--muted)] hover:bg-[var(--surface-2)]">
             {t('capture.cancel')}
           </button>
-          <button type="button" onClick={submit} className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-white hover:opacity-90">
+          <button type="button" onClick={submit} className="rounded-md bg-[var(--accent)] px-3 py-1.5 text-xs font-medium text-[var(--on-accent)] hover:opacity-90">
             {t('capture.save')}
           </button>
         </div>

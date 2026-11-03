@@ -11,6 +11,10 @@
     "folders": "Folders",
     "queries": "Queries",
     "supertags": "Supertags",
+    "calendar": "Calendar",
+    "types": "Types",
+    "tags": "Tags",
+    "collections": "Collections",
     "settings": "Settings"
   },
   "actions": {
@@ -48,7 +52,8 @@
     "outcome": "Outcome",
     "rationale": "Rationale",
     "potential": "Potential",
-    "description": "Description"
+    "description": "Description",
+    "url": "URL"
   },
   "status": {
     "new": "New",
@@ -92,7 +97,11 @@
     "decision": "Decision",
     "idea": "Idea",
     "note": "Note",
-    "folder": "Folder"
+    "folder": "Folder",
+    "tag": "Tag",
+    "image": "Image",
+    "file": "File",
+    "weblink": "Weblink"
   },
   "folders": {
     "newFolder": "Folder",
@@ -144,6 +153,19 @@
     "localMode": "Local mode — data stays on this device",
     "localModeHint": "Default is local-only with no server. Enable sync when you want to share data across devices."
   },
+  "vault": {
+    "title": "Vault",
+    "hint": "A folder on disk. Each object is one text file, and attachments sit beside it. A backup is a copy of that folder. Once linked, changes are written there and the folder is loaded on the next start.",
+    "none": "No folder selected",
+    "choose": "Choose folder",
+    "load": "Load vault",
+    "disconnect": "Disconnect",
+    "replaceLocal": "Replace the notes in the app with the contents of this folder?",
+    "unsupported": "This window cannot choose a folder. The Windows app can.",
+    "needsPermission": "The vault cannot be opened. Choose the folder again.",
+    "empty": "This folder does not contain a vault yet.",
+    "saved": "Written to the folder"
+  },
   "panel": {
     "fields": "Supertag fields",
     "noSelection": "Select a node to view fields",
@@ -194,5 +216,87 @@
     "skip": "Skip",
     "next": "Next",
     "start": "Get started"
+  },
+  "object": {
+    "back": "Back",
+    "untitled": "Untitled",
+    "title": "Title",
+    "type": "Type",
+    "tag": "Tag",
+    "tags": "Tags",
+    "addTag": "Add tag",
+    "newTag": "New tag",
+    "aliases": "Aliases",
+    "aliasesHint": "Another name, then Enter",
+    "backlinks": "Linked from",
+    "mentions": "Unlinked mentions",
+    "reviewed": "Reviewed",
+    "download": "Download",
+    "exportMd": "Export Markdown",
+    "exportJson": "Export JSON",
+    "openLink": "Open link"
+  },
+  "views": {
+    "list": "List",
+    "table": "Table",
+    "cards": "Cards",
+    "kanban": "Board",
+    "new": "New object",
+    "empty": "Nothing here yet.",
+    "count": "{{count}} objects",
+    "kanbanNeedsLabel": "Board view needs a select property."
+  },
+  "studio": {
+    "title": "Object types",
+    "newType": "New type",
+    "name": "Name",
+    "color": "Color",
+    "properties": "Properties",
+    "addProperty": "Add property",
+    "property": "Property",
+    "options": "Comma-separated options",
+    "multiple": "Multiple",
+    "reverseKey": "Reverse property key",
+    "deleteType": "Delete type",
+    "template": "Template",
+    "templateBody": "Lines for the body of a new object",
+    "saveTemplate": "Save template",
+    "templateReady": "This template is used for new objects of this type."
+  },
+  "calendar": {
+    "today": "Today",
+    "month": "Month",
+    "week": "Week",
+    "previous": "Previous",
+    "next": "Next",
+    "openNote": "Open daily note",
+    "dated": "Dated this day",
+    "created": "Created this day"
+  },
+  "queryBuilder": {
+    "new": "New query",
+    "name": "Name",
+    "type": "Type"
+  },
+  "blocks": {
+    "paragraph": "Paragraph",
+    "heading1": "Heading 1",
+    "heading2": "Heading 2",
+    "bullet": "Bullet",
+    "todo": "To-do",
+    "quote": "Quote",
+    "placeholder": "Write, / for a block, @ for a link, Shift+Enter for a line",
+    "tag": "Tag",
+    "taggedIn": "In blocks",
+    "unknown": "Unknown object",
+    "indent": "Indent",
+    "outdent": "Outdent",
+    "up": "Up",
+    "down": "Down",
+    "reorder": "Move",
+    "removeEmbed": "Remove from text"
+  },
+  "collection": {
+    "new": "New collection"
   }
 }

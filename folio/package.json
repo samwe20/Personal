@@ -1,7 +1,7 @@
 {
   "name": "folio",
   "private": true,
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "scripts": {
     "test": "node tests/regression.cjs",
@@ -41,7 +41,7 @@
     "@tauri-apps/plugin-fs": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-store": "^2",
-    "dompurify": "^3.4.15",
+    "dompurify": "^3.4.17",
     "fflate": "^0.8.3",
     "marked": "^15.0.7"
   },

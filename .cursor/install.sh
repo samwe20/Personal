@@ -7,8 +7,9 @@ npm ci --prefix folio
 npm ci --prefix fast-manager
 npm ci --prefix fast-manager/app
 npm ci --prefix fast-manager/sync-server
+npm ci --prefix posta
 
 # Folio's browser suite (npm run test:e2e) needs Chromium and its OS libraries.
 npm --prefix folio exec -- playwright install --with-deps chromium
 
-python3 -m pip install --user -r requirements.txt
+python3 -m pip install --user -r ostatni/requirements.txt

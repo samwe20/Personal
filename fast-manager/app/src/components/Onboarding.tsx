@@ -66,11 +66,11 @@ export function Onboarding() {
               </button>
             )}
             {step < STEPS - 1 ? (
-              <button type="button" onClick={() => setStep(step + 1)} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm text-white">
+              <button type="button" onClick={() => setStep(step + 1)} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm text-[var(--on-accent)]">
                 {t('onboarding.next')}
               </button>
             ) : (
-              <button type="button" onClick={finish} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm text-white">
+              <button type="button" onClick={finish} className="rounded-lg bg-[var(--accent)] px-4 py-2 text-sm text-[var(--on-accent)]">
                 {t('onboarding.start')}
               </button>
             )}

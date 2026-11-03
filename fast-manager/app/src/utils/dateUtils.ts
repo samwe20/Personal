@@ -6,6 +6,15 @@ export function localToday(): string {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+/** Pondělí až neděle kolem daného data. */
+export function weekDates(iso: string): string[] {
+  const [y, m, d] = iso.split('-').map(Number);
+  const date = new Date(y, (m ?? 1) - 1, d ?? 1);
+  const mondayOffset = (date.getDay() + 6) % 7;
+  const start = addDaysIso(iso, -mondayOffset);
+  return Array.from({ length: 7 }, (_, index) => addDaysIso(start, index));
+}
+
 export function addDaysIso(iso: string, days: number): string {
   const [y, m, d] = iso.split('-').map(Number);
   const dt = new Date(y, (m ?? 1) - 1, d ?? 1);

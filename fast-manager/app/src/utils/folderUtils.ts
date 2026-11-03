@@ -1,7 +1,7 @@
 import type { NodeRecord } from '../types';
 
 export function isFolderNode(node: NodeRecord): boolean {
-  return node.supertagIds.includes('folder');
+  return node.typeId === 'folder' || node.supertagIds.includes('folder');
 }
 
 export function getFolderNodes(nodes: NodeRecord[], parentId: string | null = null): NodeRecord[] {
@@ -17,5 +17,5 @@ export function getFolderDocuments(nodes: NodeRecord[], folderId: string): NodeR
 export function resolveFolderTitle(nodes: NodeRecord[], folderId: string): string {
   const folder = nodes.find((n) => n.id === folderId);
   if (!folder) return '—';
-  return folder.content.trim() || '—';
+  return (folder.title || folder.content).trim() || '—';
 }

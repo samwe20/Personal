@@ -1,21 +1,22 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../store/appStore';
-import { getReferenceCandidates } from '../utils/nodeUtils';
+import { getReferenceCandidates, objectTitle } from '../utils/nodeUtils';
 import type { FieldDef } from '../types';
 
 interface FieldEditorProps {
   field: FieldDef;
   value: string | number | boolean | undefined;
   onChange: (value: string | number | boolean) => void;
+  hideLabel?: boolean;
 }
 
-export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
+export function FieldEditor({ field, value, onChange, hideLabel = false }: FieldEditorProps) {
   const { t } = useTranslation();
   const nodes = useAppStore((s) => s.nodes);
   const resolveNodeTitle = useAppStore((s) => s.resolveNodeTitle);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const label = t(`fields.${field.key}`, field.key);
+  const label = field.label || t(`fields.${field.key}`, field.key);
 
   if (field.type === 'checkbox') {
     return (
@@ -26,7 +27,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
           onChange={(e) => onChange(e.target.checked)}
           className="accent-[var(--accent)]"
         />
-        {label}
+        {hideLabel ? null : label}
       </label>
     );
   }
@@ -37,7 +38,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
 
     return (
       <div className="relative">
-        <label className="ui-label">{label}</label>
+        {hideLabel ? null : <label className="ui-label">{label}</label>}
         <button
           type="button"
           onClick={() => setPickerOpen(!pickerOpen)}
@@ -70,7 +71,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
                   setPickerOpen(false);
                 }}
               >
-                {node.content.trim() || node.id.slice(0, 8)}
+                {objectTitle(node) || node.id.slice(0, 8)}
               </button>
             ))}
           </div>
@@ -82,7 +83,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
   if (field.type === 'select') {
     return (
       <div>
-        <label className="ui-label">{label}</label>
+        {hideLabel ? null : <label className="ui-label">{label}</label>}
         <select value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} className="ui-input">
           <option value="">—</option>
           {field.options?.map((opt) => (
@@ -98,7 +99,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
   if (field.type === 'datetime') {
     return (
       <div>
-        <label className="ui-label">{label}</label>
+        {hideLabel ? null : <label className="ui-label">{label}</label>}
         <input
           type="datetime-local"
           value={String(value ?? '')}
@@ -112,7 +113,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
   if (field.type === 'date') {
     return (
       <div>
-        <label className="ui-label">{label}</label>
+        {hideLabel ? null : <label className="ui-label">{label}</label>}
         <input type="date" value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} className="ui-input" />
       </div>
     );
@@ -120,7 +121,7 @@ export function FieldEditor({ field, value, onChange }: FieldEditorProps) {
 
   return (
     <div>
-      <label className="ui-label">{label}</label>
+      {hideLabel ? null : <label className="ui-label">{label}</label>}
       <input
         type={field.type === 'number' ? 'number' : 'text'}
         value={String(value ?? '')}
