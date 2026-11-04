@@ -13,20 +13,10 @@ start_session() {
   tmux new-session -d -s "$name" -c "$dir" -- bash -lc "$cmd"
 }
 
-start_session folio "$ROOT/folio" "exec npm run web:dev"
-# Vite's config sets host:false, so pass an explicit loopback host.
-start_session fast-web "$ROOT/fast-manager/app" "exec npm run dev -- --host 127.0.0.1 --port 5173"
-start_session fast-sync "$ROOT/fast-manager/sync-server" "exec npm run dev"
 start_session posta "$ROOT/posta" "exec npm start"
 
 for _ in $(seq 1 90); do
-  if curl -sf -o /dev/null "http://127.0.0.1:1420/" \
-    && curl -sf -o /dev/null "http://127.0.0.1:5173/" \
-    && curl -sf -o /dev/null "http://127.0.0.1:3847/api/health" \
-    && curl -sf -o /dev/null "http://127.0.0.1:1430/"; then
-    echo "folio http://127.0.0.1:1420"
-    echo "fast-manager http://127.0.0.1:5173"
-    echo "fast-sync http://127.0.0.1:3847/api/health"
+  if curl -sf -o /dev/null "http://127.0.0.1:1430/"; then
     echo "posta http://127.0.0.1:1430"
     exit 0
   fi

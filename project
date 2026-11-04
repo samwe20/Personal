@@ -8,8 +8,6 @@ branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "bez gitu")"
 
 dir_for() {
   case "$1" in
-    folio) echo folio ;;
-    fast) echo fast-manager ;;
     deniky) echo deniky ;;
     ostatni) echo ostatni ;;
     posta) echo posta ;;
@@ -18,8 +16,6 @@ dir_for() {
 
 workspace_for() {
   case "$1" in
-    folio) echo Folio.code-workspace ;;
-    fast) echo FAST.code-workspace ;;
     deniky) echo Deniky.code-workspace ;;
     ostatni) echo Ostatni.code-workspace ;;
     posta) echo Posta.code-workspace ;;
@@ -30,7 +26,7 @@ echo "Personal"
 echo "větev: $branch"
 case "$branch" in
   main)
-    echo "stav: společný main, všech pět projektů"
+    echo "stav: společný main, všechny tři projekty"
     ;;
   feat/*|fix/*)
     echo "stav: rozdělaná změna. Po sloučení do main tu větev smaž."
@@ -47,26 +43,29 @@ normalize() {
 if [[ $# -lt 1 ]]; then
   echo
   echo "Projekty:"
-  for key in folio fast deniky ostatni posta; do
+  for key in deniky ostatni posta; do
     dir="$(dir_for "$key")"
     name="$(head -n 1 "$ROOT/$dir/PROJECT")"
     printf '  %-8s %s  (%s/)  otevři %s\n' "$key" "$name" "$dir" "$(workspace_for "$key")"
   done
   echo
-  echo "Otevři workspace soubor. ./project folio vypíše jen Folio."
+  echo "Folio a F.A.S.T. Manager jsou v samostatných repozitářích (viz README.md)."
+  echo "Otevři workspace soubor. ./project deniky vypíše jen Deníky."
   exit 0
 fi
 
 key="$(normalize "$1")"
 case "$key" in
-  fast|f.a.s.t|fast-manager) key=fast ;;
-  folio) key=folio ;;
   deniky|deníky|diaries) key=deniky ;;
   ostatni|ostatní|other) key=ostatni ;;
   posta|pošta) key=posta ;;
+  folio|fast|f.a.s.t|fast-manager)
+    echo "Projekt $1 už není v tomto repozitáři. Viz README.md pro odkazy na samostatné repozitáře."
+    exit 1
+    ;;
   *)
     echo "Neznámý projekt: $1"
-    echo "Znám folio, fast, deniky, ostatni, posta."
+    echo "Znám deniky, ostatni, posta."
     exit 1
     ;;
 esac

@@ -1,8 +1,0 @@
-{
-  "folders": [
-    { "name": "Folio", "path": "folio" }
-  ],
-  "settings": {
-    "window.title": "Folio · ${activeRepositoryBranchName}"
-  }
-}
